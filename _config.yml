@@ -35,6 +35,8 @@ plugins:
 collections:
   games:
     output: true
+  photos:
+    output: true
 
 defaults:
   -
@@ -43,6 +45,16 @@ defaults:
       type: "posts"
     values:
       permalink: "/posts/:year/:month/:day/:title:output_ext"
+    scope:
+      path: "games" 
+      type: "games"
+    values:
+      permalink: "/games/:title:output_ext"
+    scope:
+      path: "photos" 
+      type: "photos"
+    values:
+      permalink: "photos/{{ page.title}}.html"
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to

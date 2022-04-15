@@ -99,6 +99,44 @@ So instead:
 	- Also, I initially kept the time in millisecond format (1:12.512) but the constantly shifting numbers made this stressful. Shifting to second-level granuality (1:13) made the experience much less stress inducing.
 1. I set a fixed list of words to guess. 
 
+# WebGL Hackery
+
+The last bit of functionality I wanted to implement was sharing. 
+
+The unicode for the green, grey and yellow squares was pretty easy to find here: https://unicode.org/emoji/charts/full-emoji-list.html
+
+The main issue is that WebGL builds of Unity don't get direct access to the clipboard; only the Javascript frame around it does. Unity does allow your code to [interact with the browser](https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html), and thankfully, [someone](https://forum.unity.com/threads/copy-paste-has-anyone-built-a-good-solution-for-this.401851/#post-7263700) came up with a short JS snippet that handles copying to clipboard:
+
+{% highlight Javascript %}
+mergeInto(LibraryManager.library, {
+  CopyToClipboard: function (arg){
+    // changed from "input" to "textarea" to preserve newlines
+    var tempInput = document.createElement("textarea"); 
+          tempInput.value = Pointer_stringify(arg);
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand("copy");
+          document.body.removeChild(tempInput); 
+                 }
+});
+{% endhighlight %}
+
+We can then import this function for use in our code through the following snippet:
+
+{% highlight C# %} 
+[DllImport("__Internal")]
+private static extern void CopyToClipboard(string text);
+     
+public static void SetText(string text) {          
+  #if UNITY_WEBGL && UNITY_EDITOR == false
+    CopyToClipboard(text);
+  #else
+    GUIUtility.systemCopyBuffer = text;
+  #endif
+}
+{% endhighlight %}
+
+And then we 
 [jekyll-docs]: https://jekyllrb.com/docs/home
 [jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+[jekyll-talk]: https://talk.jekyllrb.com/Wordle 

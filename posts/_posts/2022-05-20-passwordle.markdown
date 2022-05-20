@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Passwordle"
-date:   2022-05-20 11:00:00 -0400
+date:   2022-05-20 10:00:00 -0400
 categories: game dev-log
 ---
 

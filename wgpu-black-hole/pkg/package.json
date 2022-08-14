@@ -1,0 +1,15 @@
+{
+  "name": "web_wgpu",
+  "collaborators": [
+    "Kuba Karpierz <mr.karpierz@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "web_wgpu_bg.wasm",
+    "web_wgpu.js",
+    "web_wgpu.d.ts"
+  ],
+  "module": "web_wgpu.js",
+  "types": "web_wgpu.d.ts",
+  "sideEffects": false
+}

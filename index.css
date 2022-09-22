@@ -96,6 +96,10 @@
     border-radius: 3px;
 }
 
+.project-image-no-link:hover {
+    filter: grayscale(100%);
+}
+
 .project-title {
     text-indent: 10px;
     margin: 10px;

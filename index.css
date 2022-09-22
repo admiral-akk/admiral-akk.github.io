@@ -20,6 +20,11 @@
     align-items: center;
 }
 
+.projects {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .link-image:hover {
     opacity: 1.0;
 }
@@ -27,6 +32,7 @@
 .project-container {
     padding: 20px;
     display: inline-block;
+    margin: auto;
 }
 
 .project {

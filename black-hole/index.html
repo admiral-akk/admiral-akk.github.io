@@ -1,20 +1,28 @@
-<html><meta name="viewport" 
-      content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <head>
-    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-  </head>
-  <body>
-    <script type="module">
-      import init from './pkg/web.js';
-      async function run() {
-        await init();
-      }
-      run();
-    </script><script>
-</script>
-<div style="position: absolute; z-index: 1; left: 0; top: 0; width: fit-content; height:fit-content; background-color: green;"><div style="margin: 5px;text-align: center;"id="fps-counter"></div></div>
+<html>
+<meta name="viewport"
+  content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1,maximum-scale=1.0, user-scalable=no">
+
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+</head>
+
+<body>
+  <script type="module">
+    import init from './pkg/web.js';
+    async function run() {
+      await init();
+    }
+    run();
+  </script>
+  <script>
+  </script>
+  <div
+    style="position: absolute; z-index: 1; left: 0; top: 0; width: fit-content; height:fit-content; background-color: green;">
+    <div style="margin: 5px;text-align: center;" id="fps-counter"></div>
+  </div>
   <canvas style="position: absolute; z-index: 0; left: 0; top: 0;" id="canvas" height="150" width="150"></canvas>
   <textarea hidden type="text" id="shader" name="shader" rows="66" cols="100"></textarea>
   <button hidden type="button" id="recompile" name="recompile">Recompile shader!</button>
-  </body>
+</body>
+
 </html>

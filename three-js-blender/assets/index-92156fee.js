@@ -4088,12 +4088,12 @@ void main() {\r
     gl_Position = projPos;\r
     gl_PointSize = uSize * aScale * uPixelRatio;\r
     gl_PointSize *= (1.0 / - vPos.z);\r
-}`,D_=`uniform float uPixelHeight;\r
+}`,D_=`uniform float uPixelHeight;
 
 void main() {\r
     gl_FragColor = vec4(1.0, 0.0,0.0,1.0);\r
     float dCenter = distance(gl_PointCoord, vec2(0.5));\r
-    float strength = uPixelHeight * (0.05 / dCenter - 0.1) / 1000.;\r
+    float strength = (uPixelHeight / 1000.) * (0.05 / dCenter - 0.1) ;\r
     gl_FragColor = vec4(1.0,1.0,1.0, strength);\r
 }`,I_=`varying vec2 vUv;
 
@@ -4191,4 +4191,4 @@ void main()\r
     strength += step(- 0.2, strength)* 0.8;\r
     gl_FragColor = vec4(vec3(strength), 1.0);\r
 }`;const gc=document.querySelector("canvas.webgl"),Qt=new ac({canvas:gc}),js=new jm,N_=new fc,_c=new g_,vc=new Og;vc.setDRACOLoader(_c);_c.setDecoderPath("./draco/gltf/");const O_=new pn({color:"ff8049"}),xc=new _n({uniforms:{uTime:{value:0}},side:Xt,vertexShader:I_,fragmentShader:U_}),xa=N_.load("albedo.jpg");xa.flipY=!1;xa.colorSpace=et;const F_=new pn({map:xa});vc.load("scene.glb",s=>{s.scene.traverse(n=>{n.material=F_,console.log(n.name)});const e=s.scene.children.find(n=>n.name==="EmissionPortal"),t=s.scene.children.filter(n=>n.name.includes("EmissionLamp"));e.material=xc,t.forEach(n=>{n.material=O_}),js.add(s.scene)});const Vs={},Mc=new L_({width:400});Vs.clearColor="#201919";Qt.setClearColor(Vs.clearColor);Mc.addColor(Vs,"clearColor").onChange(()=>{Qt.setClearColor(Vs.clearColor)});Mc.hide();const Rt={width:window.innerWidth,height:window.innerHeight};Qt.setSize(Rt.width,Rt.height);Qt.setPixelRatio(Math.min(window.devicePixelRatio,2));window.addEventListener("resize",()=>{Rt.width=window.innerWidth,Rt.height=window.innerHeight,en.aspect=window.innerWidth/window.innerHeight,en.updateProjectionMatrix(),Qt.setSize(Rt.width,Rt.height),Qt.setPixelRatio(Math.min(window.devicePixelRatio,2))});window.screen&&window.screen.orientation&&(window.screen.orientation.onchange=()=>{Rt.width=window.innerWidth,Rt.height=window.innerHeight,en.aspect=window.innerWidth/window.innerHeight,en.updateProjectionMatrix(),Qt.setSize(Rt.width,Rt.height),Qt.setPixelRatio(Math.min(window.devicePixelRatio,2))});window.addEventListener("dblclick",()=>{document.fullscreenElement||document.webkitFullscreenElement?document.exitFullscreen():gc.requestFullscreen()});const en=new At(75,Rt.width/Rt.height);en.position.x=2;en.position.y=3;en.position.z=4;js.add(en);const Zn=new Ng(en,Qt.domElement);Zn.minDistance=3;Zn.maxDistance=6;Zn.minPolarAngle=Math.PI/10;Zn.maxPolarAngle=2*Math.PI/5;Zn.enablePan=!1;Zn.enableDamping=!0;const Ma=new Ht,ya=30,yc=new Float32Array(ya),Us=new Float32Array(ya*3);for(let s=0;s<ya;s++)yc[s]=.7*Math.random()+.1,Us[3*s]=(Math.random()-.5)*4,Us[3*s+1]=Math.random()*1.5,Us[s*3+2]=(Math.random()-.5)*4;Ma.setAttribute("aScale",new lt(yc,1));Ma.setAttribute("position",new lt(Us,3));const ta=new _n({transparent:!0,depthWrite:!1,blending:zr,uniforms:{uTime:{value:0},uPixelRatio:{value:Math.min(window.devicePixelRatio,2)},uSize:{value:300},uPixelHeight:{value:Rt.height}},vertexShader:P_,fragmentShader:D_}),B_=new hc(Ma,ta);js.add(B_);const z_=new Tg,Sc=()=>{const s=z_.getElapsedTime();Zn.update(),ta.uniforms.uTime.value=s,ta.uniforms.uPixelHeight.value=Rt.height,xc.uniforms.uTime.value=s,Qt.render(js,en),window.requestAnimationFrame(Sc)};Sc();
-//# sourceMappingURL=index-bd7f2ec2.js.map
+//# sourceMappingURL=index-92156fee.js.map

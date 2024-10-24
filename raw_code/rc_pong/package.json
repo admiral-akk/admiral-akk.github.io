@@ -1,0 +1,22 @@
+{
+  "name": "rc_pong",
+  "version": "1.0.0",
+  "description": "Radiance Cascades with some basic pong",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "Kuba Karpierz",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.5.0",
+    "vite-plugin-glsl": "^1.2.1"
+  },
+  "dependencies": {
+    "lil-gui": "^0.19.0",
+    "stats-js": "^1.0.1",
+    "twgl.js": "^5.5.4"
+  }
+}

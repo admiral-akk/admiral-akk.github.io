@@ -151,8 +151,8 @@ class DataManager {
   }
 
   saveData() {
-    localStorage.setItem(stateString, JSON.stringify(this.state));
-    localStorage.setItem(configString, JSON.stringify(this.config));
+    //localStorage.setItem(stateString, JSON.stringify(this.state));
+    //localStorage.setItem(configString, JSON.stringify(this.config));
   }
 
   clearData() {

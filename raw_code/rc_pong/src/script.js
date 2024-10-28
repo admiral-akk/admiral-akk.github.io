@@ -638,12 +638,7 @@ data.addColor({
   },
 });
 
-function render(time) {
-  stats.begin();
-  windowManager.update();
-  inputState.update(game, input.getState());
-  game.update();
-  twgl.resizeCanvasToDisplaySize(gl.canvas);
+function renderScene(time) {
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   renderTo(
@@ -655,7 +650,111 @@ function render(time) {
   );
 
   drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 0.05, game);
+}
 
+function renderDepth(time, depth) {
+  const startDepth = data.addNumber({
+    displayName: "Start Depth",
+    defaultValue: Math.log2(width) - 3,
+    min: 1,
+    max: Math.log2(width) - 3,
+    step: 1,
+  }).value;
+  const shortestDistance = (10 * Math.SQRT2) / frameBuffers.cascadeRT.width;
+  const longestDistance = Math.SQRT2;
+
+  const multiplier2 = Math.log2(longestDistance / shortestDistance);
+
+  const minDistance =
+    depth === 0
+      ? 0
+      : shortestDistance *
+        Math.pow(2, (multiplier2 * (depth - 1)) / startDepth);
+  const maxDistance =
+    depth == startDepth
+      ? Math.SQRT2
+      : shortestDistance * Math.pow(2, (multiplier2 * depth) / startDepth);
+  const deeperMaxDistance =
+    shortestDistance * Math.pow(2, (multiplier2 * (depth + 1)) / startDepth);
+
+  renderTo(
+    gl,
+    cascadeQuadCalculate,
+    bufferInfo,
+    {
+      renderResolution: [gl.canvas.width, gl.canvas.height],
+      resolution: [
+        frameBuffers.quadCascadeRT.width,
+        frameBuffers.quadCascadeRT.height,
+      ],
+      maxSteps: data.addNumber({
+        displayName: "Max Steps",
+        defaultValue: 32,
+        min: 1,
+        max: 128,
+        step: 1,
+      }).value,
+      tDistance: frameBuffers.distance.attachments[0],
+      tColor: frameBuffers.lightEmittersWithCurrent.attachments[0],
+      startDepth: startDepth,
+      current: {
+        depth: depth,
+        minDistance: minDistance,
+        maxDistance: maxDistance,
+      },
+      deeper: {
+        depth: depth,
+        minDistance: maxDistance,
+        maxDistance: deeperMaxDistance,
+      },
+      debug: {
+        continousBilinearFix: data.addNumber({
+          displayName: "Continuous Bilinear Fix",
+          defaultValue: true,
+        }).value,
+        cornerProbes: data.addNumber({
+          displayName: "Corner Probes",
+          defaultValue: true,
+        }).value,
+        showSampleUv: data.addNumber({
+          displayName: "Show Sample Uv",
+          defaultValue: false,
+        }).value,
+        showProbeUv: data.addNumber({
+          displayName: "Show Probe Uv",
+          defaultValue: false,
+        }).value,
+        showDirection: data.addNumber({
+          displayName: "Show Direction Uv",
+          defaultValue: false,
+        }).value,
+        noFix: data.addNumber({
+          displayName: "No Fix",
+          defaultValue: false,
+        }).value,
+        quadSample: data.addNumber({
+          displayName: "Quad Sample",
+          defaultValue: false,
+        }).value,
+        finalDepth: data.addNumber({
+          displayName: "Final Depth",
+          defaultValue: 0,
+          min: 0,
+          max: 8,
+          step: 1,
+        }).value,
+      },
+      tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
+    },
+    frameBuffers.spareQuadCascadeRT
+  );
+  [frameBuffers.spareQuadCascadeRT, frameBuffers.quadCascadeRT] = [
+    frameBuffers.quadCascadeRT,
+    frameBuffers.spareQuadCascadeRT,
+  ];
+}
+
+function renderDistance(time) {
   renderTo(
     gl,
     fillColor,
@@ -697,29 +796,92 @@ function render(time) {
     },
     frameBuffers.distance
   );
+}
 
-  const startDepth = data.addNumber({
-    displayName: "Start Depth",
-    defaultValue: Math.log2(width) - 3,
-    min: 1,
-    max: Math.log2(width) - 3,
-    step: 1,
-  }).value;
-  const finalDepth = data.addNumber({
-    displayName: "Final Depth",
-    defaultValue: 0,
-    min: 0,
-    max: 8,
-    step: 1,
-  }).value;
-  const initialDepth = data.addNumber({
+function renderCascadeLevel() {
+  renderTo(
+    gl,
+    renderTexture,
+    bufferInfo,
+    {
+      renderTarget: [
+        data.addNumber({
+          displayName: "minx",
+          defaultValue: 0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        }).value,
+        data.addNumber({
+          displayName: "miny",
+          defaultValue: 0,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        }).value,
+        data.addNumber({
+          displayName: "maxx",
+          defaultValue: 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        }).value,
+        data.addNumber({
+          displayName: "maxy",
+          defaultValue: 1,
+          min: 0,
+          max: 1,
+          step: 0.01,
+        }).value,
+      ],
+      resolution: [
+        frameBuffers.quadCascadeRT.width,
+        frameBuffers.quadCascadeRT.height,
+      ],
+      tPrev: frameBuffers.quadCascadeRT.attachments[0],
+    },
+    frameBuffers.spareQuadCascadeRT
+  );
+
+  renderTo(gl, applyGamma, bufferInfo, {
+    resolution: [gl.canvas.width, gl.canvas.height],
+    tPrev: frameBuffers.spareQuadCascadeRT.attachments[0],
+  });
+}
+
+function renderCasadeScene() {
+  renderTo(
+    gl,
+    cascadeQuadRender,
+    bufferInfo,
+    {
+      resolution: [
+        frameBuffers.spareQuadCascadeRT.width,
+        frameBuffers.spareQuadCascadeRT.height,
+      ],
+      tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
+    },
+    frameBuffers.spareQuadCascadeRT
+  );
+}
+
+function render(time) {
+  stats.begin();
+  windowManager.update();
+  inputState.update(game, input.getState());
+  game.update();
+  twgl.resizeCanvasToDisplaySize(gl.canvas);
+
+  renderScene(time);
+  renderDistance(time);
+
+  let depth = data.addNumber({
     displayName: "Initial Depth",
     defaultValue: Math.log2(width) - 3,
     min: 1,
     max: Math.log2(width) - 3,
     step: 1,
   }).value;
-  let depth = initialDepth;
 
   renderTo(
     gl,
@@ -736,125 +898,19 @@ function render(time) {
     frameBuffers.quadCascadeRT
   );
 
-  const maxProbeCount = frameBuffers.cascadeRT.width;
-  while (depth >= finalDepth) {
-    const shortestDistance = (10 * Math.SQRT2) / frameBuffers.cascadeRT.width;
-    const longestDistance = Math.SQRT2;
-
-    const multiplier2 = Math.log2(longestDistance / shortestDistance);
-
-    const minDistance =
-      depth === 0
-        ? 0
-        : shortestDistance *
-          Math.pow(2, (multiplier2 * (depth - 1)) / startDepth);
-    const maxDistance =
-      depth == startDepth
-        ? Math.SQRT2
-        : shortestDistance * Math.pow(2, (multiplier2 * depth) / startDepth);
-    const deeperMaxDistance =
-      shortestDistance * Math.pow(2, (multiplier2 * (depth + 1)) / startDepth);
-
-    renderTo(
-      gl,
-      cascadeQuadCalculate,
-      bufferInfo,
-      {
-        renderResolution: [gl.canvas.width, gl.canvas.height],
-        resolution: [
-          frameBuffers.quadCascadeRT.width,
-          frameBuffers.quadCascadeRT.height,
-        ],
-        maxSteps: data.addNumber({
-          displayName: "Max Steps",
-          defaultValue: 32,
-          min: 1,
-          max: 128,
-          step: 1,
-        }).value,
-        tDistance: frameBuffers.distance.attachments[0],
-        tColor: frameBuffers.lightEmittersWithCurrent.attachments[0],
-        startDepth: startDepth,
-        current: {
-          depth: depth,
-          minDistance: minDistance,
-          maxDistance: maxDistance,
-        },
-        deeper: {
-          depth: depth,
-          minDistance: maxDistance,
-          maxDistance: deeperMaxDistance,
-        },
-        debug: {
-          continousBilinearFix: data.addNumber({
-            displayName: "Continuous Bilinear Fix",
-            defaultValue: true,
-          }).value,
-          cornerProbes: data.addNumber({
-            displayName: "Corner Probes",
-            defaultValue: true,
-          }).value,
-          showSampleUv: data.addNumber({
-            displayName: "Show Sample Uv",
-            defaultValue: false,
-          }).value,
-          showProbeUv: data.addNumber({
-            displayName: "Show Probe Uv",
-            defaultValue: false,
-          }).value,
-          showDirection: data.addNumber({
-            displayName: "Show Direction Uv",
-            defaultValue: false,
-          }).value,
-          noFix: data.addNumber({
-            displayName: "No Fix",
-            defaultValue: false,
-          }).value,
-          quadSample: data.addNumber({
-            displayName: "Quad Sample",
-            defaultValue: false,
-          }).value,
-          finalDepth: data.addNumber({
-            displayName: "Final Depth",
-            defaultValue: 0,
-            min: 0,
-            max: 8,
-            step: 1,
-          }).value,
-        },
-        tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
-      },
-      frameBuffers.spareQuadCascadeRT
-    );
-    [frameBuffers.spareQuadCascadeRT, frameBuffers.quadCascadeRT] = [
-      frameBuffers.quadCascadeRT,
-      frameBuffers.spareQuadCascadeRT,
-    ];
+  while (
+    depth >=
+    data.addNumber({
+      displayName: "Final Depth",
+      defaultValue: 0,
+      min: 0,
+      max: 8,
+      step: 1,
+    }).value
+  ) {
+    renderDepth(time, depth);
     depth--;
   }
-  renderTo(
-    gl,
-    renderTexture,
-    bufferInfo,
-    {
-      resolution: [
-        frameBuffers.linearCascadeRT.width,
-        frameBuffers.linearCascadeRT.height,
-      ],
-      renderTarget: [0, 0, 1, 1],
-      tPrev: frameBuffers.cascadeRT.attachments[0],
-    },
-    frameBuffers.linearCascadeRT
-  );
-
-  renderTo(gl, drawTexture, bufferInfo, {
-    resolution: [gl.canvas.width, gl.canvas.height],
-    tPrev: frameBuffers.fill.attachments[0],
-  });
-  renderTo(gl, renderTexture, bufferInfo, {
-    resolution: [gl.canvas.width, gl.canvas.height],
-    tPrev: frameBuffers.cascadeRT.attachments[0],
-  });
 
   switch (
     data.addEnum({
@@ -864,69 +920,11 @@ function render(time) {
     }).value
   ) {
     case "Cascade Levels":
-      renderTo(
-        gl,
-        renderTexture,
-        bufferInfo,
-        {
-          renderTarget: [
-            data.addNumber({
-              displayName: "minx",
-              defaultValue: 0,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            }).value,
-            data.addNumber({
-              displayName: "miny",
-              defaultValue: 0,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            }).value,
-            data.addNumber({
-              displayName: "maxx",
-              defaultValue: 1,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            }).value,
-            data.addNumber({
-              displayName: "maxy",
-              defaultValue: 1,
-              min: 0,
-              max: 1,
-              step: 0.01,
-            }).value,
-          ],
-          resolution: [
-            frameBuffers.quadCascadeRT.width,
-            frameBuffers.quadCascadeRT.height,
-          ],
-          tPrev: frameBuffers.quadCascadeRT.attachments[0],
-        },
-        frameBuffers.spareQuadCascadeRT
-      );
-
-      renderTo(gl, applyGamma, bufferInfo, {
-        resolution: [gl.canvas.width, gl.canvas.height],
-        tPrev: frameBuffers.spareQuadCascadeRT.attachments[0],
-      });
+      renderCascadeLevel();
+      break;
     case "Render Cascade":
     default:
-      renderTo(
-        gl,
-        cascadeQuadRender,
-        bufferInfo,
-        {
-          resolution: [
-            frameBuffers.spareQuadCascadeRT.width,
-            frameBuffers.spareQuadCascadeRT.height,
-          ],
-          tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
-        },
-        frameBuffers.spareQuadCascadeRT
-      );
+      renderCasadeScene();
       break;
   }
 

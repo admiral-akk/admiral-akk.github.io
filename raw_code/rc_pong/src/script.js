@@ -865,7 +865,7 @@ function render(time) {
     frameBuffers.spareQuadCascadeFinalRT
   );
 
-  if (!hasQueried) {
+  if (!hasQueried && ext) {
     gl.beginQuery(ext.TIME_ELAPSED_EXT, query);
     hasQueried = true;
   }
@@ -882,7 +882,7 @@ function render(time) {
     renderDepth(time, depth);
     depth--;
   }
-  if (hasQueried && !hasFinished) {
+  if (hasQueried && !hasFinished && ext) {
     hasFinished = true;
     gl.endQuery(ext.TIME_ELAPSED_EXT);
   }

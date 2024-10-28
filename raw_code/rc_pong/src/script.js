@@ -445,32 +445,17 @@ const saveImage = () => {
   toSave = false;
 };
 
-const width = 8 * 128;
+const width = 16 * 128;
 const height = width;
 const frameBuffers = {
-  lightEmitters: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA8,
-        format: gl.RGBA,
-        mag: gl.NEAREST,
-        min: gl.NEAREST,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    width,
-    height
-  ),
   lightEmittersWithCurrent: twgl.createFramebufferInfo(
     gl,
     [
       {
         internalFormat: gl.RGBA8,
         format: gl.RGBA,
-        mag: gl.NEAREST,
-        min: gl.NEAREST,
+        mag: gl.LINEAR,
+        min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
         auto: true,
       },
@@ -482,8 +467,8 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA8,
-        format: gl.RGBA,
+        internalFormat: gl.R8,
+        format: gl.R,
         mag: gl.LINEAR,
         min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
@@ -497,8 +482,8 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA8,
-        format: gl.RGBA,
+        internalFormat: gl.RGB8,
+        format: gl.RGB,
         mag: gl.NEAREST,
         min: gl.NEAREST,
         wrap: gl.CLAMP_TO_EDGE,
@@ -512,8 +497,8 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA8,
-        format: gl.RGBA,
+        internalFormat: gl.RGB8,
+        format: gl.RGB,
         mag: gl.NEAREST,
         min: gl.NEAREST,
         wrap: gl.CLAMP_TO_EDGE,
@@ -523,56 +508,11 @@ const frameBuffers = {
     width,
     height
   ),
-  cascadeRT: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA32F,
-        format: gl.RGBA,
-        mag: gl.LINEAR,
-        min: gl.LINEAR,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    2 * width,
-    height
-  ),
-  spareCascadeRT: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA32F,
-        format: gl.RGBA,
-        mag: gl.LINEAR,
-        min: gl.LINEAR,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    2 * width,
-    height
-  ),
-  linearCascadeRT: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA32F,
-        format: gl.RGBA,
-        mag: gl.LINEAR,
-        min: gl.LINEAR,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    2 * width,
-    height
-  ),
   quadCascadeRT: twgl.createFramebufferInfo(
     gl,
     [
       {
-        internalFormat: gl.RGBA32F,
+        internalFormat: gl.RGBA16F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -587,37 +527,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA32F,
-        format: gl.RGBA,
-        mag: gl.LINEAR,
-        min: gl.LINEAR,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    width,
-    height
-  ),
-  finalCascadeRT: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA32F,
-        format: gl.RGBA,
-        mag: gl.LINEAR,
-        min: gl.LINEAR,
-        wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
-      },
-    ],
-    width,
-    height
-  ),
-  finalCascadeRTSpare: twgl.createFramebufferInfo(
-    gl,
-    [
-      {
-        internalFormat: gl.RGBA32F,
+        internalFormat: gl.RGBA16F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -660,7 +570,7 @@ function renderDepth(time, depth) {
     max: Math.log2(width) - 3,
     step: 1,
   }).value;
-  const shortestDistance = (10 * Math.SQRT2) / frameBuffers.cascadeRT.width;
+  const shortestDistance = (10 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
   const longestDistance = Math.SQRT2;
 
   const multiplier2 = Math.log2(longestDistance / shortestDistance);
@@ -883,13 +793,6 @@ function render(time) {
     step: 1,
   }).value;
 
-  renderTo(
-    gl,
-    fillColor,
-    bufferInfo,
-    { color: [0, 0, 0, 0] },
-    frameBuffers.cascadeRT
-  );
   renderTo(
     gl,
     fillColor,

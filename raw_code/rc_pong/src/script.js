@@ -445,7 +445,7 @@ const saveImage = () => {
   toSave = false;
 };
 
-const width = 16 * 128;
+const width = 8 * 128;
 const height = width;
 const frameBuffers = {
   lightEmittersWithCurrent: twgl.createFramebufferInfo(
@@ -457,7 +457,6 @@ const frameBuffers = {
         mag: gl.LINEAR,
         min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -472,7 +471,6 @@ const frameBuffers = {
         mag: gl.LINEAR,
         min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -487,7 +485,6 @@ const frameBuffers = {
         mag: gl.NEAREST,
         min: gl.NEAREST,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -502,7 +499,6 @@ const frameBuffers = {
         mag: gl.NEAREST,
         min: gl.NEAREST,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -512,12 +508,11 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA16F,
+        internalFormat: gl.RGBA8,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -527,12 +522,25 @@ const frameBuffers = {
     gl,
     [
       {
+        internalFormat: gl.RGBA8,
+        format: gl.RGBA,
+        mag: gl.LINEAR,
+        min: gl.LINEAR,
+        wrap: gl.CLAMP_TO_EDGE,
+      },
+    ],
+    width,
+    height
+  ),
+  spareQuadCascadeFinalRT: twgl.createFramebufferInfo(
+    gl,
+    [
+      {
         internalFormat: gl.RGBA16F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
         wrap: gl.CLAMP_TO_EDGE,
-        auto: true,
       },
     ],
     width,
@@ -549,6 +557,7 @@ data.addColor({
 });
 
 function renderScene(time) {
+  console.time("renderScene");
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   renderTo(
@@ -560,9 +569,11 @@ function renderScene(time) {
   );
 
   drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 0.05, game);
+  console.timeEnd("renderScene");
 }
 
 function renderDepth(time, depth) {
+  console.time("renderDepth");
   const startDepth = data.addNumber({
     displayName: "Start Depth",
     defaultValue: Math.log2(width) - 3,
@@ -570,7 +581,7 @@ function renderDepth(time, depth) {
     max: Math.log2(width) - 3,
     step: 1,
   }).value;
-  const shortestDistance = (10 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
+  const shortestDistance = (1 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
   const longestDistance = Math.SQRT2;
 
   const multiplier2 = Math.log2(longestDistance / shortestDistance);
@@ -662,9 +673,11 @@ function renderDepth(time, depth) {
     frameBuffers.quadCascadeRT,
     frameBuffers.spareQuadCascadeRT,
   ];
+  console.timeEnd("renderDepth");
 }
 
 function renderDistance(time) {
+  console.time("renderDistance");
   renderTo(
     gl,
     fillColor,
@@ -706,9 +719,11 @@ function renderDistance(time) {
     },
     frameBuffers.distance
   );
+  console.timeEnd("renderDistance");
 }
 
 function renderCascadeLevel() {
+  console.time("renderCascadeLevel");
   renderTo(
     gl,
     renderTexture,
@@ -750,16 +765,18 @@ function renderCascadeLevel() {
       ],
       tPrev: frameBuffers.quadCascadeRT.attachments[0],
     },
-    frameBuffers.spareQuadCascadeRT
+    frameBuffers.spareQuadCascadeFinalRT
   );
 
   renderTo(gl, applyGamma, bufferInfo, {
     resolution: [gl.canvas.width, gl.canvas.height],
-    tPrev: frameBuffers.spareQuadCascadeRT.attachments[0],
+    tPrev: frameBuffers.spareQuadCascadeFinalRT.attachments[0],
   });
+  console.timeEnd("renderCascadeLevel");
 }
 
 function renderCasadeScene() {
+  console.time("renderCasadeScene");
   renderTo(
     gl,
     cascadeQuadRender,
@@ -771,8 +788,9 @@ function renderCasadeScene() {
       ],
       tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
     },
-    frameBuffers.spareQuadCascadeRT
+    frameBuffers.spareQuadCascadeFinalRT
   );
+  console.timeEnd("renderCasadeScene");
 }
 
 function render(time) {
@@ -800,7 +818,15 @@ function render(time) {
     { color: [0, 0, 0, 0] },
     frameBuffers.quadCascadeRT
   );
+  renderTo(
+    gl,
+    fillColor,
+    bufferInfo,
+    { color: [0, 0, 0, 0] },
+    frameBuffers.spareQuadCascadeFinalRT
+  );
 
+  console.time("renderDepthLoop");
   while (
     depth >=
     data.addNumber({
@@ -814,6 +840,7 @@ function render(time) {
     renderDepth(time, depth);
     depth--;
   }
+  console.timeEnd("renderDepthLoop");
 
   switch (
     data.addEnum({
@@ -831,11 +858,11 @@ function render(time) {
       break;
   }
 
-  drawToBuffer(time, frameBuffers.spareQuadCascadeRT, 0.05, game);
+  drawToBuffer(time, frameBuffers.spareQuadCascadeFinalRT, 0.05, game);
 
   renderTo(gl, applyGamma, bufferInfo, {
     resolution: [gl.canvas.width, gl.canvas.height],
-    tPrev: frameBuffers.spareQuadCascadeRT.attachments[0],
+    tPrev: frameBuffers.spareQuadCascadeFinalRT.attachments[0],
   });
 
   if (toSave) {

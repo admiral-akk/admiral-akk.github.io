@@ -1,5 +1,5 @@
 #version 300 es
-precision mediump float;
+precision lowp float;
 
 #define PI 3.141592654 
 #define TAU (2.0*PI)

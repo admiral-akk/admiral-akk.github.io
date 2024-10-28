@@ -232,6 +232,33 @@ void main() {
 }
 `;
 
+const vs_instance = `#version 300 es
+in vec2 position;
+in vec4 color;
+in mat4 matrix;
+
+out vec4 v_color;
+  void main() {
+    // Multiply the position by the matrix.
+    gl_Position = matrix * vec4(position, 0.0, 1.0);
+    v_color = color;
+  }
+`;
+const fs_instance_color = `#version 300 es
+
+precision mediump float;
+
+in vec4 v_color;
+
+out vec4 outColor;
+void main() {
+  outColor = v_color;
+}`;
+
+const instanceColor = twgl.createProgramInfo(gl, [
+  vs_instance,
+  fs_instance_color,
+]);
 const drawLineToBuffer = twgl.createProgramInfo(gl, [vs, fs_write_line]);
 const renderTexture = twgl.createProgramInfo(gl, [vs, fs_render_texture]);
 const calculateDistance = twgl.createProgramInfo(gl, [vs, fs_render_closest]);
@@ -243,59 +270,24 @@ const cascadeQuadCalculate = twgl.createProgramInfo(gl, [
   vs,
   calculateQuadCascade,
 ]);
+const m4 = twgl.m4;
 const cascadeQuadRender = twgl.createProgramInfo(gl, [vs, renderQuadCascade]);
 
-function drawToBuffer(time, buffer, size, game) {
-  time += 100000;
-  const vs_instance = `#version 300 es
-    in vec2 position;
-    in vec4 color;
-    in mat4 matrix;
-    
-    out vec4 v_color;
-      void main() {
-        // Multiply the position by the matrix.
-        gl_Position = matrix * vec4(position, 0.0, 1.0);
-        v_color = color;
-      }
-    `;
-  const fs_instance_color = `#version 300 es
+const vertexData = [];
 
-    precision mediump float;
-    
-    in vec4 v_color;
-    
-    out vec4 outColor;
-    void main() {
-      outColor = v_color;
-    }`;
+const numPts = 32;
 
-  const instanceColor = twgl.createProgramInfo(gl, [
-    vs_instance,
-    fs_instance_color,
-  ]);
-
-  const m4 = twgl.m4;
+for (var i = 0; i <= numPts; i++) {
+  vertexData.push(
+    Math.sin((i * Math.PI * 2) / numPts),
+    Math.cos((i * Math.PI * 2) / numPts)
+  );
+}
+function renderBall(buffer) {
   const matrices = [];
   const colors = [];
 
-  const { ball, balls } = game.data.state;
-
-  for (let i = 0; i < balls.length; i++) {
-    const b = balls[i];
-    const scale = m4.scaling([b.size, b.size, b.size]);
-    const translation = m4.translation([
-      b.position[0] / b.size,
-      b.position[1] / b.size,
-      0,
-    ]);
-
-    const mat = m4.multiply(scale, translation);
-    mat.forEach((v, i) => {
-      matrices.push(v);
-    });
-    colors.push(b.color[0], b.color[1], b.color[2], 1);
-  }
+  const { ball } = game.data.state;
 
   const scale = m4.scaling([ball.size, ball.size, ball.size]);
   const translation = m4.translation([
@@ -303,25 +295,18 @@ function drawToBuffer(time, buffer, size, game) {
     ball.position[1] / ball.size,
     0,
   ]);
-
   const mat = m4.multiply(scale, translation);
   mat.forEach((v, i) => {
     matrices.push(v);
   });
   colors.push(ball.color[0], ball.color[1], ball.color[2], 1);
 
-  const vertexData = [];
+  mat.forEach((v, i) => {
+    matrices.push(v);
+  });
+  colors.push(ball.color[0], ball.color[1], ball.color[2], 1);
 
-  const numPts = 32;
-
-  for (var i = 0; i <= numPts; i++) {
-    vertexData.push(
-      Math.sin((i * Math.PI * 2) / numPts),
-      Math.cos((i * Math.PI * 2) / numPts)
-    );
-  }
-
-  const arrays2 = {
+  const arrays4 = {
     position: {
       numComponents: 2,
       data: vertexData,
@@ -337,16 +322,15 @@ function drawToBuffer(time, buffer, size, game) {
       divisor: 1,
     },
   };
-  const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
+  const bufferInfo4 = twgl.createBufferInfoFromArrays(gl, arrays4);
   const vertexArrayInfo = twgl.createVertexArrayInfo(
     gl,
     instanceColor,
-    bufferInfo
+    bufferInfo4
   );
 
   gl.useProgram(instanceColor.program);
   twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo);
-  twgl.setUniforms(instanceColor, {});
   twgl.bindFramebufferInfo(gl, buffer);
   twgl.drawBufferInfo(
     gl,
@@ -354,11 +338,69 @@ function drawToBuffer(time, buffer, size, game) {
     gl.TRIANGLE_FAN,
     vertexArrayInfo.numElements,
     0,
-    balls.length + 1
+    1
   );
+}
 
+function renderBalls(buffer) {
   const matrices2 = [];
   const colors2 = [];
+
+  const { balls } = game.data.state;
+
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i];
+    const scale = m4.scaling([b.size, b.size, b.size]);
+    const translation = m4.translation([
+      b.position[0] / b.size,
+      b.position[1] / b.size,
+      0,
+    ]);
+
+    const mat = m4.multiply(scale, translation);
+    mat.forEach((v, i) => {
+      matrices2.push(v);
+    });
+    colors2.push(b.color[0], b.color[1], b.color[2], 1);
+  }
+
+  const arrays2 = {
+    position: {
+      numComponents: 2,
+      data: vertexData,
+    },
+    color: {
+      numComponents: 4,
+      data: colors2,
+      divisor: 1,
+    },
+    matrix: {
+      numComponents: 16,
+      data: matrices2,
+      divisor: 1,
+    },
+  };
+  const bufferInfo2 = twgl.createBufferInfoFromArrays(gl, arrays2);
+  const vertexArrayInfo2 = twgl.createVertexArrayInfo(
+    gl,
+    instanceColor,
+    bufferInfo2
+  );
+  gl.useProgram(instanceColor.program);
+  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo2);
+  twgl.bindFramebufferInfo(gl, buffer);
+  twgl.drawBufferInfo(
+    gl,
+    vertexArrayInfo2,
+    gl.TRIANGLE_FAN,
+    vertexArrayInfo2.numElements,
+    0,
+    balls.length
+  );
+}
+function renderPaddles(buffer) {
+  const matrices3 = [];
+  const colors3 = [];
 
   const { paddles } = game.data.state;
 
@@ -372,9 +414,9 @@ function drawToBuffer(time, buffer, size, game) {
     ]);
     const mat = m4.multiply(scale, translation);
     mat.forEach((v, i) => {
-      matrices2.push(v);
+      matrices3.push(v);
     });
-    colors2.push(p.color[0], p.color[1], p.color[2], 1);
+    colors3.push(p.color[0], p.color[1], p.color[2], 1);
   }
   const vertexData2 = [1, 1, 1, -1, -1, -1, -1, 1];
 
@@ -385,34 +427,38 @@ function drawToBuffer(time, buffer, size, game) {
     },
     color: {
       numComponents: 4,
-      data: colors2,
+      data: colors3,
       divisor: 1,
     },
     matrix: {
       numComponents: 16,
-      data: matrices2,
+      data: matrices3,
       divisor: 1,
     },
   };
-  const bufferInfo2 = twgl.createBufferInfoFromArrays(gl, arrays3);
-  const vertexArrayInfo2 = twgl.createVertexArrayInfo(
+  const bufferInfo3 = twgl.createBufferInfoFromArrays(gl, arrays3);
+  const vertexArrayInfo3 = twgl.createVertexArrayInfo(
     gl,
     instanceColor,
-    bufferInfo2
+    bufferInfo3
   );
-
   gl.useProgram(instanceColor.program);
-  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo2);
-  twgl.setUniforms(instanceColor, {});
+  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo3);
   twgl.bindFramebufferInfo(gl, buffer);
   twgl.drawBufferInfo(
     gl,
-    vertexArrayInfo,
+    vertexArrayInfo3,
     gl.TRIANGLE_FAN,
-    vertexArrayInfo.numElements,
+    vertexArrayInfo3.numElements,
     0,
     paddles.length
   );
+}
+
+function drawToBuffer(time, buffer, size, game) {
+  renderBall(buffer);
+  renderBalls(buffer);
+  renderPaddles(buffer);
 }
 
 windowManager.listeners.push({
@@ -445,7 +491,7 @@ const saveImage = () => {
   toSave = false;
 };
 
-const width = 8 * 128;
+const width = 4 * 128;
 const height = width;
 const frameBuffers = {
   lightEmittersWithCurrent: twgl.createFramebufferInfo(
@@ -508,7 +554,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA8,
+        internalFormat: gl.RGBA16F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -522,7 +568,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA8,
+        internalFormat: gl.RGBA16F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -555,9 +601,11 @@ data.addColor({
     game.commands.push(new UpdateColorCommand(color));
   },
 });
-
+const ext = gl.getExtension("EXT_disjoint_timer_query_webgl2");
+const query = gl.createQuery();
+var hasQueried = false;
+var hasFinished = false;
 function renderScene(time) {
-  console.time("renderScene");
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   renderTo(
@@ -569,11 +617,9 @@ function renderScene(time) {
   );
 
   drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 0.05, game);
-  console.timeEnd("renderScene");
 }
 
 function renderDepth(time, depth) {
-  console.time("renderDepth");
   const startDepth = data.addNumber({
     displayName: "Start Depth",
     defaultValue: Math.log2(width) - 3,
@@ -673,11 +719,9 @@ function renderDepth(time, depth) {
     frameBuffers.quadCascadeRT,
     frameBuffers.spareQuadCascadeRT,
   ];
-  console.timeEnd("renderDepth");
 }
 
 function renderDistance(time) {
-  console.time("renderDistance");
   renderTo(
     gl,
     fillColor,
@@ -719,11 +763,9 @@ function renderDistance(time) {
     },
     frameBuffers.distance
   );
-  console.timeEnd("renderDistance");
 }
 
 function renderCascadeLevel() {
-  console.time("renderCascadeLevel");
   renderTo(
     gl,
     renderTexture,
@@ -772,11 +814,9 @@ function renderCascadeLevel() {
     resolution: [gl.canvas.width, gl.canvas.height],
     tPrev: frameBuffers.spareQuadCascadeFinalRT.attachments[0],
   });
-  console.timeEnd("renderCascadeLevel");
 }
 
 function renderCasadeScene() {
-  console.time("renderCasadeScene");
   renderTo(
     gl,
     cascadeQuadRender,
@@ -790,7 +830,6 @@ function renderCasadeScene() {
     },
     frameBuffers.spareQuadCascadeFinalRT
   );
-  console.timeEnd("renderCasadeScene");
 }
 
 function render(time) {
@@ -826,7 +865,10 @@ function render(time) {
     frameBuffers.spareQuadCascadeFinalRT
   );
 
-  console.time("renderDepthLoop");
+  if (!hasQueried) {
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, query);
+    hasQueried = true;
+  }
   while (
     depth >=
     data.addNumber({
@@ -840,8 +882,14 @@ function render(time) {
     renderDepth(time, depth);
     depth--;
   }
-  console.timeEnd("renderDepthLoop");
-
+  if (hasQueried && !hasFinished) {
+    hasFinished = true;
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+  }
+  renderTo(gl, applyGamma, bufferInfo, {
+    resolution: [gl.canvas.width, gl.canvas.height],
+    tPrev: frameBuffers.lightEmittersWithCurrent.attachments[0],
+  });
   switch (
     data.addEnum({
       displayName: "Render Mode",
@@ -868,7 +916,11 @@ function render(time) {
   if (toSave) {
     saveImage();
   }
-
+  const available = gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE);
+  if (available) {
+    const elapsedNanos = gl.getQueryParameter(query, gl.QUERY_RESULT);
+    console.log("ELAPSED: ", elapsedNanos / 1000000);
+  }
   stats.end();
   requestAnimationFrame(render);
 }

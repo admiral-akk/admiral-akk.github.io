@@ -418,10 +418,7 @@ function renderPaddles(buffer) {
     });
     colors3.push(p.color[0], p.color[1], p.color[2], 1);
   }
-
-  const vertexData2 = [1, 1, 1, -1];
-
-  vertexData2.push(-1, -1, -1, 1);
+  const vertexData2 = [1, 1, 1, -1, -1, -1, -1, 1];
 
   const arrays3 = {
     position: {

@@ -554,7 +554,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA16F,
+        internalFormat: gl.RGBA32F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -568,7 +568,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA16F,
+        internalFormat: gl.RGBA32F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -582,7 +582,7 @@ const frameBuffers = {
     gl,
     [
       {
-        internalFormat: gl.RGBA16F,
+        internalFormat: gl.RGBA32F,
         format: gl.RGBA,
         mag: gl.LINEAR,
         min: gl.LINEAR,
@@ -620,14 +620,8 @@ function renderScene(time) {
 }
 
 function renderDepth(time, depth) {
-  const startDepth = data.addNumber({
-    displayName: "Start Depth",
-    defaultValue: Math.log2(width) - 3,
-    min: 1,
-    max: Math.log2(width) - 3,
-    step: 1,
-  }).value;
-  const shortestDistance = (1 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
+  const startDepth = Math.log2(width) - 5;
+  const shortestDistance = (2 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
   const longestDistance = Math.SQRT2;
 
   const multiplier2 = Math.log2(longestDistance / shortestDistance);

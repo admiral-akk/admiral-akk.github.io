@@ -491,7 +491,7 @@ const saveImage = () => {
   toSave = false;
 };
 
-const width = 4 * 128;
+const width = 8 * 128;
 const height = width;
 const frameBuffers = {
   lightEmittersWithCurrent: twgl.createFramebufferInfo(
@@ -832,15 +832,41 @@ function renderCasadeScene() {
   );
 }
 
-function render(time) {
+class TimeManager {
+  constructor({ fps = 60 }) {
+    this.frame = 0;
+    this.fps = fps;
+    this.initialTime = Date.now();
+    this.lastDelta = Date.now();
+  }
+
+  getDeltaTime() {
+    const now = Date.now();
+    const deltaTime = now - this.lastDelta;
+    this.lastDelta = Date.now();
+    return deltaTime;
+  }
+
+  timeToNextRender() {
+    this.frame++;
+    const timeSinceStart = Date.now() - this.initialTime;
+    const delta = 1000 / this.fps;
+    return timeSinceStart % delta;
+  }
+}
+
+const time = new TimeManager({ fps: 60 });
+
+function render(timeMillis) {
   stats.begin();
   windowManager.update();
   inputState.update(game, input.getState());
-  game.update();
+
+  game.update(time.getDeltaTime() / 1000);
   twgl.resizeCanvasToDisplaySize(gl.canvas);
 
-  renderScene(time);
-  renderDistance(time);
+  renderScene(timeMillis);
+  renderDistance(timeMillis);
 
   let depth = data.addNumber({
     displayName: "Initial Depth",
@@ -921,8 +947,10 @@ function render(time) {
     const elapsedNanos = gl.getQueryParameter(query, gl.QUERY_RESULT);
     console.log("ELAPSED: ", elapsedNanos / 1000000);
   }
+  setTimeout(() => {
+    requestAnimationFrame(render);
+  }, time.timeToNextRender());
   stats.end();
-  requestAnimationFrame(render);
 }
 
 requestAnimationFrame(render);

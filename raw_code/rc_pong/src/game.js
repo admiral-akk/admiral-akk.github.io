@@ -206,8 +206,8 @@ class MyGame {
     }
   }
 
-  update() {
-    this.commands.push(new TickCommand(0.04));
+  update(deltaTime) {
+    this.commands.push(new TickCommand(deltaTime));
     this.commands.forEach((command) => {
       this.applyCommand(command);
     });

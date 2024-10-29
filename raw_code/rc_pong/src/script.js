@@ -283,16 +283,20 @@ for (var i = 0; i <= numPts; i++) {
     Math.cos((i * Math.PI * 2) / numPts)
   );
 }
-function renderBall(buffer) {
+function renderBall(buffer, size) {
   const matrices = [];
   const colors = [];
 
   const { ball } = game.data.state;
 
-  const scale = m4.scaling([ball.size, ball.size, ball.size]);
+  const scale = m4.scaling([
+    ball.size * size,
+    ball.size * size,
+    ball.size * size,
+  ]);
   const translation = m4.translation([
-    ball.position[0] / ball.size,
-    ball.position[1] / ball.size,
+    ball.position[0] / (ball.size * size),
+    ball.position[1] / (ball.size * size),
     0,
   ]);
   const mat = m4.multiply(scale, translation);
@@ -342,7 +346,7 @@ function renderBall(buffer) {
   );
 }
 
-function renderBalls(buffer) {
+function renderBalls(buffer, size) {
   const matrices2 = [];
   const colors2 = [];
 
@@ -350,10 +354,10 @@ function renderBalls(buffer) {
 
   for (let i = 0; i < balls.length; i++) {
     const b = balls[i];
-    const scale = m4.scaling([b.size, b.size, b.size]);
+    const scale = m4.scaling([b.size * size, b.size * size, b.size * size]);
     const translation = m4.translation([
-      b.position[0] / b.size,
-      b.position[1] / b.size,
+      b.position[0] / (b.size * size),
+      b.position[1] / (b.size * size),
       0,
     ]);
 
@@ -398,7 +402,7 @@ function renderBalls(buffer) {
     balls.length
   );
 }
-function renderPaddles(buffer) {
+function renderPaddles(buffer, size) {
   const matrices3 = [];
   const colors3 = [];
 
@@ -406,10 +410,10 @@ function renderPaddles(buffer) {
 
   for (let i = 0; i < paddles.length; i++) {
     const p = paddles[i];
-    const scale = m4.scaling([p.size[0], p.size[1], 1]);
+    const scale = m4.scaling([p.size[0] * size, p.size[1] * size, 1]);
     const translation = m4.translation([
-      p.position[0] / p.size[0],
-      p.position[1] / p.size[1],
+      p.position[0] / (p.size[0] * size),
+      p.position[1] / (p.size[1] * size),
       0,
     ]);
     const mat = m4.multiply(scale, translation);
@@ -456,9 +460,9 @@ function renderPaddles(buffer) {
 }
 
 function drawToBuffer(time, buffer, size, game) {
-  renderBall(buffer);
-  renderBalls(buffer);
-  renderPaddles(buffer);
+  renderBall(buffer, size);
+  renderBalls(buffer, size);
+  renderPaddles(buffer, size);
 }
 
 windowManager.listeners.push({
@@ -616,7 +620,7 @@ function renderScene(time) {
     frameBuffers.lightEmittersWithCurrent
   );
 
-  drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 0.05, game);
+  drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 1, game);
 }
 
 function renderDepth(time, depth) {
@@ -926,7 +930,7 @@ function render(timeMillis) {
       break;
   }
 
-  drawToBuffer(time, frameBuffers.spareQuadCascadeFinalRT, 0.05, game);
+  drawToBuffer(time, frameBuffers.spareQuadCascadeFinalRT, 1.0, game);
 
   renderTo(gl, applyGamma, bufferInfo, {
     resolution: [gl.canvas.width, gl.canvas.height],

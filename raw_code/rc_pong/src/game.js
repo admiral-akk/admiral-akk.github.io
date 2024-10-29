@@ -73,7 +73,7 @@ class MyGame {
       position: new Vec(0, 0),
       color: new Vec(1, 1, 1),
       size: 0.05,
-      velocity: new Vec(0.8, 0.4),
+      velocity: new Vec(0.8, 0.4).mul(2),
     };
     this.data.state.paddles = [
       {
@@ -152,7 +152,7 @@ class MyGame {
           const other = balls[i];
           other.color.sub(Vec.ONE3.clone().mul(2 * delta)).max(Vec.ZERO3);
           const deltaV = other.position.clone().sub(ball.position);
-          if (deltaV.len() < 0.2) {
+          if (deltaV.len() < 0.15) {
             other.color.copy(ball.color).mul(3);
           }
 

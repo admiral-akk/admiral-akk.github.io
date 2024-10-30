@@ -77,13 +77,13 @@ class MyGame {
     };
     this.data.state.paddles = [
       {
-        position: new Vec(-0.9, 0),
+        position: new Vec(-1.9, 0),
         size: new Vec(0.02, 0.2),
         color: new Vec(1, 0, 0),
         direction: 0,
       },
       {
-        position: new Vec(0.9, 0),
+        position: new Vec(1.9, 0),
         size: new Vec(0.02, 0.2),
         color: new Vec(0, 1, 0),
         direction: 0,
@@ -96,10 +96,10 @@ class MyGame {
 
   setupBalls() {
     const balls = [];
-    for (var i = 0; i < 200; i++) {
+    for (var i = 0; i < 400; i++) {
       const origin = new Vec(
-        getRandomInt({ max: 0.2, min: -0.2, steps: 40 }),
-        getRandomInt({ max: 0.9, min: -0.9, steps: 100 })
+        getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
+        getRandomInt({ max: 0.95, min: -0.95, steps: 100 })
       );
       balls.push({
         origin: origin,
@@ -128,7 +128,7 @@ class MyGame {
     ball.position[0] += delta * ball.velocity[0];
     ball.position[1] += delta * ball.velocity[1];
 
-    if (Math.abs(ball.position[0]) + ball.size >= 1) {
+    if (Math.abs(ball.position[0]) + ball.size >= 2) {
       ball.velocity[0] *= -1;
     }
     if (Math.abs(ball.position[1]) + ball.size >= 1) {

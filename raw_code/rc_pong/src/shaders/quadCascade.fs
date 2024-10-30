@@ -117,7 +117,9 @@ vec2 indicesToSampleUv(ivec4 index) {
 vec4 indicesToProbeDir(ivec4 index) {
     float tauOverIndexRayCount = TAU / float(4 << (2 * index.w));
     float angle = tauOverIndexRayCount * (float(index.z) + 0.5);
-    vec2 dir = vec2(cos(angle), -sin(angle));
+    vec2 dir = vec2(cos(angle), -sin(angle)) / renderResolution;
+    dir = normalize(dir);
+
 
     float probeCount = float(textureSize(tPrevCascade, 0).x >> (index.w + 1));
     vec2 zeroToOne = vec2(index.xy) / (probeCount - 1.);

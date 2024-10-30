@@ -57,7 +57,7 @@ data.init();
 
 // Canvas Manager
 
-const windowManager = new WindowManager(1);
+const windowManager = new WindowManager(2);
 
 // Input handler
 
@@ -290,7 +290,7 @@ function renderBall(buffer, size) {
   const { ball } = game.data.state;
 
   const scale = m4.scaling([
-    ball.size * size,
+    (ball.size * size) / windowManager.sizes.aspect,
     ball.size * size,
     ball.size * size,
   ]);
@@ -354,7 +354,11 @@ function renderBalls(buffer, size) {
 
   for (let i = 0; i < balls.length; i++) {
     const b = balls[i];
-    const scale = m4.scaling([b.size * size, b.size * size, b.size * size]);
+    const scale = m4.scaling([
+      (b.size * size) / windowManager.sizes.aspect,
+      b.size * size,
+      b.size * size,
+    ]);
     const translation = m4.translation([
       b.position[0] / (b.size * size),
       b.position[1] / (b.size * size),
@@ -410,7 +414,11 @@ function renderPaddles(buffer, size) {
 
   for (let i = 0; i < paddles.length; i++) {
     const p = paddles[i];
-    const scale = m4.scaling([p.size[0] * size, p.size[1] * size, 1]);
+    const scale = m4.scaling([
+      (p.size[0] * size) / windowManager.sizes.aspect,
+      p.size[1] * size,
+      1,
+    ]);
     const translation = m4.translation([
       p.position[0] / (p.size[0] * size),
       p.position[1] / (p.size[1] * size),

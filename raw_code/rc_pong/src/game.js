@@ -161,11 +161,12 @@ class MyGame {
 
         for (let i = 0; i < paddles.length; i++) {
           const p = paddles[i];
-          p.position.y += delta * p.direction * 0.01;
+          p.position.y += delta * p.direction * 2;
           p.position.y = Math.min(
             Math.max(p.position.y, -1 + p.size.y),
             1 - p.size.y
           );
+
           const size = new Vec(p.size);
           const top = new Vec(p.position).add(p.size);
           const bot = new Vec(p.position).sub(p.size);

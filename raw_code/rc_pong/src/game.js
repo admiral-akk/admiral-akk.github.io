@@ -96,7 +96,7 @@ class MyGame {
 
   setupBalls() {
     const balls = [];
-    for (var i = 0; i < 4000; i++) {
+    for (var i = 0; i < 1; i++) {
       const origin = new Vec(
         getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
         getRandomInt({ max: 0.95, min: -0.95, steps: 100 })

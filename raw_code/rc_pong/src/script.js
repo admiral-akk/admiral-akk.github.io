@@ -295,20 +295,20 @@ function renderBall(buffer, size) {
     ball.size * size,
   ]);
   const translation = m4.translation([
-    ball.position[0] / (ball.size * size),
-    ball.position[1] / (ball.size * size),
+    ball.position.x / (ball.size * size),
+    ball.position.y / (ball.size * size),
     0,
   ]);
   const mat = m4.multiply(scale, translation);
   mat.forEach((v, i) => {
     matrices.push(v);
   });
-  colors.push(ball.color[0], ball.color[1], ball.color[2], 1);
+  colors.push(ball.color.x, ball.color.y, ball.color.z, 1);
 
   mat.forEach((v, i) => {
     matrices.push(v);
   });
-  colors.push(ball.color[0], ball.color[1], ball.color[2], 1);
+  colors.push(ball.color.x, ball.color.y, ball.color.z, 1);
 
   const arrays4 = {
     position: {
@@ -360,8 +360,8 @@ function renderBalls(buffer, size) {
       b.size * size,
     ]);
     const translation = m4.translation([
-      b.position[0] / (b.size * size),
-      b.position[1] / (b.size * size),
+      b.position.x / (b.size * size),
+      b.position.y / (b.size * size),
       0,
     ]);
 
@@ -369,7 +369,7 @@ function renderBalls(buffer, size) {
     mat.forEach((v, i) => {
       matrices2.push(v);
     });
-    colors2.push(b.color[0], b.color[1], b.color[2], 1);
+    colors2.push(b.color.z, b.color.y, b.color.z, 1);
   }
 
   const arrays2 = {
@@ -415,20 +415,20 @@ function renderPaddles(buffer, size) {
   for (let i = 0; i < paddles.length; i++) {
     const p = paddles[i];
     const scale = m4.scaling([
-      (p.size[0] * size) / windowManager.sizes.aspect,
-      p.size[1] * size,
+      (p.size.x * size) / windowManager.sizes.aspect,
+      p.size.y * size,
       1,
     ]);
     const translation = m4.translation([
-      p.position[0] / (p.size[0] * size),
-      p.position[1] / (p.size[1] * size),
+      p.position.x / (p.size.x * size),
+      p.position.y / (p.size.y * size),
       0,
     ]);
     const mat = m4.multiply(scale, translation);
     mat.forEach((v, i) => {
       matrices3.push(v);
     });
-    colors3.push(p.color[0], p.color[1], p.color[2], 1);
+    colors3.push(p.color.x, p.color.y, p.color.z, 1);
   }
   const vertexData2 = [1, 1, 1, -1, -1, -1, -1, 1];
 

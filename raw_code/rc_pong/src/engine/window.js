@@ -40,8 +40,6 @@ class WindowManager {
     window.addEventListener("resize", this.update);
     window.addEventListener("orientationchange", this.update);
     window.addEventListener("dblclick", (event) => {
-      // I want the fullscreen to stop for now.
-      return;
       if (event.target.className !== "webgl") {
         return;
       }

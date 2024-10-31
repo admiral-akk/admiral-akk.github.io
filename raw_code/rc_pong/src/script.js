@@ -632,7 +632,7 @@ function renderScene(time) {
 }
 
 function renderDepth(time, depth) {
-  const startDepth = Math.log2(width) - 5;
+  const startDepth = 2;
   const shortestDistance = (2 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
   const longestDistance = Math.SQRT2;
 

@@ -150,6 +150,15 @@ class FloatingBall extends Entity {
   }
 }
 
+class Particle extends Entity {
+  constructor({ position, color, size, velocity, timeToLive }) {
+    super({ position, velocity });
+    this.size = size;
+    this.color = color;
+    this.timeToLive = timeToLive;
+  }
+}
+
 class Wall extends Entity {
   constructor({ position, scale }) {
     super({ position, collider: new Collider("box", scale) });
@@ -300,15 +309,17 @@ class MyGame {
         const base = t > startDelta ? endStartAngle : startStartAngle;
         const offset = t > startDelta ? t - startDelta : t;
         const angle = base + offset + Math.PI / 2;
-        particles.push({
-          position: ball.position.clone(),
-          color: new Vec(1, 1, 1),
-          size: 0.01,
-          velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
-            getRandomInt({ max: 2, min: 1, steps: 200 })
-          ),
-          timeToLive: 1,
-        });
+        particles.push(
+          new Particle({
+            position: ball.position.clone(),
+            color: new Vec(1, 1, 1),
+            size: 0.01,
+            velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
+              getRandomInt({ max: 2, min: 1, steps: 200 })
+            ),
+            timeToLive: 1,
+          })
+        );
       }
     } else {
       return;

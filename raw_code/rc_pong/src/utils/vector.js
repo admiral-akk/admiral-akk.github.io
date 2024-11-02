@@ -104,6 +104,19 @@ class Vec {
     return this;
   }
 
+  div(other) {
+    const isNum = typeof other === "number";
+    this.x /= isNum ? other : other.x;
+    this.y /= isNum ? other : other.y;
+    if (this.length > 2) {
+      this.z /= isNum ? other : other.z ?? 0;
+    }
+    if (this.length > 3) {
+      this.w /= isNum ? other : other.w ?? 0;
+    }
+    return this;
+  }
+
   dot(other) {
     let sum = 0;
     sum += this.x * other.x;
@@ -149,35 +162,37 @@ class Vec {
     }
     return this;
   }
+
   normalize() {
-    const sum = this.dot(this);
+    const sum = this.len();
     this.x /= sum;
 
     this.y /= sum;
     if (this.length > 2) {
-      this.z = Math.max(this.z, other.z ?? 0);
+      this.z /= sum;
     }
     if (this.length > 3) {
-      this.w = Math.max(this.w, other.w ?? 0);
+      this.w /= sum;
     }
     return this;
   }
 
   cross(other) {
-    if (other.length === this.length) {
-      if (this.length === 2) {
-        return this.x * other.y - this.y * other.x;
-      } else if (this.length === 3) {
-        return new Vec([
-          this.y * other.z - this.z * other.y,
-          this.z * other.x - this.x * other.z,
-          this.x * other.y - this.y * other.x,
-        ]);
-      } else {
-        throw new Error("Can't do 4D cross (yet?)");
-      }
+    if (this.length === 2) {
+      return this.x * other.y - this.y * other.x;
+    } else if (this.length === 3) {
+      const z = other.z ?? 0;
+
+      const x1 = this.y * z - this.z * other.y;
+      const y1 = this.z * other.x - this.x * z;
+      const z1 = this.x * other.y - this.y * other.x;
+
+      this.x = x1;
+      this.y = y1;
+      this.z = z1;
+      return this;
     } else {
-      throw new Error("Dimensions need to match for cross.");
+      throw new Error("Can't do 4D cross (yet?)");
     }
   }
 
@@ -196,6 +211,18 @@ class Vec {
       this.z !== undefined ? this.z : null,
       this.w !== undefined ? this.w : null
     );
+  }
+
+  abs() {
+    this.x = Math.abs(this.x);
+    this.y = Math.abs(this.y);
+    if (this.length > 2) {
+      this.z = Math.abs(this.z);
+    }
+    if (this.length > 3) {
+      this.w = Math.abs(this.w);
+    }
+    return this;
   }
 }
 

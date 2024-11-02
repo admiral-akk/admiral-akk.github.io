@@ -467,10 +467,71 @@ function renderPaddles(buffer, size) {
   );
 }
 
+function renderParticles(buffer, size) {
+  const matrices2 = [];
+  const colors2 = [];
+
+  const { particles } = game.data.state;
+
+  for (let i = 0; i < particles.length; i++) {
+    const b = particles[i];
+    const scale = m4.scaling([
+      (b.size * size) / windowManager.sizes.aspect,
+      b.size * size,
+      b.size * size,
+    ]);
+    const translation = m4.translation([
+      b.position.x / (b.size * size),
+      b.position.y / (b.size * size),
+      0,
+    ]);
+
+    const mat = m4.multiply(scale, translation);
+    mat.forEach((v, i) => {
+      matrices2.push(v);
+    });
+    colors2.push(b.color.z, b.color.y, b.color.z, 1);
+  }
+
+  const arrays2 = {
+    position: {
+      numComponents: 2,
+      data: vertexData,
+    },
+    color: {
+      numComponents: 4,
+      data: colors2,
+      divisor: 1,
+    },
+    matrix: {
+      numComponents: 16,
+      data: matrices2,
+      divisor: 1,
+    },
+  };
+  const bufferInfo2 = twgl.createBufferInfoFromArrays(gl, arrays2);
+  const vertexArrayInfo2 = twgl.createVertexArrayInfo(
+    gl,
+    instanceColor,
+    bufferInfo2
+  );
+  gl.useProgram(instanceColor.program);
+  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo2);
+  twgl.bindFramebufferInfo(gl, buffer);
+  twgl.drawBufferInfo(
+    gl,
+    vertexArrayInfo2,
+    gl.TRIANGLE_FAN,
+    vertexArrayInfo2.numElements,
+    0,
+    particles.length
+  );
+}
 function drawToBuffer(time, buffer, size, game) {
   renderBall(buffer, size);
   renderBalls(buffer, size);
   renderPaddles(buffer, size);
+  renderParticles(buffer, size);
 }
 
 windowManager.listeners.push({
@@ -632,7 +693,7 @@ function renderScene(time) {
 }
 
 function renderDepth(time, depth) {
-  const startDepth = 2;
+  const startDepth = 5;
   const shortestDistance = (2 * Math.SQRT2) / frameBuffers.quadCascadeRT.width;
   const longestDistance = Math.SQRT2;
 
@@ -951,7 +1012,6 @@ function render(timeMillis) {
   const available = gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE);
   if (available) {
     const elapsedNanos = gl.getQueryParameter(query, gl.QUERY_RESULT);
-    console.log("ELAPSED: ", elapsedNanos / 1000000);
   }
   setTimeout(() => {
     requestAnimationFrame(render);

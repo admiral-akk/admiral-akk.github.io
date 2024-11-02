@@ -1,3 +1,4 @@
+import { Collider, Entity } from "./engine/entity";
 import { State, StateMachine } from "./utils/stateMachine";
 import { Vec, LineSegment } from "./utils/vector";
 
@@ -60,43 +61,65 @@ const inputState = new InputStateManager();
 
 const clipToScreenSpace = ([x, y]) => [(x + 1) / 2, (y + 1) / 2];
 
+class Paddle extends Entity {
+  constructor({ position, color }) {
+    super({
+      position,
+      collider: new Collider("box", new Vec(0.02, 0.2)),
+    });
+    this.size = new Vec(0.02, 0.2);
+    this.color = color;
+    this.direction = 0;
+  }
+}
+
+class Ball extends Entity {
+  constructor({ position, velocity }) {
+    super({
+      position,
+      velocity,
+      collider: new Collider("sphere", new Vec(0.05, 0.05)),
+    });
+    this.color = new Vec(1, 1, 1);
+    this.size = 0.05;
+  }
+}
+
+class Wall extends Entity {
+  constructor({ position, scale }) {
+    super({ position, collider: new Collider("box", scale) });
+  }
+}
+
 class MyGame {
   constructor(data) {
     this.commands = [];
     this.data = data;
     data.listeners.push(this);
-    if (this.data.state.ball) {
-      this.data.state.ball.size = 0.1;
-    }
     this.data.state.balls = this.setupBalls();
-    this.data.state.ball = {
+    this.data.state.ball = new Ball({
       position: new Vec(0, 0),
-      color: new Vec(1, 1, 1),
-      size: 0.05,
       velocity: new Vec(0.8, 0.4).mul(2),
-    };
+    });
+
     this.data.state.paddles = [
-      {
-        position: new Vec(-1.9, 0),
-        size: new Vec(0.02, 0.2),
-        color: new Vec(1, 0, 0),
-        direction: 0,
-      },
-      {
-        position: new Vec(1.9, 0),
-        size: new Vec(0.02, 0.2),
-        color: new Vec(0, 1, 0),
-        direction: 0,
-      },
+      new Paddle({ position: new Vec(-1.9, 0), color: new Vec(1, 0, 0) }),
+      new Paddle({ position: new Vec(1.9, 0), color: new Vec(0, 1, 0) }),
     ];
-    this.data.saveData();
+    this.data.state.walls = [
+      new Wall({ position: new Vec(-3, 0), scale: new Vec(1, 2) }),
+      new Wall({ position: new Vec(3, 0), scale: new Vec(1, 2) }),
+      new Wall({ position: new Vec(0, 2), scale: new Vec(3, 1) }),
+      new Wall({ position: new Vec(0, -2), scale: new Vec(3, 1) }),
+    ];
+    this.data.state.particles = [];
     this.activeColor = [1, 1, 1, 1];
     this.currLine = { start: [0, 0], end: [0, 0], color: this.activeColor };
   }
 
   setupBalls() {
     const balls = [];
-    for (var i = 0; i < 1; i++) {
+    for (var i = 0; i < 1000; i++) {
       const origin = new Vec(
         getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
         getRandomInt({ max: 0.95, min: -0.95, steps: 100 })
@@ -124,15 +147,100 @@ class MyGame {
   }
 
   moveBall(delta) {
-    const { ball } = this.data.state;
+    const { ball, walls, paddles } = this.data.state;
     ball.position.x += delta * ball.velocity.x;
     ball.position.y += delta * ball.velocity.y;
 
-    if (Math.abs(ball.position.x) + ball.size >= 2) {
-      ball.velocity.x *= -1;
+    var hit = { hit: false };
+
+    for (let i = 0; i < walls.length; i++) {
+      const wall = walls[i];
+      const collision = ball.collides(wall);
+      if (collision) {
+        if (ball.velocity.dot(collision.normal) < 0) {
+          hit.startVelocity = ball.velocity.clone();
+          const ortho = Vec.Z3.clone().cross(collision.normal).normalize();
+
+          ortho.mul(ortho.dot(ball.velocity));
+
+          const delta = ball.velocity.clone().sub(ortho);
+          ball.velocity.add(delta.mul(-2));
+          // reflect the velocity about the implied line of the normal
+          hit.hit = true;
+          hit.endVelocity = ball.velocity.clone();
+        }
+      }
     }
-    if (Math.abs(ball.position.y) + ball.size >= 1) {
-      ball.velocity.y *= -1;
+    for (let i = 0; i < paddles.length; i++) {
+      const paddle = paddles[i];
+      const collision = ball.collides(paddle);
+      if (collision) {
+        if (ball.velocity.dot(collision.normal) < 0) {
+          hit.startVelocity = ball.velocity.clone();
+          const ortho = Vec.Z3.clone().cross(collision.normal).normalize();
+
+          ortho.mul(ortho.dot(ball.velocity));
+
+          const delta = ball.velocity.clone().sub(ortho);
+          // reflect the velocity about the implied line of the normal
+          ball.velocity.add(delta.mul(-2));
+          ball.color = paddle.color;
+          hit.hit = true;
+          hit.endVelocity = ball.velocity.clone();
+        }
+      }
+    }
+    return hit;
+  }
+
+  spawnParticles({ startVelocity, endVelocity }) {
+    const { ball, particles } = this.data.state;
+
+    if (endVelocity.normalize().dot(startVelocity.normalize()) > 0) {
+      const endEnd = endVelocity.clone().add(startVelocity).normalize();
+      const startStart = endEnd.clone().mul(-1);
+
+      const startStartAngle = Math.atan2(startStart.y, startStart.x) + Math.PI;
+      startVelocity.mul(-1);
+      const startEndAngle =
+        Math.atan2(startVelocity.y, startVelocity.x) + Math.PI;
+
+      const startDelta = startEndAngle - startStartAngle;
+
+      const endStartAngle = Math.atan2(endVelocity.y, endVelocity.x) + Math.PI;
+      const endEndAngle = Math.atan2(endEnd.y, endEnd.x) + Math.PI;
+
+      const endDelta = endEndAngle - endStartAngle;
+
+      const max = endDelta + startDelta;
+
+      for (let i = 0; i < 100; i++) {
+        const t = getRandomInt({ max: max, min: 0, steps: 200 });
+        const base = t > startDelta ? endStartAngle : startStartAngle;
+        const offset = t > startDelta ? t - startDelta : t;
+        const angle = base + offset + Math.PI / 2;
+        particles.push({
+          position: ball.position.clone(),
+          color: new Vec(1, 1, 1),
+          size: 0.01,
+          velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
+            getRandomInt({ max: 2, min: 1, steps: 200 })
+          ),
+          timeToLive: 1,
+        });
+      }
+    } else {
+      return;
+      for (let i = 0; i < 100; i++) {
+        const angle = getRandomInt({ max: Math.PI, min: -Math.PI, steps: 200 });
+        particles.push({
+          position: ball.position.clone(),
+          color: new Vec(1, 1, 1),
+          size: 0.01,
+          velocity: new Vec(Math.sin(angle), Math.cos(angle)),
+          timeToLive: 1,
+        });
+      }
     }
   }
 
@@ -146,8 +254,9 @@ class MyGame {
         break;
       case TickCommand:
         const { delta } = command;
-        const { ball, balls, paddles } = this.data.state;
-        this.moveBall(delta);
+        const { ball, balls, paddles, particles } = this.data.state;
+        var hit = this.moveBall(delta);
+
         for (let i = 0; i < balls.length; i++) {
           const other = balls[i];
           other.color.sub(Vec.ONE3.clone().mul(2 * delta)).max(Vec.ZERO3);
@@ -157,8 +266,16 @@ class MyGame {
           }
         }
 
-        // check intersections
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.position.add(p.velocity.clone().mul(delta));
+          p.timeToLive -= delta;
+          if (p.timeToLive <= 0) {
+            particles.splice(i, 1);
+          }
+        }
 
+        // check intersections
         for (let i = 0; i < paddles.length; i++) {
           const p = paddles[i];
           p.position.y += delta * p.direction * 2;
@@ -195,12 +312,19 @@ class MyGame {
             if (dist < ball.size) {
               ball.color = p.color;
               if (Math.sign(ball.velocity.x) != Math.sign(0.5 - i)) {
-                ball.velocity.x *= -1;
+                hit.hit = true;
+                hit.startVelocity = ball.velocity.clone();
+                ball.velocity.y *= -1;
+                hit.endVelocity = ball.velocity.clone();
               }
             }
           }
         }
-        this.data.saveData();
+
+        if (hit.hit) {
+          this.spawnParticles(hit);
+        }
+
         break;
       default:
         break;

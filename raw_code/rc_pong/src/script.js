@@ -6,6 +6,7 @@ import * as twgl from "twgl.js";
 import { InputManager } from "./engine/input.js";
 import { InputStateManager, MyGame } from "./game.js";
 import calculateQuadCascade from "./shaders/quadCascade.fs";
+import { withLogging } from "./utils/debug.js";
 import renderQuadCascade from "./shaders/renderQuadCascade.fs";
 
 var stats = new Stats();
@@ -285,6 +286,9 @@ for (var i = 0; i <= numPts; i++) {
 }
 
 function renderEntities(entities, buffer) {
+  if (entities.length === 0) {
+    return;
+  }
   const matrices = [];
   const colors = [];
 
@@ -343,260 +347,14 @@ function renderEntities(entities, buffer) {
     gl.TRIANGLE_FAN,
     vertexArrayInfo.numElements,
     0,
-    1
+    entities.length
   );
 }
-
-function renderBall(buffer, size) {
-  const matrices = [];
-  const colors = [];
-
-  const { ball } = game.data.state;
-
-  const scale = m4.scaling([
-    (ball.size * size) / windowManager.sizes.aspect,
-    ball.size * size,
-    ball.size * size,
-  ]);
-  const translation = m4.translation([
-    ball.position.x / (ball.size * size),
-    ball.position.y / (ball.size * size),
-    0,
-  ]);
-  const mat = m4.multiply(scale, translation);
-  mat.forEach((v, i) => {
-    matrices.push(v);
-  });
-  colors.push(ball.color.x, ball.color.y, ball.color.z, 1);
-
-  mat.forEach((v, i) => {
-    matrices.push(v);
-  });
-  colors.push(ball.color.x, ball.color.y, ball.color.z, 1);
-
-  const arrays4 = {
-    position: {
-      numComponents: 2,
-      data: vertexData,
-    },
-    color: {
-      numComponents: 4,
-      data: colors,
-      divisor: 1,
-    },
-    matrix: {
-      numComponents: 16,
-      data: matrices,
-      divisor: 1,
-    },
-  };
-  const bufferInfo4 = twgl.createBufferInfoFromArrays(gl, arrays4);
-  const vertexArrayInfo = twgl.createVertexArrayInfo(
-    gl,
-    instanceColor,
-    bufferInfo4
-  );
-
-  gl.useProgram(instanceColor.program);
-  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo);
-  twgl.bindFramebufferInfo(gl, buffer);
-  twgl.drawBufferInfo(
-    gl,
-    vertexArrayInfo,
-    gl.TRIANGLE_FAN,
-    vertexArrayInfo.numElements,
-    0,
-    1
-  );
-}
-
-function renderBalls(buffer, size) {
-  const matrices2 = [];
-  const colors2 = [];
-
-  const { balls } = game.data.state;
-
-  for (let i = 0; i < balls.length; i++) {
-    const b = balls[i];
-    const scale = m4.scaling([
-      (b.size * size) / windowManager.sizes.aspect,
-      b.size * size,
-      b.size * size,
-    ]);
-    const translation = m4.translation([
-      b.position.x / (b.size * size),
-      b.position.y / (b.size * size),
-      0,
-    ]);
-
-    const mat = m4.multiply(scale, translation);
-    mat.forEach((v, i) => {
-      matrices2.push(v);
-    });
-    colors2.push(b.mesh.color.z, b.mesh.color.y, b.mesh.color.z, 1);
-  }
-
-  const arrays2 = {
-    position: {
-      numComponents: 2,
-      data: vertexData,
-    },
-    color: {
-      numComponents: 4,
-      data: colors2,
-      divisor: 1,
-    },
-    matrix: {
-      numComponents: 16,
-      data: matrices2,
-      divisor: 1,
-    },
-  };
-  const bufferInfo2 = twgl.createBufferInfoFromArrays(gl, arrays2);
-  const vertexArrayInfo2 = twgl.createVertexArrayInfo(
-    gl,
-    instanceColor,
-    bufferInfo2
-  );
-  gl.useProgram(instanceColor.program);
-  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo2);
-  twgl.bindFramebufferInfo(gl, buffer);
-  twgl.drawBufferInfo(
-    gl,
-    vertexArrayInfo2,
-    gl.TRIANGLE_FAN,
-    vertexArrayInfo2.numElements,
-    0,
-    balls.length
-  );
-}
-function renderPaddles(buffer, size) {
-  const matrices3 = [];
-  const colors3 = [];
-
-  const { paddles } = game.data.state;
-
-  for (let i = 0; i < paddles.length; i++) {
-    const p = paddles[i];
-    const scale = m4.scaling([
-      (p.size.x * size) / windowManager.sizes.aspect,
-      p.size.y * size,
-      1,
-    ]);
-    const translation = m4.translation([
-      p.position.x / (p.size.x * size),
-      p.position.y / (p.size.y * size),
-      0,
-    ]);
-    const mat = m4.multiply(scale, translation);
-    mat.forEach((v, i) => {
-      matrices3.push(v);
-    });
-    colors3.push(p.mesh.color.x, p.mesh.color.y, p.mesh.color.z, 1);
-  }
-  const vertexData2 = [1, 1, 1, -1, -1, -1, -1, 1];
-
-  const arrays3 = {
-    position: {
-      numComponents: 2,
-      data: vertexData2,
-    },
-    color: {
-      numComponents: 4,
-      data: colors3,
-      divisor: 1,
-    },
-    matrix: {
-      numComponents: 16,
-      data: matrices3,
-      divisor: 1,
-    },
-  };
-  const bufferInfo3 = twgl.createBufferInfoFromArrays(gl, arrays3);
-  const vertexArrayInfo3 = twgl.createVertexArrayInfo(
-    gl,
-    instanceColor,
-    bufferInfo3
-  );
-  gl.useProgram(instanceColor.program);
-  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo3);
-  twgl.bindFramebufferInfo(gl, buffer);
-  twgl.drawBufferInfo(
-    gl,
-    vertexArrayInfo3,
-    gl.TRIANGLE_FAN,
-    vertexArrayInfo3.numElements,
-    0,
-    paddles.length
-  );
-}
-
-function renderParticles(buffer, size) {
-  const matrices2 = [];
-  const colors2 = [];
-
-  const { particles } = game.data.state;
-
-  for (let i = 0; i < particles.length; i++) {
-    const b = particles[i];
-    const scale = m4.scaling([
-      (b.size * size) / windowManager.sizes.aspect,
-      b.size * size,
-      b.size * size,
-    ]);
-    const translation = m4.translation([
-      b.position.x / (b.size * size),
-      b.position.y / (b.size * size),
-      0,
-    ]);
-
-    const mat = m4.multiply(scale, translation);
-    mat.forEach((v, i) => {
-      matrices2.push(v);
-    });
-    colors2.push(b.mesh.color.z, b.mesh.color.y, b.mesh.color.z, 1);
-  }
-
-  const arrays2 = {
-    position: {
-      numComponents: 2,
-      data: vertexData,
-    },
-    color: {
-      numComponents: 4,
-      data: colors2,
-      divisor: 1,
-    },
-    matrix: {
-      numComponents: 16,
-      data: matrices2,
-      divisor: 1,
-    },
-  };
-  const bufferInfo2 = twgl.createBufferInfoFromArrays(gl, arrays2);
-  const vertexArrayInfo2 = twgl.createVertexArrayInfo(
-    gl,
-    instanceColor,
-    bufferInfo2
-  );
-  gl.useProgram(instanceColor.program);
-  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo2);
-  twgl.bindFramebufferInfo(gl, buffer);
-  twgl.drawBufferInfo(
-    gl,
-    vertexArrayInfo2,
-    gl.TRIANGLE_FAN,
-    vertexArrayInfo2.numElements,
-    0,
-    particles.length
-  );
-}
-function drawToBuffer(time, buffer, size, game) {
-  //renderBall(buffer, size);
+function drawToBuffer(buffer, game) {
   renderEntities([game.data.state.ball], buffer);
-  renderBalls(buffer, size);
-  renderPaddles(buffer, size);
-  renderParticles(buffer, size);
+  renderEntities(game.data.state.paddles, buffer);
+  renderEntities(game.data.state.balls, buffer);
+  renderEntities(game.data.state.particles, buffer);
 }
 
 windowManager.listeners.push({
@@ -754,7 +512,7 @@ function renderScene(time) {
     frameBuffers.lightEmittersWithCurrent
   );
 
-  drawToBuffer(time, frameBuffers.lightEmittersWithCurrent, 1, game);
+  drawToBuffer(frameBuffers.lightEmittersWithCurrent, game);
 }
 
 function renderDepth(time, depth) {
@@ -1064,7 +822,7 @@ function render(timeMillis) {
       break;
   }
 
-  drawToBuffer(time, frameBuffers.spareQuadCascadeFinalRT, 1.0, game);
+  drawToBuffer(frameBuffers.spareQuadCascadeFinalRT, game);
 
   renderTo(gl, applyGamma, bufferInfo, {
     resolution: [gl.canvas.width, gl.canvas.height],

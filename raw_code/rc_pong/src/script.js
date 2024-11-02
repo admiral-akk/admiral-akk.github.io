@@ -352,16 +352,13 @@ windowManager.listeners.push({
     gl.canvas.height = height;
   },
 });
-let toSave = false;
-
-data.addButton({
-  name: "Save Image",
-  fn: () => {
-    toSave = true;
-  },
-});
-
+let toSave = { requested: false, lastRequest: 0 };
 const saveImage = () => {
+  toSave.requested = false;
+
+  if (Date.now() - toSave.lastRequest < 500) {
+    return;
+  }
   let canvas = document.getElementById("webgl");
 
   var image = canvas.toDataURL();
@@ -373,7 +370,7 @@ const saveImage = () => {
   aDownloadLink.href = image;
   // Get the code to click the download link
   aDownloadLink.click();
-  toSave = false;
+  toSave.lastRequest = Date.now();
 };
 
 const width = 8 * 128;
@@ -742,7 +739,7 @@ function render(timeMillis) {
   const state = input.getState();
   inputState.update(game, state);
   if ((state["control"] || state["meta"]) && state["s"]) {
-    toSave = true;
+    toSave.requested = true;
   }
 
   game.update(time.getDeltaTime() / 1000);
@@ -822,7 +819,7 @@ function render(timeMillis) {
     tPrev: frameBuffers.spareQuadCascadeFinalRT.attachments[0],
   });
 
-  if (toSave) {
+  if (toSave.requested) {
     saveImage();
   }
   const available = gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE);

@@ -1,6 +1,7 @@
 import { Collider, Entity } from "./engine/entity";
 import { State, StateMachine } from "./utils/stateMachine";
 import { Vec, LineSegment } from "./utils/vector";
+import { withLogging } from "./utils/debug";
 
 // Input State Machine
 
@@ -111,7 +112,7 @@ class MyGame {
     this.data.state.balls = this.setupBalls();
     this.data.state.ball = new Ball({
       position: new Vec(0, 0),
-      velocity: new Vec(0.8, 0.4).mul(2),
+      velocity: new Vec(0.6, 0.8).mul(2),
     });
 
     this.data.state.paddles = [
@@ -141,7 +142,7 @@ class MyGame {
         new FloatingBall({
           position: origin,
           size,
-          triggerSize: 0.1,
+          triggerSize: 0.2,
         })
       );
     }

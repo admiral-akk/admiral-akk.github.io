@@ -92,17 +92,35 @@ class Entity {
       case "sphere":
         switch (other.collider.type) {
           case "sphere":
-            delta.mul(scale1).normalize().mul(scale1);
-
             const start = this.position.clone();
             const end = start
               .clone()
-              .add(delta)
-              .sub(other.position)
-              .div(scale2);
-            start.div(scale2);
+              .add(
+                rawDelta.clone().mul(-1).mul(scale1).normalize().mul(scale1)
+              );
+            start.sub(other.position).div(scale2);
+            end.sub(other.position).div(scale2);
+            const dist = distanceTo(other.position, start, end);
 
-            return distanceTo(other.position, start, end) <= 1;
+            if (dist <= 1) {
+              // this is wrong normal, but we'll deal with it later
+              // what we actually want is:
+              //
+              // 1. Find the point that's contained by both and
+              //       maximizes the min of the distances to the edge
+              // 2. Find the vector to the nearest point on the
+              //       sphere from that point
+              return new Collision({ normal: rawDelta.normalize().mul(-1) });
+            } else {
+              // this is a hack, something is happening when the points are close
+              if (
+                rawDelta.clone().div(scale1).len() <= 1 ||
+                rawDelta.clone().div(scale2).len() <= 1
+              ) {
+                return new Collision({ normal: rawDelta.normalize().mul(-1) });
+              }
+              return null;
+            }
           case "box":
             delta.sub(scale2).div(scale1);
             // inside the box

@@ -14,13 +14,14 @@ class Mesh {
   })();
   static boxVertices = [1, 1, 1, -1, -1, -1, -1, 1];
 
-  constructor(type, scale) {
+  constructor(type, scale, color) {
     this.scale = scale;
+    this.color = color;
     switch (type) {
       case "box":
         this.vertices = Mesh.boxVertices;
         break;
-      case "circle":
+      case "sphere":
         this.vertices = Mesh.circleVertices;
         break;
       default:
@@ -194,4 +195,4 @@ class Entity {
   }
 }
 
-export { Entity, Collider };
+export { Entity, Collider, Mesh };

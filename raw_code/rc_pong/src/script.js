@@ -283,6 +283,70 @@ for (var i = 0; i <= numPts; i++) {
     Math.cos((i * Math.PI * 2) / numPts)
   );
 }
+
+function renderEntities(entities, buffer) {
+  const matrices = [];
+  const colors = [];
+
+  const vertices = entities[0].mesh.vertices;
+
+  for (let i = 0; i < entities.length; i++) {
+    const entity = entities[i];
+    const { position, mesh } = entity;
+    const { scale, color } = mesh;
+    const scaleM = m4.scaling([
+      scale.x / windowManager.sizes.aspect,
+      scale.y,
+      1,
+    ]);
+    const translation = m4.translation([
+      position.x / scale.x,
+      position.y / scale.y,
+      0,
+    ]);
+    const mat = m4.multiply(scaleM, translation);
+    mat.forEach((v, i) => {
+      matrices.push(v);
+    });
+    colors.push(color.x, color.y, color.z, color.w);
+  }
+
+  const arrays4 = {
+    position: {
+      numComponents: 2,
+      data: vertices,
+    },
+    color: {
+      numComponents: 4,
+      data: colors,
+      divisor: 1,
+    },
+    matrix: {
+      numComponents: 16,
+      data: matrices,
+      divisor: 1,
+    },
+  };
+  const bufferInfo4 = twgl.createBufferInfoFromArrays(gl, arrays4);
+  const vertexArrayInfo = twgl.createVertexArrayInfo(
+    gl,
+    instanceColor,
+    bufferInfo4
+  );
+
+  gl.useProgram(instanceColor.program);
+  twgl.setBuffersAndAttributes(gl, instanceColor, vertexArrayInfo);
+  twgl.bindFramebufferInfo(gl, buffer);
+  twgl.drawBufferInfo(
+    gl,
+    vertexArrayInfo,
+    gl.TRIANGLE_FAN,
+    vertexArrayInfo.numElements,
+    0,
+    1
+  );
+}
+
 function renderBall(buffer, size) {
   const matrices = [];
   const colors = [];
@@ -369,7 +433,7 @@ function renderBalls(buffer, size) {
     mat.forEach((v, i) => {
       matrices2.push(v);
     });
-    colors2.push(b.color.z, b.color.y, b.color.z, 1);
+    colors2.push(b.mesh.color.z, b.mesh.color.y, b.mesh.color.z, 1);
   }
 
   const arrays2 = {
@@ -428,7 +492,7 @@ function renderPaddles(buffer, size) {
     mat.forEach((v, i) => {
       matrices3.push(v);
     });
-    colors3.push(p.color.x, p.color.y, p.color.z, 1);
+    colors3.push(p.mesh.color.x, p.mesh.color.y, p.mesh.color.z, 1);
   }
   const vertexData2 = [1, 1, 1, -1, -1, -1, -1, 1];
 
@@ -490,7 +554,7 @@ function renderParticles(buffer, size) {
     mat.forEach((v, i) => {
       matrices2.push(v);
     });
-    colors2.push(b.color.z, b.color.y, b.color.z, 1);
+    colors2.push(b.mesh.color.z, b.mesh.color.y, b.mesh.color.z, 1);
   }
 
   const arrays2 = {
@@ -528,7 +592,8 @@ function renderParticles(buffer, size) {
   );
 }
 function drawToBuffer(time, buffer, size, game) {
-  renderBall(buffer, size);
+  //renderBall(buffer, size);
+  renderEntities([game.data.state.ball], buffer);
   renderBalls(buffer, size);
   renderPaddles(buffer, size);
   renderParticles(buffer, size);

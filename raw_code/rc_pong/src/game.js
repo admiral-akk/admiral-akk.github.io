@@ -1,7 +1,6 @@
-import { Collider, Entity } from "./engine/entity";
+import { Collider, Entity, Mesh } from "./engine/entity";
 import { State, StateMachine } from "./utils/stateMachine";
-import { Vec, LineSegment } from "./utils/vector";
-import { withLogging } from "./utils/debug";
+import { Vec } from "./utils/vector";
 
 // Input State Machine
 
@@ -82,11 +81,11 @@ class Paddle extends Entity {
     super({
       position,
       collider: new Collider("box", new Vec(0.02, 0.2)),
+      mesh: new Mesh("box", new Vec(0.02, 0.2), color),
     });
     this.origin = position.clone();
     this.attackDir = attackDir.mul(Paddle.attackDistance);
     this.size = new Vec(0.02, 0.2);
-    this.color = color;
     this.direction = 0;
     this.attackData = {
       time: 0,
@@ -128,40 +127,49 @@ class Paddle extends Entity {
 
 class Ball extends Entity {
   constructor({ position, velocity }) {
+    const color = new Vec(1, 1, 1, 1);
     super({
       position,
       velocity,
       collider: new Collider("sphere", new Vec(0.05, 0.05)),
+      mesh: new Mesh("sphere", new Vec(0.05, 0.05), color),
     });
-    this.color = new Vec(1, 1, 1);
     this.size = 0.05;
   }
 }
 
 class FloatingBall extends Entity {
   constructor({ position, size, triggerSize }) {
+    const color = new Vec(0, 0, 0, 1);
     super({
       position,
       collider: new Collider("sphere", new Vec(triggerSize, triggerSize)),
+      mesh: new Mesh("sphere", new Vec(size, size), color),
     });
     this.size = size;
     this.origin = position.clone();
-    this.color = new Vec(0, 0, 0);
   }
 }
 
 class Particle extends Entity {
   constructor({ position, color, size, velocity, timeToLive }) {
-    super({ position, velocity });
+    super({
+      position,
+      velocity,
+      mesh: new Mesh("sphere", new Vec(size, size), color),
+    });
     this.size = size;
-    this.color = color;
     this.timeToLive = timeToLive;
   }
 }
 
 class Wall extends Entity {
   constructor({ position, scale }) {
-    super({ position, collider: new Collider("box", scale) });
+    super({
+      position,
+      collider: new Collider("box", scale),
+      mesh: new Mesh("box", new Vec(scale, scale)),
+    });
   }
 }
 
@@ -179,12 +187,12 @@ class MyGame {
     this.data.state.paddles = [
       new Paddle({
         position: new Vec(-1.9, 0),
-        color: new Vec(1, 0, 0),
+        color: new Vec(1, 0, 0, 1),
         attackDir: new Vec(1, 0),
       }),
       new Paddle({
         position: new Vec(1.9, 0),
-        color: new Vec(0, 1, 0),
+        color: new Vec(0, 1, 0, 1),
         attackDir: new Vec(-1, 0),
       }),
     ];
@@ -195,8 +203,6 @@ class MyGame {
       new Wall({ position: new Vec(0, -2), scale: new Vec(3, 1) }),
     ];
     this.data.state.particles = [];
-    this.activeColor = [1, 1, 1, 1];
-    this.currLine = { start: [0, 0], end: [0, 0], color: this.activeColor };
   }
 
   setupBalls() {
@@ -268,7 +274,7 @@ class MyGame {
           const delta = ball.velocity.clone().sub(ortho);
           // reflect the velocity about the implied line of the normal
           ball.velocity.add(delta.mul(-2));
-          ball.color = paddle.color;
+          ball.mesh.color = paddle.mesh.color;
           hit.hit = true;
           if (paddle.isAttacking()) {
             ball.velocity.add(delta.mul(0.4));
@@ -312,7 +318,7 @@ class MyGame {
         particles.push(
           new Particle({
             position: ball.position.clone(),
-            color: new Vec(1, 1, 1),
+            color: new Vec(1, 1, 1, 1),
             size: 0.01,
             velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
               getRandomInt({ max: 2, min: 1, steps: 200 })
@@ -356,9 +362,9 @@ class MyGame {
 
         for (let i = 0; i < balls.length; i++) {
           const other = balls[i];
-          other.color.sub(Vec.ONE3.clone().mul(2 * delta)).max(Vec.ZERO3);
+          other.mesh.color.sub(Vec.ONE3.clone().mul(2 * delta)).max(Vec.ZERO3);
           if (other.collides(ball)) {
-            other.color.copy(ball.color).mul(3);
+            other.mesh.color.copy(ball.mesh.color).mul(3);
           }
         }
 

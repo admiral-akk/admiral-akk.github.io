@@ -264,6 +264,9 @@ class MyGame {
           if (paddle.isAttacking()) {
             ball.velocity.add(delta.mul(0.4));
           }
+          if (paddle.direction) {
+            ball.velocity.y += paddle.direction * 1;
+          }
           hit.endVelocity = ball.velocity.clone();
         }
       }

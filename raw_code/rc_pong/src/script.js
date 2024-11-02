@@ -274,17 +274,6 @@ const cascadeQuadCalculate = twgl.createProgramInfo(gl, [
 const m4 = twgl.m4;
 const cascadeQuadRender = twgl.createProgramInfo(gl, [vs, renderQuadCascade]);
 
-const vertexData = [];
-
-const numPts = 32;
-
-for (var i = 0; i <= numPts; i++) {
-  vertexData.push(
-    Math.sin((i * Math.PI * 2) / numPts),
-    Math.cos((i * Math.PI * 2) / numPts)
-  );
-}
-
 function renderEntities(entities, buffer) {
   if (entities.length === 0) {
     return;
@@ -750,7 +739,11 @@ const time = new TimeManager({ fps: 60 });
 function render(timeMillis) {
   stats.begin();
   windowManager.update();
-  inputState.update(game, input.getState());
+  const state = input.getState();
+  inputState.update(game, state);
+  if ((state["control"] || state["meta"]) && state["s"]) {
+    toSave = true;
+  }
 
   game.update(time.getDeltaTime() / 1000);
   twgl.resizeCanvasToDisplaySize(gl.canvas);

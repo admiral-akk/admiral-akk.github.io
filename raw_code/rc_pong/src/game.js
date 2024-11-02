@@ -67,8 +67,6 @@ class InputStateManager extends StateMachine {
   }
 }
 
-const inputState = new InputStateManager();
-
 // Game
 
 const clipToScreenSpace = ([x, y]) => [(x + 1) / 2, (y + 1) / 2];

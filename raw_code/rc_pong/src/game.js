@@ -15,6 +15,12 @@ class Command {
   }
 }
 
+class AttackCommand extends Command {
+  constructor(playerIndex) {
+    super();
+    this.playerIndex = playerIndex;
+  }
+}
 class MoveCommand extends Command {
   constructor(playerIndex, direction) {
     super();
@@ -39,7 +45,13 @@ class OpenInputState extends State {
       (inputState["arrowup"] !== undefined) -
       +(inputState["arrowdown"] !== undefined);
     game.commands.push(new MoveCommand(0, leftDir));
+    if (inputState["d"] !== undefined) {
+      game.commands.push(new AttackCommand(0));
+    }
     game.commands.push(new MoveCommand(1, rightDir));
+    if (inputState["arrowleft"] !== undefined) {
+      game.commands.push(new AttackCommand(1));
+    }
   }
 }
 
@@ -63,14 +75,54 @@ const inputState = new InputStateManager();
 const clipToScreenSpace = ([x, y]) => [(x + 1) / 2, (y + 1) / 2];
 
 class Paddle extends Entity {
-  constructor({ position, color }) {
+  static attackTime = 0.2;
+  static attackDistance = 0.1;
+
+  constructor({ position, color, attackDir }) {
     super({
       position,
       collider: new Collider("box", new Vec(0.02, 0.2)),
     });
+    this.origin = position.clone();
+    this.attackDir = attackDir.mul(Paddle.attackDistance);
     this.size = new Vec(0.02, 0.2);
     this.color = color;
     this.direction = 0;
+    this.attackData = {
+      time: 0,
+    };
+  }
+
+  isAttacking() {
+    return this.attackData.time > 0.8 * Paddle.attackTime;
+  }
+
+  attackAnimation() {
+    this.position.x =
+      this.origin.x +
+      this.attackDir.x.mix(
+        0,
+        1 - (this.attackData.time / Paddle.attackTime).clamp(0, 1)
+      );
+  }
+
+  update(delta) {
+    this.position.y += delta * this.direction * 2;
+    this.position.y = Math.min(
+      Math.max(this.position.y, -1 + this.size.y),
+      1 - this.size.y
+    );
+    this.attackData.time -= delta;
+    this.attackAnimation();
+  }
+
+  attack() {
+    if (this.attackData.time > 0) {
+      return;
+    }
+
+    this.attackData.time = Paddle.attackTime;
+    this.position.add(this.attackDir.clone().mul(Paddle.attackDistance));
   }
 }
 
@@ -116,8 +168,16 @@ class MyGame {
     });
 
     this.data.state.paddles = [
-      new Paddle({ position: new Vec(-1.9, 0), color: new Vec(1, 0, 0) }),
-      new Paddle({ position: new Vec(1.9, 0), color: new Vec(0, 1, 0) }),
+      new Paddle({
+        position: new Vec(-1.9, 0),
+        color: new Vec(1, 0, 0),
+        attackDir: new Vec(1, 0),
+      }),
+      new Paddle({
+        position: new Vec(1.9, 0),
+        color: new Vec(0, 1, 0),
+        attackDir: new Vec(-1, 0),
+      }),
     ];
     this.data.state.walls = [
       new Wall({ position: new Vec(-3, 0), scale: new Vec(1, 2) }),
@@ -142,7 +202,7 @@ class MyGame {
         new FloatingBall({
           position: origin,
           size,
-          triggerSize: 0.2,
+          triggerSize: 0.1,
         })
       );
     }
@@ -201,6 +261,9 @@ class MyGame {
           ball.velocity.add(delta.mul(-2));
           ball.color = paddle.color;
           hit.hit = true;
+          if (paddle.isAttacking()) {
+            ball.velocity.add(delta.mul(0.4));
+          }
           hit.endVelocity = ball.velocity.clone();
         }
       }
@@ -267,6 +330,11 @@ class MyGame {
             command.direction;
         }
         break;
+      case AttackCommand:
+        {
+          this.data.state.paddles[command.playerIndex].attack();
+        }
+        break;
       case TickCommand:
         const { delta } = command;
         const { ball, balls, paddles, particles } = this.data.state;
@@ -291,12 +359,7 @@ class MyGame {
 
         // check intersections
         for (let i = 0; i < paddles.length; i++) {
-          const p = paddles[i];
-          p.position.y += delta * p.direction * 2;
-          p.position.y = Math.min(
-            Math.max(p.position.y, -1 + p.size.y),
-            1 - p.size.y
-          );
+          paddles[i].update(delta);
         }
 
         if (hit.hit) {

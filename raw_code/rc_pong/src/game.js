@@ -85,6 +85,18 @@ class Ball extends Entity {
   }
 }
 
+class FloatingBall extends Entity {
+  constructor({ position, size, triggerSize }) {
+    super({
+      position,
+      collider: new Collider("sphere", new Vec(triggerSize, triggerSize)),
+    });
+    this.size = size;
+    this.origin = position.clone();
+    this.color = new Vec(0, 0, 0);
+  }
+}
+
 class Wall extends Entity {
   constructor({ position, scale }) {
     super({ position, collider: new Collider("box", scale) });
@@ -124,12 +136,14 @@ class MyGame {
         getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
         getRandomInt({ max: 0.95, min: -0.95, steps: 100 })
       );
-      balls.push({
-        origin: origin,
-        position: origin.clone(),
-        color: new Vec(0, 0, 0),
-        size: getRandomInt({ max: 0.02, min: 0.01, steps: 5 }),
-      });
+      const size = getRandomInt({ max: 0.02, min: 0.01, steps: 5 });
+      balls.push(
+        new FloatingBall({
+          position: origin,
+          size,
+          triggerSize: 0.1,
+        })
+      );
     }
     return balls;
   }
@@ -260,8 +274,7 @@ class MyGame {
         for (let i = 0; i < balls.length; i++) {
           const other = balls[i];
           other.color.sub(Vec.ONE3.clone().mul(2 * delta)).max(Vec.ZERO3);
-          const deltaV = other.position.clone().sub(ball.position);
-          if (deltaV.len() < 0.15) {
+          if (other.collides(ball)) {
             other.color.copy(ball.color).mul(3);
           }
         }
@@ -283,42 +296,6 @@ class MyGame {
             Math.max(p.position.y, -1 + p.size.y),
             1 - p.size.y
           );
-
-          const size = new Vec(p.size);
-          const top = new Vec(p.position).add(p.size);
-          const bot = new Vec(p.position).sub(p.size);
-          const lineSegments = [
-            new LineSegment(
-              top.clone(),
-              top.clone().sub(size.clone().mul(Vec.X2).mul(2))
-            ),
-            new LineSegment(
-              top.clone(),
-              top.clone().sub(size.clone().mul(Vec.Y2).mul(2))
-            ),
-            new LineSegment(
-              bot.clone(),
-              bot.clone().add(size.clone().mul(Vec.X2).mul(2))
-            ),
-            new LineSegment(
-              bot.clone(),
-              bot.clone().add(size.clone().mul(Vec.Y2).mul(2))
-            ),
-          ];
-
-          for (let j = 0; j < lineSegments.length; j++) {
-            const l = lineSegments[j];
-            const dist = l.distanceTo(ball.position);
-            if (dist < ball.size) {
-              ball.color = p.color;
-              if (Math.sign(ball.velocity.x) != Math.sign(0.5 - i)) {
-                hit.hit = true;
-                hit.startVelocity = ball.velocity.clone();
-                ball.velocity.y *= -1;
-                hit.endVelocity = ball.velocity.clone();
-              }
-            }
-          }
         }
 
         if (hit.hit) {

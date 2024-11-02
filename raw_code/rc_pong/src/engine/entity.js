@@ -92,7 +92,17 @@ class Entity {
       case "sphere":
         switch (other.collider.type) {
           case "sphere":
-            return delta.lenSq() >= 4;
+            delta.mul(scale1).normalize().mul(scale1);
+
+            const start = this.position.clone();
+            const end = start
+              .clone()
+              .add(delta)
+              .sub(other.position)
+              .div(scale2);
+            start.div(scale2);
+
+            return distanceTo(other.position, start, end) <= 1;
           case "box":
             delta.sub(scale2).div(scale1);
             // inside the box

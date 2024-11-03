@@ -1,4 +1,4 @@
-const DEBUG = { enabled: false };
+const DEBUG = { enabled: true };
 const old_console_log = console.log;
 console.log = function () {
   if (DEBUG.enabled) {

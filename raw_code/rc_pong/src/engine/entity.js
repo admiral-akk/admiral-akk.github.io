@@ -56,8 +56,9 @@ function distanceTo(point, start, end) {
 }
 
 class Collision {
-  constructor({ normal }) {
+  constructor({ normal, collisionPoint = null }) {
     this.normal = normal;
+    this.collisionPoint = collisionPoint;
   }
 }
 
@@ -124,31 +125,86 @@ class Entity {
             }
           case "box":
             delta.sub(scale2).div(scale1);
+
+            const localCorner = scale2.clone();
+            if (rawDelta.x < 0) {
+              localCorner.x *= -1;
+            }
+            if (rawDelta.y < 0) {
+              localCorner.y *= -1;
+            }
+            const globalCorner = other.position.clone().add(localCorner);
+
             // inside the box
             if (delta.x <= 0 && delta.y <= 0) {
+              delta.mul(scale1);
               // figure out what the closest point of collision is
-              return new Collision({ normal: rawDelta.normalize().mul(-1) });
+              if (delta.x < delta.y) {
+                // to top/bot
+                globalCorner.x = this.position.x;
+                if (rawDelta.y > 0) {
+                  return new Collision({
+                    normal: new Vec(0, 1),
+                    collisionPoint: globalCorner,
+                  });
+                } else {
+                  return new Collision({
+                    normal: new Vec(0, -1),
+                    collisionPoint: globalCorner,
+                  });
+                }
+              } else {
+                globalCorner.y = this.position.y;
+                // x is surface dir
+                if (rawDelta.x > 0) {
+                  return new Collision({
+                    normal: new Vec(1, 0),
+                    collisionPoint: globalCorner,
+                  });
+                } else {
+                  return new Collision({
+                    normal: new Vec(-1, 0),
+                    collisionPoint: globalCorner,
+                  });
+                }
+              }
             }
             // hits the top/bottom of the box
             if (delta.x <= 0 && delta.y <= 1) {
+              globalCorner.x = this.position.x;
               if (rawDelta.y > 0) {
-                return new Collision({ normal: new Vec(0, 1) });
+                return new Collision({
+                  normal: new Vec(0, 1),
+                  collisionPoint: globalCorner,
+                });
               } else {
-                return new Collision({ normal: new Vec(0, -1) });
+                return new Collision({
+                  normal: new Vec(0, -1),
+                  collisionPoint: globalCorner,
+                });
               }
             }
             // hits the side of the box
             if (delta.x <= 1 && delta.y <= 0) {
+              globalCorner.y = this.position.y;
               if (rawDelta.x > 0) {
-                return new Collision({ normal: new Vec(1, 0) });
+                return new Collision({
+                  normal: new Vec(1, 0),
+                  collisionPoint: globalCorner,
+                });
               } else {
-                return new Collision({ normal: new Vec(-1, 0) });
+                return new Collision({
+                  normal: new Vec(-1, 0),
+                  collisionPoint: globalCorner,
+                });
               }
             }
             // hits the corner of the box
             if (delta.lenSq() <= 1) {
-              console.log("corner");
-              return new Collision({ normal: delta.normalize().mul(-1) });
+              return new Collision({
+                normal: delta.normalize().mul(-1),
+                collisionPoint: globalCorner,
+              });
             }
             return null;
           default:

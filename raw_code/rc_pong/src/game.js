@@ -184,7 +184,7 @@ class MyGame {
     this.data.state.balls = this.setupBalls();
     this.data.state.ball = new Ball({
       position: new Vec(0, 0),
-      velocity: new Vec(0.6, 0.8).mul(2),
+      velocity: new Vec(0.6, 0.8).mul(20),
     });
 
     this.data.state.paddles = [
@@ -200,10 +200,10 @@ class MyGame {
       }),
     ];
     this.data.state.walls = [
-      new Wall({ position: new Vec(-3, 0), scale: new Vec(1, 2) }),
-      new Wall({ position: new Vec(3, 0), scale: new Vec(1, 2) }),
-      new Wall({ position: new Vec(0, 2), scale: new Vec(3, 1) }),
-      new Wall({ position: new Vec(0, -2), scale: new Vec(3, 1) }),
+      new Wall({ position: new Vec(-3, 0), scale: new Vec(1, 4) }),
+      new Wall({ position: new Vec(3, 0), scale: new Vec(1, 4) }),
+      new Wall({ position: new Vec(0, 2), scale: new Vec(6, 1) }),
+      new Wall({ position: new Vec(0, -2), scale: new Vec(6, 1) }),
     ];
     this.data.state.particles = [];
   }
@@ -250,6 +250,15 @@ class MyGame {
       const wall = walls[i];
       const collision = ball.collides(wall);
       if (collision) {
+        // check if the ball needs to be moved out
+
+        const newPos = collision.collisionPoint
+          .clone()
+          .add(collision.normal.clone().mul(ball.mesh.scale));
+
+        if (newPos.clone().sub(ball.position).dot(collision.normal) < 0) {
+          ball.position = newPos;
+        }
         if (ball.velocity.dot(collision.normal) < 0) {
           hit.startVelocity = ball.velocity.clone();
           hit.normal = collision.normal;
@@ -269,6 +278,18 @@ class MyGame {
       const paddle = paddles[i];
       const collision = ball.collides(paddle);
       if (collision) {
+        console.log(collision.collisionPoint);
+
+        // check if the ball needs to be moved out
+
+        const newPos = collision.collisionPoint
+          .clone()
+          .add(collision.normal.clone().mul(ball.mesh.scale));
+
+        if (newPos.clone().sub(ball.position).dot(collision.normal) < 0) {
+          ball.position = newPos;
+        }
+
         if (ball.velocity.dot(collision.normal) < 0) {
           hit.startVelocity = ball.velocity.clone();
           hit.normal = collision.normal;

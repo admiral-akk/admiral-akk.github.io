@@ -1,6 +1,7 @@
 import { Collider, Entity, Mesh } from "./engine/entity";
 import { State, StateMachine } from "./utils/stateMachine";
 import { Vec } from "./utils/vector";
+import { gsap } from "gsap";
 import { withLogging } from "./utils/debug.js";
 
 // Input State Machine
@@ -315,6 +316,33 @@ class MyGame {
           totalTime: 0.2,
         })
       );
+    }
+    if (hit.hit) {
+      const tl = gsap.timeline();
+      const hitForce = Math.abs(ball.velocity.dot(hit.normal)).clamp(0, 1);
+      if (hit.normal.x !== 0) {
+        tl.fromTo(
+          ball.mesh.scale,
+          { x: (ball.size / 3).mix(ball.size, hitForce) },
+          { duration: 1.5, x: ball.size, ease: "elastic.out" }
+        ).fromTo(
+          ball.mesh.scale,
+          { y: (1.5 * ball.size).mix(ball.size, hitForce) },
+          { duration: 1.5, y: ball.size, ease: "elastic.out" },
+          "<"
+        );
+      } else {
+        tl.fromTo(
+          ball.mesh.scale,
+          { y: (ball.size / 3).mix(ball.size, hitForce) },
+          { duration: 1.5, y: ball.size, ease: "elastic.out" }
+        ).fromTo(
+          ball.mesh.scale,
+          { x: (1.5 * ball.size).mix(ball.size, hitForce) },
+          { duration: 1.5, x: ball.size, ease: "elastic.out" },
+          "<"
+        );
+      }
     }
     return hit;
   }

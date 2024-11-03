@@ -15,6 +15,7 @@
     "vite-plugin-glsl": "^1.2.1"
   },
   "dependencies": {
+    "gsap": "^3.12.5",
     "lil-gui": "^0.19.0",
     "stats-js": "^1.0.1",
     "twgl.js": "^5.5.4"

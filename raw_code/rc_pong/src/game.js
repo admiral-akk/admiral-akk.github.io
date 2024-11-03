@@ -291,7 +291,7 @@ class MyGame {
       }
     }
 
-    if (!hit.hit) {
+    if (!hit.hit && getRandomInt({ max: 1, min: 0, steps: 100 }) > 0.8) {
       const back = Math.atan2(ball.velocity.x, ball.velocity.y) + Math.PI;
       const angle = back + getRandomInt({ max: 1, min: -1, steps: 100 });
       const posAngle =
@@ -339,10 +339,18 @@ class MyGame {
       const endDelta = endEndAngle - endStartAngle;
 
       const max = endDelta + startDelta;
+      const orthoAngle = Math.atan2(normal.x, normal.y);
 
-      for (let i = 0; i < 10; i++) {
-        const orthoAngle = Math.atan2(normal.x, normal.y);
+      const weight = Math.abs(normal.dot(startVelocity.clone().normalize()));
 
+      const count =
+        10 * weight +
+        getRandomInt({
+          max: 10 * weight,
+          min: 0,
+          steps: 11,
+        });
+      for (let i = 0; i < count; i++) {
         const delta = getRandomInt({
           max: Math.PI / 2,
           min: Math.PI / 3,

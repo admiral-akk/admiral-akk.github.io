@@ -180,6 +180,7 @@ class MyGame {
   constructor(data) {
     this.commands = [];
     this.data = data;
+    this.bounce = new Audio("./freejazz.wav");
     data.listeners.push(this);
     this.data.state.balls = this.setupBalls();
     this.data.state.ball = new Ball({
@@ -278,10 +279,7 @@ class MyGame {
       const paddle = paddles[i];
       const collision = ball.collides(paddle);
       if (collision) {
-        console.log(collision.collisionPoint);
-
         // check if the ball needs to be moved out
-
         const newPos = collision.collisionPoint
           .clone()
           .add(collision.normal.clone().mul(ball.mesh.scale));

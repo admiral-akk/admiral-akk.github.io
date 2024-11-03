@@ -3,7 +3,7 @@ class WindowManager {
     this.sizes = {
       width: window.innerWidth,
       height: window.innerHeight,
-      buffer: 20,
+      buffer: 0,
       aspect,
     };
     this.listeners = [];

@@ -126,6 +126,7 @@ class Entity {
             delta.sub(scale2).div(scale1);
             // inside the box
             if (delta.x <= 0 && delta.y <= 0) {
+              // figure out what the closest point of collision is
               return new Collision({ normal: rawDelta.normalize().mul(-1) });
             }
             // hits the top/bottom of the box

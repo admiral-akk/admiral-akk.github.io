@@ -209,7 +209,7 @@ class MyGame {
 
   setupBalls() {
     const balls = [];
-    for (var i = 0; i < 1000; i++) {
+    for (var i = 0; i < 100; i++) {
       const origin = new Vec(
         getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
         getRandomInt({ max: 0.95, min: -0.95, steps: 100 })
@@ -239,7 +239,7 @@ class MyGame {
   }
 
   moveBall(delta) {
-    const { ball, walls, paddles } = this.data.state;
+    const { ball, walls, paddles, particles } = this.data.state;
     ball.position.x += delta * ball.velocity.x;
     ball.position.y += delta * ball.velocity.y;
 
@@ -290,6 +290,32 @@ class MyGame {
         }
       }
     }
+
+    if (!hit.hit) {
+      const back = Math.atan2(ball.velocity.x, ball.velocity.y) + Math.PI;
+      const angle = back + getRandomInt({ max: 1, min: -1, steps: 100 });
+      const posAngle =
+        back +
+        getRandomInt({ max: Math.PI / 4, min: -Math.PI / 4, steps: 100 });
+      const posRad = ball.mesh.scale.len();
+      particles.push(
+        new Particle({
+          position: ball.position
+            .clone()
+            .add(
+              Vec.ONE2.clone().mul(
+                new Vec(Math.sin(posAngle), Math.cos(posAngle)).mul(posRad)
+              )
+            ),
+          color: ball.mesh.color.clone(),
+          size: 0.01,
+          velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
+            getRandomInt({ max: 0.1, min: 0.01, steps: 200 })
+          ),
+          totalTime: 0.2,
+        })
+      );
+    }
     return hit;
   }
 
@@ -335,7 +361,7 @@ class MyGame {
         particles.push(
           new Particle({
             position: ball.position.clone(),
-            color: new Vec(1, 1, 1, 1),
+            color: ball.mesh.color.clone(),
             size: 0.01,
             velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
               getRandomInt({ max: 1, min: 0.4, steps: 200 })
@@ -389,7 +415,6 @@ class MyGame {
           const p = particles[i];
           p.position.add(p.velocity.clone().mul(delta));
           p.timeToLive -= delta;
-          withLogging(() => console.log(p.timeToLive / p.totalTime));
           p.mesh.scale = Vec.ONE2.clone().mul(
             (p.size * p.timeToLive) / p.totalTime
           );

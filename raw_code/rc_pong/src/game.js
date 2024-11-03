@@ -1,6 +1,7 @@
 import { Collider, Entity, Mesh } from "./engine/entity";
 import { State, StateMachine } from "./utils/stateMachine";
 import { Vec } from "./utils/vector";
+import { withLogging } from "./utils/debug.js";
 
 // Input State Machine
 
@@ -150,14 +151,17 @@ class FloatingBall extends Entity {
 }
 
 class Particle extends Entity {
-  constructor({ position, color, size, velocity, timeToLive }) {
+  constructor({ position, color, size, velocity, totalTime, timeToLive }) {
     super({
       position,
       velocity,
       mesh: new Mesh("sphere", new Vec(size, size), color),
     });
     this.size = size;
-    this.timeToLive = timeToLive;
+    this.orginalColor = color.clone();
+    this.originalScale = size;
+    this.totalTime = totalTime;
+    this.timeToLive = totalTime;
   }
 }
 
@@ -247,6 +251,7 @@ class MyGame {
       if (collision) {
         if (ball.velocity.dot(collision.normal) < 0) {
           hit.startVelocity = ball.velocity.clone();
+          hit.normal = collision.normal;
           const ortho = Vec.Z3.clone().cross(collision.normal).normalize();
 
           ortho.mul(ortho.dot(ball.velocity));
@@ -265,6 +270,7 @@ class MyGame {
       if (collision) {
         if (ball.velocity.dot(collision.normal) < 0) {
           hit.startVelocity = ball.velocity.clone();
+          hit.normal = collision.normal;
           const ortho = Vec.Z3.clone().cross(collision.normal).normalize();
 
           ortho.mul(ortho.dot(ball.velocity));
@@ -287,10 +293,10 @@ class MyGame {
     return hit;
   }
 
-  spawnParticles({ startVelocity, endVelocity }) {
+  spawnParticles({ startVelocity, endVelocity, normal }) {
     const { ball, particles } = this.data.state;
 
-    if (endVelocity.normalize().dot(startVelocity.normalize()) > 0) {
+    if (endVelocity.normalize().dot(startVelocity.normalize()) > 0 || true) {
       const endEnd = endVelocity.clone().add(startVelocity).normalize();
       const startStart = endEnd.clone().mul(-1);
 
@@ -308,20 +314,33 @@ class MyGame {
 
       const max = endDelta + startDelta;
 
-      for (let i = 0; i < 100; i++) {
-        const t = getRandomInt({ max: max, min: 0, steps: 200 });
-        const base = t > startDelta ? endStartAngle : startStartAngle;
-        const offset = t > startDelta ? t - startDelta : t;
-        const angle = base + offset + Math.PI / 2;
+      for (let i = 0; i < 10; i++) {
+        const orthoAngle = Math.atan2(normal.x, normal.y);
+
+        const delta = getRandomInt({
+          max: Math.PI / 2,
+          min: Math.PI / 3,
+          steps: 200,
+        });
+
+        const angle =
+          orthoAngle +
+          delta *
+            getRandomInt({
+              max: 1,
+              min: -1,
+              steps: 2,
+            });
+
         particles.push(
           new Particle({
             position: ball.position.clone(),
             color: new Vec(1, 1, 1, 1),
             size: 0.01,
             velocity: new Vec(Math.sin(angle), Math.cos(angle)).mul(
-              getRandomInt({ max: 2, min: 1, steps: 200 })
+              getRandomInt({ max: 1, min: 0.4, steps: 200 })
             ),
-            timeToLive: 1,
+            totalTime: 0.4,
           })
         );
       }
@@ -370,6 +389,10 @@ class MyGame {
           const p = particles[i];
           p.position.add(p.velocity.clone().mul(delta));
           p.timeToLive -= delta;
+          withLogging(() => console.log(p.timeToLive / p.totalTime));
+          p.mesh.scale = Vec.ONE2.clone().mul(
+            (p.size * p.timeToLive) / p.totalTime
+          );
           if (p.timeToLive <= 0) {
             particles.splice(i, 1);
           }

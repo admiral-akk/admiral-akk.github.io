@@ -180,12 +180,12 @@ class MyGame {
   constructor(data) {
     this.commands = [];
     this.data = data;
-    this.bounce = new Audio("./freejazz.wav");
+    this.bounce = new Audio("./bounce.wav");
     data.listeners.push(this);
     this.data.state.balls = this.setupBalls();
     this.data.state.ball = new Ball({
       position: new Vec(0, 0),
-      velocity: new Vec(0.6, 0.8).mul(20),
+      velocity: new Vec(0.6, 0.8).mul(2),
     });
 
     this.data.state.paddles = [
@@ -211,7 +211,7 @@ class MyGame {
 
   setupBalls() {
     const balls = [];
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 400; i++) {
       const origin = new Vec(
         getRandomInt({ max: 1.2, min: -1.5, steps: 200 }),
         getRandomInt({ max: 0.95, min: -0.95, steps: 100 })
@@ -252,7 +252,14 @@ class MyGame {
       const collision = ball.collides(wall);
       if (collision) {
         // check if the ball needs to be moved out
-
+        const a = this.bounce.cloneNode();
+        a.playbackRate = getRandomInt({
+          max: 0.4,
+          min: 0.2,
+          steps: 100,
+        });
+        a.volume = 0;
+        a.play();
         const newPos = collision.collisionPoint
           .clone()
           .add(collision.normal.clone().mul(ball.mesh.scale));
@@ -311,7 +318,7 @@ class MyGame {
       }
     }
 
-    if (!hit.hit && getRandomInt({ max: 1, min: 0, steps: 100 }) > 0.8) {
+    if (!hit.hit && getRandomInt({ max: 1, min: 0, steps: 100 }) > 0.1) {
       const back = Math.atan2(ball.velocity.x, ball.velocity.y) + Math.PI;
       const angle = back + getRandomInt({ max: 1, min: -1, steps: 100 });
       const posAngle =
@@ -338,7 +345,7 @@ class MyGame {
     }
     if (hit.hit) {
       const tl = gsap.timeline();
-      const hitForce = Math.abs(ball.velocity.dot(hit.normal)).clamp(0, 1);
+      const hitForce = 1 - Math.abs(ball.velocity.dot(hit.normal)).clamp(0, 1);
       if (hit.normal.x !== 0) {
         tl.fromTo(
           ball.mesh.scale,

@@ -8,14 +8,127 @@ import { InputStateManager, MyGame } from "./game.js";
 import calculateQuadCascade from "./shaders/quadCascade.fs";
 import { withLogging } from "./utils/debug.js";
 import renderQuadCascade from "./shaders/renderQuadCascade.fs";
+import GUI from "lil-gui";
 
 var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
+const gui = new GUI();
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function applyEnvelope(node, value, points) {
+  for (let i = 0; i < points.length; i++) {
+    const [t, v] = points[i];
+    node[value].exponentialRampToValueAtTime(v, audioContext.currentTime + t);
+  }
+}
+
+const pianoEnv = (peak, length, start = 0.001, end = 0.001) => {
+  return [
+    [0, start],
+    [length / 10, peak],
+    [length / 5, peak / 2],
+    [length, end],
+  ];
+};
+
+const droneEnv = (peak, length, start = 0.001, end = 0.001) => {
+  return [
+    [0, start],
+    [length / 2, peak],
+    [length, end],
+  ];
+};
+
+const debug = {
+  osc: {
+    type: "sawtooth",
+    frequency: 100,
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 0.1,
+    release: 0.1,
+  },
+  filter: {
+    type: "lowpass",
+    frequency: 20,
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 0.1,
+    release: 0.1,
+  },
+  gain: {
+    gain: 1,
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 0.1,
+    release: 0.1,
+  },
+};
+
+const oscConfig = gui.addFolder("Osc");
+oscConfig.add(debug.osc, "type", ["sawtooth", "sine", "square", "triangle"]);
+oscConfig.add(debug.osc, "frequency", 20, 1000);
+oscConfig.add(debug.osc, "attack", 0, 1);
+oscConfig.add(debug.osc, "decay", 0, 1);
+oscConfig.add(debug.osc, "sustain", 0, 1);
+oscConfig.add(debug.osc, "release", 0, 1);
+
+const filterConfig = gui.addFolder("Filter");
+filterConfig.add(debug.filter, "type", [
+  "lowpass",
+  "allpass",
+  "bandpass",
+  "highpass",
+  "highshelf",
+  "lowshelf",
+]);
+filterConfig.add(debug.filter, "frequency", 20, 1000);
+filterConfig.add(debug.filter, "attack", 0, 1);
+filterConfig.add(debug.filter, "decay", 0, 1);
+filterConfig.add(debug.filter, "sustain", 0, 1);
+filterConfig.add(debug.filter, "release", 0, 1);
+
+const gainConfig = gui.addFolder("Gain");
+gainConfig.add(debug.gain, "gain", 0, 1);
+gainConfig.add(debug.gain, "attack", 0, 1);
+gainConfig.add(debug.gain, "decay", 0, 1);
+gainConfig.add(debug.gain, "sustain", 0, 1);
+gainConfig.add(debug.gain, "release", 0, 1);
+
+function play() {
+  var osc = audioContext.createOscillator();
+  var gainOsc = audioContext.createGain();
+  var filter = audioContext.createBiquadFilter();
+  applyEnvelope(osc, "frequency", []);
+  applyEnvelope(gainOsc, "gain", pianoEnv(1, 1, 1));
+  applyEnvelope(filter, "frequency", pianoEnv(120, 1, 20, 20));
+}
+function beep() {
+  var osc = audioContext.createOscillator();
+  var gainOsc = audioContext.createGain();
+  var filter = audioContext.createBiquadFilter();
+
+  osc.type = "triangle";
+
+  applyEnvelope(osc, "frequency", droneEnv(1000, 1, 1000, 1000));
+  applyEnvelope(gainOsc, "gain", pianoEnv(1, 1, 1));
+  applyEnvelope(filter, "frequency", pianoEnv(120, 1, 20, 20));
+  applyEnvelope(filter, "Q", pianoEnv(120, 1, -120, 120));
+  osc.connect(gainOsc);
+  gainOsc.connect(filter);
+  filter.connect(audioContext.destination);
+
+  osc.start(audioContext.currentTime);
+  osc.stop(audioContext.currentTime + 1);
+}
+
+export { beep };
+
 // Render Pipeline
 
 const gl = document.getElementById("webgl").getContext("webgl2");
+twgl.resizeCanvasToDisplaySize(gl.canvas);
 twgl.addExtensionsToContext(gl);
 
 function renderTo(
@@ -274,7 +387,7 @@ const cascadeQuadCalculate = twgl.createProgramInfo(gl, [
 const m4 = twgl.m4;
 const cascadeQuadRender = twgl.createProgramInfo(gl, [vs, renderQuadCascade]);
 
-function renderEntities(entities, buffer) {
+function renderEntities(entities, buffer, rescale) {
   if (entities.length === 0) {
     return;
   }
@@ -288,13 +401,13 @@ function renderEntities(entities, buffer) {
     const { position, mesh } = entity;
     const { scale, color } = mesh;
     const scaleM = m4.scaling([
-      scale.x / windowManager.sizes.aspect,
-      scale.y,
+      (rescale * scale.x) / windowManager.sizes.aspect,
+      rescale * scale.y,
       1,
     ]);
     const translation = m4.translation([
-      position.x / scale.x,
-      position.y / scale.y,
+      position.x / (rescale * scale.x),
+      position.y / (rescale * scale.y),
       0,
     ]);
     const mat = m4.multiply(scaleM, translation);
@@ -339,11 +452,11 @@ function renderEntities(entities, buffer) {
     entities.length
   );
 }
-function drawToBuffer(buffer, game) {
-  renderEntities([game.data.state.ball], buffer);
-  renderEntities(game.data.state.paddles, buffer);
-  renderEntities(game.data.state.balls, buffer);
-  renderEntities(game.data.state.particles, buffer);
+function drawToBuffer(buffer, game, scale = 1) {
+  renderEntities([game.data.state.ball], buffer, scale);
+  renderEntities(game.data.state.paddles, buffer, scale);
+  renderEntities(game.data.state.balls, buffer, scale);
+  renderEntities(game.data.state.particles, buffer, scale);
 }
 
 windowManager.listeners.push({
@@ -373,6 +486,7 @@ const saveImage = () => {
   toSave.lastRequest = Date.now();
 };
 
+windowManager.update();
 const width = 8 * 128;
 const height = width;
 const frameBuffers = {
@@ -473,6 +587,20 @@ const frameBuffers = {
     ],
     width,
     height
+  ),
+  spareFullSizeFinalRT: twgl.createFramebufferInfo(
+    gl,
+    [
+      {
+        internalFormat: gl.RGBA32F,
+        format: gl.RGBA,
+        mag: gl.LINEAR,
+        min: gl.LINEAR,
+        wrap: gl.CLAMP_TO_EDGE,
+      },
+    ],
+    gl.canvas.width,
+    gl.canvas.height
   ),
 };
 
@@ -699,12 +827,12 @@ function renderCasadeScene() {
     bufferInfo,
     {
       resolution: [
-        frameBuffers.spareQuadCascadeRT.width,
-        frameBuffers.spareQuadCascadeRT.height,
+        frameBuffers.spareFullSizeFinalRT.width,
+        frameBuffers.spareFullSizeFinalRT.height,
       ],
       tPrevCascade: frameBuffers.quadCascadeRT.attachments[0],
     },
-    frameBuffers.spareQuadCascadeFinalRT
+    frameBuffers.spareFullSizeFinalRT
   );
 }
 
@@ -812,11 +940,11 @@ function render(timeMillis) {
       break;
   }
 
-  drawToBuffer(frameBuffers.spareQuadCascadeFinalRT, game);
+  drawToBuffer(frameBuffers.spareFullSizeFinalRT, game);
 
   renderTo(gl, applyGamma, bufferInfo, {
     resolution: [gl.canvas.width, gl.canvas.height],
-    tPrev: frameBuffers.spareQuadCascadeFinalRT.attachments[0],
+    tPrev: frameBuffers.spareFullSizeFinalRT.attachments[0],
   });
 
   if (toSave.requested) {

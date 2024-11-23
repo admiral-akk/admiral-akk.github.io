@@ -1,0 +1,170 @@
+/* these are just to get the canvas right */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  outline: none;
+}
+
+.relative {
+  user-select: none;
+  position: relative;
+}
+
+.ui {
+  position: absolute /* needs to be important for fullscreen */ !important;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  container-type: inline-size;
+  container-name: ui;
+}
+
+html,
+body {
+  overflow: hidden;
+  background-color: black;
+}
+
+.lil-gui {
+  --background-color: #000;
+  --widget-color: #0af;
+  --padding: 5px;
+  --name-width: 65%;
+  --width: 600px;
+}
+
+/* font sizing */
+.container div {
+  font-size: 2cqi;
+  text-align: center;
+  container: ui;
+}
+
+.default-text-box-container {
+  background-color: transparent;
+}
+
+.text-box-container {
+  flex: 1;
+}
+
+.default-text-box {
+  background-color: transparent;
+}
+
+.text-box {
+  container: ui;
+}
+
+.default-ui-table {
+}
+
+.ui-table {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.f-xs {
+  font-size: 0.5cqi;
+  text-align: center;
+}
+
+.f-s {
+  font-size: 1cqi;
+  text-align: center;
+}
+
+.f-m {
+  font-size: 3cqi;
+  text-align: center;
+}
+
+.f-l {
+  font-size: 3cqi;
+  text-align: center;
+}
+
+.f-xl {
+  font-size: 4cqi;
+  text-align: center;
+}
+
+.ability-number {
+  font-size: 1.5cqi;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+}
+.background-grey {
+  background-color: darkgray;
+}
+
+.root-level-ui {
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+/* c for container */
+.row-c {
+  align-items: center;
+  justify-content: space-around;
+  display: flex;
+  background-color: darkgray;
+}
+
+.column-c {
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  display: flex;
+  background-color: darkgray;
+}
+
+/* ui disables pointer events to allow the canvas to accept them */
+.targetable {
+  pointer-events: auto;
+}
+
+.commandButton {
+  pointer-events: auto;
+}
+
+.selected {
+  background-color: #c58f09;
+}
+
+.hovered {
+  border: solid;
+  border-color: #fbf28d;
+}
+
+.ability {
+  position: relative;
+  aspect-ratio: 1;
+  background-size: 100% 100%;
+}
+
+.stat {
+  aspect-ratio: 1;
+  position: absolute;
+  background-color: transparent;
+  background-size: 100% 100%;
+  width: 40%;
+  height: 40%;
+}
+
+.default-image {
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}

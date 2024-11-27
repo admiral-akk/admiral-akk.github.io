@@ -1,4 +1,5 @@
 import GUI from "lil-gui";
+import "../utils/array.js";
 
 const stateString = "state";
 const configString = "config";

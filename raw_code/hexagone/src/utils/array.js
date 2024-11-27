@@ -20,3 +20,5 @@ export function addCustomArrayMethods() {
     return true;
   };
 }
+
+addCustomArrayMethods();

@@ -4,7 +4,6 @@ import { DataManager } from "./engine/data.js";
 import Stats from "stats-js";
 import * as twgl from "twgl.js";
 import { InputManager } from "./engine/input.js";
-import { InputStateManager, MyGame } from "./game.js";
 import calculateQuadCascade from "./shaders/quadCascade.fs";
 import { withLogging } from "./utils/debug.js";
 import renderQuadCascade from "./shaders/renderQuadCascade.fs";
@@ -26,9 +25,6 @@ function applyEnvelope(node, value, points) {
 }
 
 function play() {
-  audioContext.close();
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
   const debug = {
     osc: {
       type: data.addEnum(
@@ -51,7 +47,7 @@ function play() {
         ["lowpass", "allpass", "bandpass", "highpass", "highshelf", "lowshelf"],
         () => play()
       ).value,
-      frequency: data.addNumber("Filter - Frequency", 20, 0, 1000, 1, () =>
+      frequency: data.addNumber("Filter - Frequency", 20, 20, 1000, 1, () =>
         play()
       ).value,
       attack: data.addNumber("Filter - Attack", 0.1, 0.01, 0.4, 0.01, () =>
@@ -78,9 +74,14 @@ function play() {
       decay: data.addNumber("Gain - Decay", 0.1, 0.01, 0.4, 0.01, () => play())
         .value,
     },
+    overall: {
+      length: data.addNumber("Overall - Length", 1, 0.1, 3, 0.01, () => play())
+        .value,
+    },
   };
 
   const osc = audioContext.createOscillator();
+  const oscGain = audioContext.createGain();
   const mixer = audioContext.createGain();
 
   const filter = audioContext.createBiquadFilter();
@@ -92,21 +93,23 @@ function play() {
   const compressorNode = audioContext.createDynamicsCompressor();
   const endGain = audioContext.createGain();
 
-  osc.connect(mixer);
+  osc.connect(oscGain);
+  oscGain.connect(mixer);
   mixer.connect(skipFilterGain);
   mixer.connect(filter);
   filter.connect(postFilterGain);
   skipFilterGain.connect(delay);
   postFilterGain.connect(delay);
-  delay.connect(finalGain);
   delay.connect(delayFeedbackGain);
   delayFeedbackGain.connect(mixer);
-  finalGain.connect(compressorNode);
-  compressorNode.connect(endGain);
+
+  delay.connect(finalGain);
+  finalGain.connect(endGain);
   endGain.connect(audioContext.destination);
 
   const freq = 256 * Math.pow(2, (debug.osc.frequency - 48) / 12);
 
+  osc.frequency.setValueAtTime(freq, 0);
   applyEnvelope(osc, "frequency", [
     [debug.osc.attack, freq],
     [debug.osc.attack + debug.osc.decay, 0.001],
@@ -116,8 +119,12 @@ function play() {
   mixer.gain.setValueAtTime(1, audioContext.currentTime);
 
   filter.type = debug.filter.type;
+  filter.frequency.setValueAtTime(
+    debug.filter.frequency,
+    audioContext.currentTime
+  );
   applyEnvelope(filter, "frequency", [
-    [0, 0.1],
+    [0, 10000],
     [debug.filter.attack, debug.filter.frequency],
     [debug.filter.attack + debug.filter.decay, 0.001],
   ]);
@@ -125,24 +132,42 @@ function play() {
   postFilterGain.gain.value = debug.filter.strength;
   skipFilterGain.gain.value = 1 - postFilterGain.gain.value;
 
-  const length = debug.gain.attack + debug.gain.decay;
-  applyEnvelope(finalGain, "gain", [
+  applyEnvelope(oscGain, "gain", [
     [0, 0.001],
     [debug.gain.attack, debug.gain.gain],
-    [length, 0.001],
+    [debug.gain.attack + debug.gain.decay, 0.001],
   ]);
 
   delay.delayTime.value = debug.delay.time;
   delayFeedbackGain.gain.value = debug.delay.gain;
 
+  const length = debug.overall.length;
   endGain.gain.setValueAtTime(1, audioContext.currentTime);
-  endGain.gain.setValueAtTime(1, audioContext.currentTime + length - 0.043);
+  endGain.gain.exponentialRampToValueAtTime(
+    1,
+    audioContext.currentTime + length - 0.4
+  );
   endGain.gain.exponentialRampToValueAtTime(
     0.0001,
     audioContext.currentTime + length - 0.013
   );
+
   osc.start(audioContext.currentTime);
   osc.stop(audioContext.currentTime + length);
+  console.log(osc.context);
+  osc.onended = () => {
+    osc.disconnect();
+    oscGain.disconnect();
+    mixer.disconnect();
+    filter.disconnect();
+    postFilterGain.disconnect();
+    skipFilterGain.disconnect();
+    delay.disconnect();
+    delayFeedbackGain.disconnect();
+    finalGain.disconnect();
+    endGain.disconnect();
+    osc.disconnect();
+  };
 }
 
 play();
@@ -162,12 +187,6 @@ const windowManager = new WindowManager(2);
 // Input handler
 
 const input = new InputManager(windowManager);
-
-const inputState = new InputStateManager();
-
-// Game
-
-const game = new MyGame(data);
 
 // Data Storage Layer
 
@@ -205,16 +224,16 @@ class TimeManager {
 
 const time = new TimeManager({ fps: 60 });
 
+const toSave = { requested: false };
+
 function render() {
   stats.begin();
   windowManager.update();
   const state = input.getState();
-  inputState.update(game, state);
   if ((state["control"] || state["meta"]) && state["s"]) {
     toSave.requested = true;
   }
 
-  game.update(time.getDeltaTime() / 1000);
   twgl.resizeCanvasToDisplaySize(gl.canvas);
 
   setTimeout(() => {

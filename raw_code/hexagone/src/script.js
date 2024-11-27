@@ -37,30 +37,12 @@ function play() {
         ["sawtooth", "sine", "square", "triangle"],
         () => play()
       ).value,
-      frequency: data.addNumber({
-        displayName: "Osc - Frequency",
-        defaultValue: 48,
-        min: 0,
-        max: 96,
-        step: 1,
-        callback: () => play(),
-      }).value,
-      attack: data.addNumber({
-        displayName: "Osc - Attack",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      decay: data.addNumber({
-        displayName: "Osc - Decay",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
+      frequency: data.addNumber("Osc - Frequency", 48, 0, 96, 1, () => play())
+        .value,
+      attack: data.addNumber("Osc - Attack", 0.1, 0.01, 0.4, 0.01, () => play())
+        .value,
+      decay: data.addNumber("Osc - Decay", 0.1, 0.01, 0.4, 0.01, () => play())
+        .value,
     },
     filter: {
       type: data.addEnum(
@@ -69,82 +51,32 @@ function play() {
         ["lowpass", "allpass", "bandpass", "highpass", "highshelf", "lowshelf"],
         () => play()
       ).value,
-      frequency: data.addNumber({
-        displayName: "Filter - Frequency",
-        defaultValue: 20,
-        min: 0,
-        max: 1000,
-        step: 1,
-        callback: () => play(),
-      }).value,
-      attack: data.addNumber({
-        displayName: "Filter - Attack",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      decay: data.addNumber({
-        displayName: "Filter - Decay",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      strength: data.addNumber({
-        displayName: "Filter - Strength",
-        defaultValue: 0.5,
-        min: 0.0,
-        max: 1,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
+      frequency: data.addNumber("Filter - Frequency", 20, 0, 1000, 1, () =>
+        play()
+      ).value,
+      attack: data.addNumber("Filter - Attack", 0.1, 0.01, 0.4, 0.01, () =>
+        play()
+      ).value,
+      decay: data.addNumber("Filter - Decay", 0.1, 0.01, 0.4, 0.01, () =>
+        play()
+      ).value,
+      strength: data.addNumber("Filter - Strength", 0.5, 0.0, 1, 0.01, () =>
+        play()
+      ).value,
     },
     delay: {
-      time: data.addNumber({
-        displayName: "Delay - Time",
-        defaultValue: 0.2,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      gain: data.addNumber({
-        displayName: "Delay - Gain",
-        defaultValue: 0.3,
-        min: 0.0,
-        max: 1,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
+      time: data.addNumber("Delay - Time", 0.2, 0.01, 0.4, 0.01, () => play())
+        .value,
+      gain: data.addNumber("Delay - Gain", 0.3, 0.0, 1, 0.01, () => play())
+        .value,
     },
     gain: {
-      gain: data.addNumber({
-        displayName: "Gain - Gain",
-        defaultValue: 1,
-        min: 0.0,
-        max: 1,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      attack: data.addNumber({
-        displayName: "Gain - Attack",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
-      decay: data.addNumber({
-        displayName: "Gain - Decay",
-        defaultValue: 0.1,
-        min: 0.01,
-        max: 0.4,
-        step: 0.01,
-        callback: () => play(),
-      }).value,
+      gain: data.addNumber("Gain - Gain", 1, 0.0, 1, 0.01, () => play()).value,
+      attack: data.addNumber("Gain - Attack", 0.1, 0.01, 0.4, 0.01, () =>
+        play()
+      ).value,
+      decay: data.addNumber("Gain - Decay", 0.1, 0.01, 0.4, 0.01, () => play())
+        .value,
     },
   };
 

@@ -39,14 +39,14 @@ class DataManager {
     return this.config[displayName];
   }
 
-  addNumber({
+  addNumber(
     displayName,
     defaultValue,
     min = null,
     max = null,
     step = null,
-    callback = null,
-  }) {
+    callback = null
+  ) {
     if (!this.config[displayName]) {
       const existingValue =
         this.serializedConfig[displayName]?.value ?? defaultValue;

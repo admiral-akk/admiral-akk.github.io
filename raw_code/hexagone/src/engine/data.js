@@ -21,10 +21,9 @@ class DataManager {
     // load in the local data, if any
     this.readData();
     this.addButton({ name: "Clear Data", fn: () => this.clearData() });
-    gui.hide();
   }
 
-  addEnum({ displayName, defaultValue, options, callback = null }) {
+  addEnum(displayName, defaultValue, options, callback = null) {
     if (!this.config[displayName]) {
       const existingValue =
         this.serializedConfig[displayName]?.value ?? defaultValue;

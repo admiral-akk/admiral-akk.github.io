@@ -15,7 +15,7 @@ class DataManager {
   init() {
     const gui = new GUI();
 
-    this.variables = gui.addFolder("Variables");
+    this.variables = { value: gui.addFolder("Variables") };
     this.buttons = gui.addFolder("Buttons");
 
     // load in the local data, if any
@@ -87,7 +87,7 @@ class DataManager {
         defaultValue: defaultValue,
         value: existingValue,
       };
-      this.variables
+      this.variables.value
         .addColor(this.config[displayName], "value")
         .name(displayName)
         .onChange((v) => {
@@ -109,6 +109,19 @@ class DataManager {
     this.buttons.add(s, name);
   }
 
+  getFolder(key) {
+    var currFolder = this.variables;
+    const structure = key.split(" - ");
+    for (let i = 0; i < structure.length - 1; i++) {
+      const name = structure[i];
+      if (!(name in currFolder)) {
+        currFolder[name] = { value: currFolder.value.addFolder(name) };
+      }
+      currFolder = currFolder[name];
+    }
+    return currFolder.value;
+  }
+
   addConfigData(key, callback) {
     const {
       minOrOptions = null,
@@ -116,9 +129,11 @@ class DataManager {
       step = null,
       name,
     } = this.config[key];
-    this.variables
+
+    const shortName = key.split(" - ").peek();
+    this.getFolder(name)
       .add(this.config[key], "value", minOrOptions, max, step)
-      .name(name)
+      .name(shortName)
       .onChange((v) => {
         this.saveData();
         this.notify();
@@ -151,7 +166,7 @@ class DataManager {
 
   saveData() {
     //localStorage.setItem(stateString, JSON.stringify(this.state));
-    //localStorage.setItem(configString, JSON.stringify(this.config));
+    localStorage.setItem(configString, JSON.stringify(this.config));
   }
 
   clearData() {

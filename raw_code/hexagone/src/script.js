@@ -25,6 +25,12 @@ editor.on("nodeCreated", function (id) {
     case "envelope":
       audioNodes[id] = new Envelope();
       break;
+    case "filter":
+      audioNodes[id] = audioContext.createBiquadFilter();
+      break;
+    case "noise":
+      audioNodes[id] = new NoiseNode();
+      break;
     default:
       break;
   }
@@ -46,6 +52,75 @@ editor.on("moduleCreated", function (name) {
 editor.on("moduleChanged", function (name) {
   console.log("Module Changed " + name);
 });
+
+class NoiseNode extends AudioBufferSourceNode {
+  constructor() {
+    super(audioContext);
+    const bufferSize = 2 * audioContext.sampleRate;
+    const noiseBuffer = audioContext.createBuffer(
+      1,
+      bufferSize,
+      audioContext.sampleRate
+    );
+
+    this.type = "white";
+    this.buffer = noiseBuffer;
+    this.loop = true;
+
+    this.regenerateBuffer();
+    this.start(0);
+  }
+
+  regenerateBuffer() {
+    // https://noisehack.com/generate-noise-web-audio-api/
+    const output = this.buffer.getChannelData(0);
+    const bufferSize = 2 * audioContext.sampleRate;
+    switch (this.type) {
+      case "pink":
+        var b0, b1, b2, b3, b4, b5, b6;
+        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+        for (var i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.969 * b2 + white * 0.153852;
+          b3 = 0.8665 * b3 + white * 0.3104856;
+          b4 = 0.55 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.016898;
+          output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+          output[i] *= 0.11; // (roughly) compensate for gain
+          b6 = white * 0.115926;
+        }
+        break;
+      case "brown":
+        var lastOut = 0;
+        for (var i = 0; i < bufferSize; i++) {
+          var white = Math.random() * 2 - 1;
+          output[i] = (lastOut + 0.02 * white) / 1.02;
+          lastOut = output[i];
+          output[i] *= 3.5; // (roughly) compensate for gain
+        }
+        break;
+      case "white":
+      default:
+        for (var i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+        break;
+    }
+  }
+
+  getInput(key) {
+    return this;
+  }
+
+  updateData(data) {
+    if (this.type != data.type) {
+      this.type = data.type;
+      this.regenerateBuffer();
+    }
+  }
+}
 
 class Envelope extends GainNode {
   constructor() {
@@ -93,7 +168,7 @@ class Envelope extends GainNode {
   }
 
   getInput(key) {
-    return this.offset;
+    return this;
   }
 
   updateData(data) {
@@ -105,6 +180,16 @@ class Envelope extends GainNode {
   }
 }
 
+BiquadFilterNode.prototype.getInput = function (key) {
+  switch (key) {
+    case "input_1":
+      return this;
+    case "input_2":
+    default:
+      return this.frequency;
+  }
+};
+
 AudioContext.prototype.getInput = function (key) {
   switch (key) {
     default:
@@ -113,7 +198,6 @@ AudioContext.prototype.getInput = function (key) {
 };
 
 GainNode.prototype.getInput = function (key) {
-  console.log(key);
   switch (key) {
     case "input_1":
       return this;
@@ -137,6 +221,10 @@ OscillatorNode.prototype.updateData = function (data) {
 };
 GainNode.prototype.updateData = function (data) {
   this.gain.value = data.gain;
+};
+BiquadFilterNode.prototype.updateData = function (data) {
+  this.type = data.type;
+  this.frequency.value = data.frequency;
 };
 
 editor.on("connectionCreated", function (connection) {
@@ -308,13 +396,73 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
       `;
       editor.addNode(
         "envelope",
-        1,
+        0,
         1,
         pos_x,
         pos_y,
         "envelope",
         { ramptype: "exp", attack: 1, peak: 1, decay: 1 },
         env
+      );
+      break;
+
+    case "noise":
+      var noise = `
+        <div>
+          <div class="title-box"><i class="fab fa-telegram-plane"></i> Noise</div>
+          <div class="box">
+            <p>Select type</p>
+            <select df-type>
+              <option value="white">White</option>
+              <option value="pink">Pink</option>
+              <option value="brown">Brown</option>
+            </select>
+          </div>
+        </div>
+        `;
+      editor.addNode(
+        "noise",
+        0,
+        1,
+        pos_x,
+        pos_y,
+        "noise",
+        { type: "white" },
+        noise
+      );
+      break;
+
+    case "filter":
+      var filter = `
+      <div>
+        <div class="title-box"><i class="fab fa-telegram-plane"></i> Filter</div>
+        <div class="box">
+          <p>Select type</p>
+          <select df-type>
+            <option value="lowpass">Low Pass</option>
+            <option value="highpass">High Pass</option>
+            <option value="bandpass">Band Pass</option>
+            <option value="lowshelf">Low Shelf</option>
+            <option value="peaking">Peaking</option>
+            <option value="notch">Notch</option>
+            <option value="allpass">All Pass</option>
+          </select>
+        </div>
+        <div class="box">
+          <p>Frequency</p>
+          <input type="number" df-frequency>
+        </div>
+      </div>
+      `;
+      editor.addNode(
+        "filter",
+        2,
+        1,
+        pos_x,
+        pos_y,
+        "filter",
+        { type: "lowpass", frequency: 200 },
+        filter
       );
       break;
 

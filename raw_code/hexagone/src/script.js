@@ -10,6 +10,7 @@ const audioNodes = new Map();
 editor.on("nodeCreated", function (id) {
   console.log("Node created " + id);
   const node = editor.getNodeFromId(id);
+  console.log(node.class);
   switch (node.class) {
     case "oscillator":
       audioNodes[id] = audioContext.createOscillator();
@@ -17,6 +18,12 @@ editor.on("nodeCreated", function (id) {
       break;
     case "output":
       audioNodes[id] = audioContext;
+      break;
+    case "gain":
+      audioNodes[id] = audioContext.createGain();
+      break;
+    case "envelope":
+      audioNodes[id] = new Envelope();
       break;
     default:
       break;
@@ -40,27 +47,96 @@ editor.on("moduleChanged", function (name) {
   console.log("Module Changed " + name);
 });
 
-AudioContext.prototype.getInputName = (key) => {
+class Envelope extends GainNode {
+  constructor() {
+    super(audioContext);
+    this.constantNode = audioContext.createConstantSource();
+    this.constantNode.connect(this);
+    this.constantNode.start();
+    this.data = {
+      ramptype: "exp",
+      peak: 1,
+      attack: 1,
+      decay: 1,
+    };
+  }
+
+  applyEnvelope() {
+    var setValue;
+    var currentTime = audioContext.currentTime;
+    console.log(this.data);
+    this.gain.cancelScheduledValues(currentTime + 1);
+    switch (this.data.ramptype) {
+      case "linear":
+        setValue = (val, t) => this.gain.linearRampToValueAtTime(val, t);
+        break;
+      case "instant":
+        setValue = (val, t) => this.gain.setValueAtTime(val, t);
+        break;
+      default:
+      case "exp":
+        setValue = (val, t) => this.gain.exponentialRampToValueAtTime(val, t);
+        break;
+    }
+    const addStep = (val, deltaTime) => {
+      if (deltaTime > 0) {
+        currentTime += deltaTime;
+        setValue(val, currentTime);
+      }
+    };
+    if (this.data.attack > 0) {
+      this.gain.setValueAtTime(0.001, currentTime);
+    }
+
+    addStep(this.data.peak, this.data.attack);
+    addStep(0.001, this.data.decay);
+  }
+
+  getInput(key) {
+    return this.offset;
+  }
+
+  updateData(data) {
+    this.data.ramptype = data.ramptype;
+    this.data.peak = Number(data.peak);
+    this.data.attack = Number(data.attack);
+    this.data.decay = Number(data.decay);
+    this.applyEnvelope();
+  }
+}
+
+AudioContext.prototype.getInput = function (key) {
   switch (key) {
     default:
-      return "destination";
+      return this.destination;
+  }
+};
+
+GainNode.prototype.getInput = function (key) {
+  console.log(key);
+  switch (key) {
+    case "input_1":
+      return this;
+    case "input_2":
+    default:
+      return this.gain;
+  }
+};
+
+OscillatorNode.prototype.getInput = function (key) {
+  switch (key) {
+    default:
+      return this.frequency;
   }
 };
 
 AudioContext.prototype.updateData = () => {};
-
-OscillatorNode.prototype.getInputName = (key) => {
-  switch (key) {
-    case "input_1":
-      return "frequency";
-    default:
-      return "frequency";
-  }
-};
-
 OscillatorNode.prototype.updateData = function (data) {
   this.type = data.type;
-  //this.frequency.value = data.frequency;
+  this.frequency.value = data.frequency;
+};
+GainNode.prototype.updateData = function (data) {
+  this.gain.value = data.gain;
 };
 
 editor.on("connectionCreated", function (connection) {
@@ -70,10 +146,7 @@ editor.on("connectionCreated", function (connection) {
   const sendingNode = audioNodes[connection.output_id];
   const recievingNode = audioNodes[connection.input_id];
   if (sendingNode && recievingNode) {
-    const targetName = recievingNode.getInputName(connection.input_class);
-    console.log(sendingNode, recievingNode);
-    console.log(targetName);
-    sendingNode.connect(recievingNode[targetName]);
+    sendingNode.connect(recievingNode.getInput(connection.input_class));
   }
 });
 
@@ -89,6 +162,7 @@ editor.on("mouseMove", function (position) {
 
 editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
+  console.log(data, audioNodes[id]);
   audioNodes[id].updateData(data);
 });
 
@@ -192,6 +266,56 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
       </div>
       `;
       editor.addNode("output", 1, 0, pos_x, pos_y, "output", {}, output);
+      break;
+    case "gain":
+      var gain = `
+        <div>
+          <div class="title-box"><i class="fas fa-at"></i> Gain</div>
+      <div class="box">
+        <p>Gain</p>
+        <input type="number" df-gain>
+      </div>
+        </div>
+        `;
+      editor.addNode("gain", 2, 1, pos_x, pos_y, "gain", { gain: 1 }, gain);
+      break;
+
+    case "env":
+      var env = `
+      <div>
+        <div class="title-box"><i class="fab fa-telegram-plane"></i> Envelope</div>
+        <div class="box">
+          <p>Select type</p>
+          <select df-ramptype>
+            <option value="exp">Exponential</option>
+            <option value="linear">Linear</option>
+            <option value="instant">Instant</option>
+          </select>
+        </div>
+        <div class="box">
+          <p>Attack</p>
+          <input type="number" df-attack>
+        </div>
+        <div class="box">
+          <p>Decay</p>
+          <input type="number" df-decay>
+        </div>
+        <div class="box">
+          <p>Peak</p>
+          <input type="number" df-peak>
+        </div>
+      </div>
+      `;
+      editor.addNode(
+        "envelope",
+        1,
+        1,
+        pos_x,
+        pos_y,
+        "envelope",
+        { ramptype: "exp", attack: 1, peak: 1, decay: 1 },
+        env
+      );
       break;
 
     case "osc":

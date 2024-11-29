@@ -5,7 +5,7 @@ editor.reroute = true;
 editor.start();
 
 // Events!
-const audioNodes = new Map();
+const audioNodes = {};
 
 editor.on("nodeCreated", function (id) {
   console.log("Node created " + id);
@@ -737,7 +737,18 @@ function changeMode(option) {
   }
 }
 
+function trigger() {
+  console.log(audioNodes);
+  for (const [_, audioNode] of Object.entries(audioNodes)) {
+    console.log(audioNode);
+    if (audioNode.applyEnvelope) {
+      audioNode.applyEnvelope();
+    }
+  }
+}
+
 window.drop = drop;
 window.drag = drag;
 window.allowDrop = allowDrop;
 window.editor = editor;
+window.trigger = trigger;

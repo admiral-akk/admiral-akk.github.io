@@ -6,6 +6,62 @@ editor.start();
 
 // Events!
 const audioNodes = new Map();
+const stateString = "synth";
+
+function readData() {
+  const state = localStorage.getItem(stateString);
+  if (state && state != "undefined") {
+    const { data } = JSON.parse(state).drawflow.Home;
+
+    const connectionsMap = {};
+    const idMap = {};
+
+    for (const [_, value] of Object.entries(data)) {
+      const { id, name, data, html, inputs, outputs, pos_x, pos_y } = value;
+
+      console.log(
+        value,
+        Object.keys(inputs).length,
+        Object.keys(outputs).length
+      );
+      const newId = editor.addNode(
+        name,
+        Object.keys(inputs).length,
+        Object.keys(outputs).length,
+        pos_x,
+        pos_y,
+        value.class,
+        data,
+        html
+      );
+
+      idMap[id] = newId;
+      connectionsMap[newId] = {};
+      for (const [outputName, value] of Object.entries(outputs)) {
+        connectionsMap[newId][outputName] = [];
+        for (let i = 0; i < value.connections.length; i++) {
+          connectionsMap[newId][outputName].push(value.connections[i]);
+        }
+      }
+    }
+
+    for (const [newId, connections] of Object.entries(connectionsMap)) {
+      for (const [outputName, connectionList] of Object.entries(connections)) {
+        for (let i = 0; i < connectionList.length; i++) {
+          const { node, output } = connectionList[i];
+          editor.addConnection(newId, idMap[node], outputName, output);
+        }
+      }
+    }
+  }
+}
+
+function saveData() {
+  localStorage.setItem(stateString, JSON.stringify(editor.export()));
+}
+
+var exportdata = editor.export();
+editor.import(exportdata);
 
 function draw() {
   const timestamp = Date.now();
@@ -326,6 +382,7 @@ editor.on("connectionCreated", function (connection) {
   if (sendingNode && recievingNode) {
     sendingNode.connect(recievingNode.getInput(connection.input_class));
   }
+  saveData();
 });
 
 editor.on("connectionRemoved", function (connection) {
@@ -334,6 +391,7 @@ editor.on("connectionRemoved", function (connection) {
   audioNodes[connection.output_id]?.disconnect(
     audioNodes[connection.input_id].getInput(connection.input_class)
   );
+  saveData();
 });
 
 editor.on("mouseMove", function (position) {
@@ -344,6 +402,7 @@ editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
   console.log(data, audioNodes[id]);
   audioNodes[id].updateData(data);
+  saveData();
 });
 
 editor.on("nodeMoved", function (id) {
@@ -844,4 +903,5 @@ window.allowDrop = allowDrop;
 window.editor = editor;
 window.trigger = trigger;
 
+readData();
 requestAnimationFrame(draw);

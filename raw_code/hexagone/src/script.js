@@ -35,6 +35,8 @@ function readData() {
         html
       );
 
+      audioNodes[newId].updateData(data);
+
       idMap[id] = newId;
       connectionsMap[newId] = {};
       for (const [outputName, value] of Object.entries(outputs)) {
@@ -64,6 +66,7 @@ var exportdata = editor.export();
 editor.import(exportdata);
 
 function draw() {
+  audioContext.resume();
   const timestamp = Date.now();
   for (const [_, audioNode] of Object.entries(audioNodes)) {
     const canvas = audioNode.canvas;
@@ -122,9 +125,6 @@ function draw() {
 }
 
 editor.on("nodeCreated", function (id) {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
   console.log("Node created " + id);
   const node = editor.getNodeFromId(id);
 

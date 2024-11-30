@@ -1,16 +1,77 @@
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 editor.reroute = true;
 editor.start();
 
 // Events!
-const audioNodes = {};
+const audioNodes = new Map();
+
+function draw() {
+  const timestamp = Date.now();
+  for (const [_, audioNode] of Object.entries(audioNodes)) {
+    const canvas = audioNode.canvas;
+    const analyser = audioNode.analyser;
+    if (canvas && analyser) {
+      const canvasCtx = canvas.getContext("2d");
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      audioNode.history.push([timestamp, dataArray]);
+
+      const windowSize = 500;
+
+      audioNode.history = audioNode.history.filter(
+        ([time, _]) => time > timestamp - windowSize
+      );
+
+      const bufferTimeLength =
+        (1000 * analyser.frequencyBinCount) / audioContext.sampleRate;
+      const sampleTick = bufferTimeLength / analyser.frequencyBinCount;
+
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      canvasCtx.fillStyle = "rgb(200 200 200)";
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = "rgb(0 0 0)";
+      canvasCtx.beginPath();
+      let x = 0;
+      let time = audioNode.history[0][0] - bufferTimeLength;
+      for (let i = 0; i < audioNode.history.length; i++) {
+        const data = audioNode.history[i][1];
+
+        for (let j = 0; j < data.length; j++) {
+          const v = data[j] / 128.0;
+          const y = v * (canvas.height / 2);
+
+          if (i === 0 && j == 0) {
+            canvasCtx.moveTo(canvas.width * x, y);
+          } else {
+            canvasCtx.lineTo(canvas.width * x, y);
+          }
+
+          x += sampleTick / windowSize;
+          time += sampleTick;
+          if (time > audioNode.history?.[i + 1]?.[0] - bufferTimeLength) {
+            break;
+          }
+        }
+      }
+      canvasCtx.stroke();
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
 
 editor.on("nodeCreated", function (id) {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
   console.log("Node created " + id);
   const node = editor.getNodeFromId(id);
-  console.log(node.class);
+
   switch (node.class) {
     case "oscillator":
       audioNodes[id] = audioContext.createOscillator();
@@ -34,6 +95,34 @@ editor.on("nodeCreated", function (id) {
     default:
       break;
   }
+
+  switch (node.class) {
+    case "oscillator":
+    case "gain":
+    case "envelope":
+    case "filter":
+    case "noise":
+      const htmlBody = document
+        .getElementById(`node-${id}`)
+        .getElementsByClassName("drawflow_content_node")[0].children[0];
+      const canvas = document.createElement("canvas");
+      canvas.width = 180;
+      canvas.height = 180;
+      htmlBody.appendChild(canvas);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteTimeDomainData(dataArray);
+
+      audioNodes[id].connect(analyser);
+
+      audioNodes[id].canvas = canvas;
+      audioNodes[id].analyser = analyser;
+      audioNodes[id].history = [];
+    default:
+      break;
+  }
 });
 
 editor.on("nodeRemoved", function (id) {
@@ -53,6 +142,7 @@ editor.on("moduleChanged", function (name) {
   console.log("Module Changed " + name);
 });
 
+console.log("sample rate", audioContext.sampleRate);
 class NoiseNode extends AudioBufferSourceNode {
   constructor() {
     super(audioContext);
@@ -241,7 +331,9 @@ editor.on("connectionCreated", function (connection) {
 editor.on("connectionRemoved", function (connection) {
   console.log("Connection removed");
   console.log(connection);
-  audioNodes[connection.output_id]?.disconnect();
+  audioNodes[connection.output_id]?.disconnect(
+    audioNodes[connection.input_id].getInput(connection.input_class)
+  );
 });
 
 editor.on("mouseMove", function (position) {
@@ -738,7 +830,6 @@ function changeMode(option) {
 }
 
 function trigger() {
-  console.log(audioNodes);
   for (const [_, audioNode] of Object.entries(audioNodes)) {
     console.log(audioNode);
     if (audioNode.applyEnvelope) {
@@ -752,3 +843,5 @@ window.drag = drag;
 window.allowDrop = allowDrop;
 window.editor = editor;
 window.trigger = trigger;
+
+requestAnimationFrame(draw);

@@ -1,6 +1,4 @@
-# four.js.base
-
-Iterating on some 3.js based engine stuff.
+Just messing about with some projects, and keeping links below of resources I found useful.
 
 Credits
 
@@ -32,3 +30,4 @@ Learning Resources
 - SimonDev: https://www.youtube.com/@simondev758/videos
 - Jaume Sanchez (cross-hatching): https://spite.github.io/sketch/
 - Radiance Cascades: https://jason.today/gi.html
+- Synth Secrets: https://www.soundonsound.com/synthesizers/synth-secrets

@@ -1,7 +1,7 @@
 {
-  "name": "hexagone",
+  "name": "byos",
   "version": "1.0.0",
-  "description": "Hexagon grid movement",
+  "description": "Build Your Own Synth",
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173",

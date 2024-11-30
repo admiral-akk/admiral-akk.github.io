@@ -15,7 +15,7 @@ export default {
     commonjsOptions: {
       include: [/linked-dep/, /node_modules/],
     },
-    outDir: "../../../hexagone", // Output in the dist/ folder
+    outDir: "../../../byos", // Output in the dist/ folder
     emptyOutDir: true, // Empty the folder first
     sourcemap: true, // Add sourcemap
   },

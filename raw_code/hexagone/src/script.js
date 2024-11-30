@@ -8,8 +8,26 @@ editor.start();
 const audioNodes = new Map();
 const stateString = "synth";
 
+function encodeDataInUrl(data) {
+  const url = new URL(window.location.href);
+  const d = window.btoa(JSON.stringify(data));
+  url.searchParams.set("d", d);
+  window.history.pushState(null, "", url.toString());
+}
+
+function decodeDataFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const myData = urlParams.get("d");
+  if (!myData) {
+    return null;
+  }
+  return window.atob(myData);
+}
+
 function readData() {
-  const state = localStorage.getItem(stateString);
+  const urlData = decodeDataFromUrl();
+  const state = urlData ?? localStorage.getItem(stateString);
+  console.log(state);
   if (state && state != "undefined") {
     const { data } = JSON.parse(state).drawflow.Home;
 
@@ -56,10 +74,13 @@ function readData() {
       }
     }
   }
+  encodeDataInUrl(editor.export());
 }
 
 function saveData() {
-  localStorage.setItem(stateString, JSON.stringify(editor.export()));
+  const data = editor.export();
+  localStorage.setItem(stateString, JSON.stringify(data));
+  encodeDataInUrl(data);
 }
 
 var exportdata = editor.export();
@@ -179,9 +200,11 @@ editor.on("nodeCreated", function (id) {
     default:
       break;
   }
+  saveData();
 });
 
 editor.on("nodeRemoved", function (id) {
+  saveData();
   console.log("Node removed " + id);
   // remove connections
 });

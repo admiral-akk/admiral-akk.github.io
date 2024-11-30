@@ -140,7 +140,7 @@ class Envelope extends GainNode {
     var setValue;
     var currentTime = audioContext.currentTime;
     console.log(this.data);
-    this.gain.cancelScheduledValues(currentTime + 1);
+    this.gain.cancelScheduledValues(currentTime);
     switch (this.data.ramptype) {
       case "linear":
         setValue = (val, t) => this.gain.linearRampToValueAtTime(val, t);

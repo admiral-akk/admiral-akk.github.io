@@ -9,11 +9,42 @@ editor.start();
 // Events!
 const audioNodes = new Map();
 
+function minifyData(editorData) {
+  if (typeof editorData !== "object" || editorData === null) {
+    return null;
+  }
+  const newData = {};
+  for (const [key, value] of Object.entries(editorData.drawflow.Home.data)) {
+    const { data, id, name, outputs, pos_x, pos_y } = value;
+    newData[key] = {
+      data,
+      id,
+      name,
+      outputs,
+      pos_x,
+      pos_y,
+    };
+  }
+  console.log(newData);
+  return newData;
+}
+
+function unminifyData(urlData) {
+  if (typeof urlData !== "object" || urlData === null) {
+    return null;
+  }
+  const newData = { drawflow: { Home: { data: urlData } } };
+  return newData;
+}
+
+async function saveTransformedData() {
+  return saveData(minifyData(editor.export()));
+}
+
 async function readData() {
-  const dataP = await fetchData();
+  const dataP = unminifyData(await fetchData());
   if (dataP && dataP != "undefined" && dataP !== null) {
     const { data } = dataP.drawflow.Home;
-    console.log("data", data);
 
     const connectionsMap = {};
     const idMap = {};
@@ -104,16 +135,10 @@ async function readData() {
     // then figure out which positions to put nodes in and create the nodes
 
     for (const [_, value] of Object.entries(data)) {
-      const { id, name, data } = value;
+      const { id, name, data, pos_x, pos_y } = value;
 
-      const newId = addNodeToDrawFlow(
-        name,
-        position[id].posX,
-        position[id].posY,
-        data
-      );
+      const newId = addNodeToDrawFlow(name, pos_x, pos_y, data);
 
-      console.log(data);
       audioNodes[newId].updateData(data);
 
       idMap[id] = newId;
@@ -135,7 +160,7 @@ async function readData() {
       }
     }
   }
-  await saveData(editor.export());
+  await saveTransformedData();
 }
 
 function draw() {
@@ -254,11 +279,11 @@ function nodeCreated(id) {
 }
 
 editor.on("nodeCreated", () => {
-  saveData(editor.export());
+  saveTransformedData();
 });
 
 editor.on("nodeRemoved", function (id) {
-  saveData(editor.export());
+  saveTransformedData();
   // remove connections
 });
 
@@ -448,14 +473,14 @@ editor.on("connectionCreated", function (connection) {
   if (sendingNode && recievingNode) {
     sendingNode.connect(recievingNode.getInput(connection.input_class));
   }
-  saveData(editor.export());
+  saveTransformedData();
 });
 
 editor.on("connectionRemoved", function (connection) {
   audioNodes[connection.output_id]?.disconnect(
     audioNodes[connection.input_id].getInput(connection.input_class)
   );
-  saveData(editor.export());
+  saveTransformedData();
 });
 
 editor.on("mouseMove", function (position) {
@@ -466,7 +491,7 @@ editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
 
   audioNodes[id].updateData(data);
-  saveData(editor.export());
+  saveTransformedData();
 });
 
 editor.on("nodeMoved", function (id) {});

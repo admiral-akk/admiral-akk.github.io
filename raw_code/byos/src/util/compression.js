@@ -12,7 +12,7 @@ async function compressToBase64UrlStr(data) {
   const stream = new Blob([jsonString]).stream();
 
   // Create a compressed stream.
-  const compressedStream = stream.pipeThrough(new CompressionStream("gzip"));
+  const compressedStream = stream.pipeThrough(new CompressionStream("deflate"));
 
   // Read all the bytes from this stream.
   const chunks = [];
@@ -21,12 +21,15 @@ async function compressToBase64UrlStr(data) {
   }
   const uint8Array = await concatUint8Arrays(chunks);
   const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
-  return base64.replace(/\+/g, "-").replace(/\//g, "_");
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, ".");
 }
 
 // https://evanhahn.com/javascript-compression-streams-api-with-strings/
 async function decompressFromBase64UrlStr(base64UrlStr) {
-  const base64 = base64UrlStr.replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = base64UrlStr
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .replace(/./g, "=");
   const uint8Array = new Uint8Array(
     atob(base64)
       .split("")
@@ -37,7 +40,7 @@ async function decompressFromBase64UrlStr(base64UrlStr) {
 
   // Create a decompressed stream.
   const decompressedStream = stream.pipeThrough(
-    new DecompressionStream("gzip")
+    new DecompressionStream("deflate")
   );
 
   // Read all the bytes from this stream.
@@ -56,6 +59,8 @@ async function saveData(data) {
   const base64UrlStr = await compressToBase64UrlStr(data);
   const url = new URL(window.location.href);
   url.searchParams.set("d", base64UrlStr);
+  console.log("data to compress", data);
+  console.log("compressed string length", base64UrlStr.length);
   window.history.pushState(null, "", url.toString());
 }
 

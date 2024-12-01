@@ -3,6 +3,8 @@ import {
   ApiCompressor,
   DefaultCompressor,
 } from "./util/compression.js";
+import { EnvelopeNode } from "./nodes/envelopeNode.js";
+import { NoiseNode } from "./nodes/noiseNode.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -353,13 +355,13 @@ function nodeCreated(id) {
       audioNodes[id] = audioContext.createGain();
       break;
     case "e":
-      audioNodes[id] = new Envelope();
+      audioNodes[id] = new EnvelopeNode(audioContext);
       break;
     case "f":
       audioNodes[id] = audioContext.createBiquadFilter();
       break;
     case "n":
-      audioNodes[id] = new NoiseNode();
+      audioNodes[id] = new NoiseNode(audioContext);
       break;
     default:
       break;
@@ -408,178 +410,6 @@ editor.on("nodeSelected", function (id) {});
 editor.on("moduleCreated", function (name) {});
 
 editor.on("moduleChanged", function (name) {});
-
-class NoiseNode extends AudioBufferSourceNode {
-  constructor() {
-    super(audioContext);
-    const bufferSize = 2 * audioContext.sampleRate;
-    const noiseBuffer = audioContext.createBuffer(
-      1,
-      bufferSize,
-      audioContext.sampleRate
-    );
-
-    this.type = "white";
-    this.buffer = noiseBuffer;
-    this.loop = true;
-
-    this.regenerateBuffer();
-    this.start(0);
-  }
-
-  static dataToString(data) {
-    switch (data.type) {
-      default:
-      case "white":
-        return "0";
-      case "pink":
-        return "1";
-      case "brown":
-        return "2";
-    }
-  }
-
-  static dataFromString(str) {
-    const num = Number(str);
-    switch (num) {
-      default:
-      case "0":
-        return "white";
-      case "1":
-        return "pink";
-      case "2":
-        return "brown";
-    }
-  }
-
-  regenerateBuffer() {
-    // https://noisehack.com/generate-noise-web-audio-api/
-    const output = this.buffer.getChannelData(0);
-    const bufferSize = 2 * audioContext.sampleRate;
-    switch (this.type) {
-      case "pink":
-        var b0, b1, b2, b3, b4, b5, b6;
-        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-        for (var i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.969 * b2 + white * 0.153852;
-          b3 = 0.8665 * b3 + white * 0.3104856;
-          b4 = 0.55 * b4 + white * 0.5329522;
-          b5 = -0.7616 * b5 - white * 0.016898;
-          output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-          output[i] *= 0.11; // (roughly) compensate for gain
-          b6 = white * 0.115926;
-        }
-        break;
-      case "brown":
-        var lastOut = 0;
-        for (var i = 0; i < bufferSize; i++) {
-          var white = Math.random() * 2 - 1;
-          output[i] = (lastOut + 0.02 * white) / 1.02;
-          lastOut = output[i];
-          output[i] *= 3.5; // (roughly) compensate for gain
-        }
-        break;
-      case "white":
-      default:
-        for (var i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
-        break;
-    }
-  }
-
-  getInput(key) {
-    return this;
-  }
-
-  updateData(data) {
-    if (this.type != data.type) {
-      this.type = data.type;
-      this.regenerateBuffer();
-    }
-  }
-}
-
-class Envelope extends GainNode {
-  static types = ["linear", "instant", "exp"];
-  constructor() {
-    super(audioContext);
-    this.constantNode = audioContext.createConstantSource();
-    this.constantNode.connect(this);
-    this.constantNode.start();
-    this.data = {
-      ramptype: "exp",
-      peak: 1,
-      attack: 1,
-      decay: 1,
-    };
-  }
-
-  static dataToString(data) {
-    const { ramptype, peak, attack, decay } = data;
-    const typeIndex = Envelope.types.indexOf(ramptype);
-    const dataStr = `${typeIndex}${peak},${attack},${decay}`;
-
-    return dataStr;
-  }
-
-  static dataFromString(str) {
-    const ramptype = Envelope.types[Number(str[0])];
-    const [peak, attack, decay] = str.substring(1).split(",");
-    return {
-      ramptype,
-      attack: Number(attack),
-      decay: Number(decay),
-      peak: Number(peak),
-    };
-  }
-
-  getInput(key) {
-    return this;
-  }
-
-  updateData(data) {
-    this.data.ramptype = data.ramptype;
-    this.data.peak = Number(data.peak);
-    this.data.attack = Number(data.attack);
-    this.data.decay = Number(data.decay);
-    this.applyEnvelope();
-  }
-
-  applyEnvelope() {
-    var setValue;
-    var currentTime = audioContext.currentTime;
-
-    this.gain.cancelScheduledValues(currentTime);
-    switch (this.data.ramptype) {
-      case "linear":
-        setValue = (val, t) => this.gain.linearRampToValueAtTime(val, t);
-        break;
-      case "instant":
-        setValue = (val, t) => this.gain.setValueAtTime(val, t);
-        break;
-      default:
-      case "exp":
-        setValue = (val, t) => this.gain.exponentialRampToValueAtTime(val, t);
-        break;
-    }
-    const addStep = (val, deltaTime) => {
-      if (deltaTime > 0) {
-        currentTime += deltaTime;
-        setValue(val, currentTime);
-      }
-    };
-    if (this.data.attack > 0) {
-      this.gain.setValueAtTime(0.001, currentTime);
-    }
-
-    addStep(this.data.peak, this.data.attack);
-    addStep(0.001, this.data.decay);
-  }
-}
 
 BiquadFilterNode.types = [
   "lowpass",
@@ -791,7 +621,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
     case "s":
       var output = `
       <div>
-        <div class="title-box"><i class="fas fa-at"></i> Audio Out </div>
+        <div class="title-box"><i class="fas fa-volume-up"></i> Audio Out </div>
       </div>
       `;
       nodeId = editor.addNode("s", 1, 0, pos_x, pos_y, "s", data ?? {}, output);
@@ -1017,7 +847,7 @@ window.editor = editor;
 toAudioNodeType = {
   s: AudioContext,
   g: GainNode,
-  e: Envelope,
+  e: EnvelopeNode,
   n: NoiseNode,
   f: BiquadFilterNode,
   o: OscillatorNode,

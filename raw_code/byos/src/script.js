@@ -136,7 +136,11 @@ async function readData() {
             console.log("connection", connection);
             const d = distanceToSink[Number(connection.id)];
             if (d !== undefined) {
-              newDist[id] = d;
+              if (newDist[id] !== undefined) {
+                newDist[id] = Math.min(newDist[id], d);
+              } else {
+                newDist[id] = d;
+              }
               break;
             }
           }
@@ -147,7 +151,7 @@ async function readData() {
         break;
       } else {
         for (const [id, d] of Object.entries(newDist)) {
-          distanceToSink[id] = d;
+          distanceToSink[id] = d + 1;
         }
         newDist = {};
       }
@@ -155,12 +159,24 @@ async function readData() {
 
     for (const [id, value] of Object.entries(data)) {
       if (distanceToSink[id] === undefined) {
-        console.log("id", id);
-        console.log("distanceToSink", distanceToSink);
-        console.log("connectionsMap", connectionsMap);
-        console.log("data", data);
         throw new Error();
       }
+    }
+
+    // calculate positions of nodes
+
+    const countOfDist = {};
+    const position = {};
+    for (const [id, value] of Object.entries(data)) {
+      const dist = distanceToSink[id];
+      if (countOfDist[dist] === undefined) {
+        countOfDist[dist] = 1;
+      } else {
+        countOfDist[dist] = countOfDist[dist] + 1;
+      }
+      const count = countOfDist[dist];
+      console.log(countOfDist);
+      position[id] = { posX: -dist * 300 + 800, posY: 500 * count };
     }
 
     // then figure out which positions to put nodes in and create the nodes
@@ -168,9 +184,11 @@ async function readData() {
     for (const [_, value] of Object.entries(data)) {
       const { id, name, data } = value;
 
-      const newId = addNodeToDrawFlow(name, 400, 400);
-
-      console.log(newId, audioNodes[newId]);
+      const newId = addNodeToDrawFlow(
+        name,
+        position[id].posX,
+        position[id].posY
+      );
 
       audioNodes[newId].updateData(data);
 

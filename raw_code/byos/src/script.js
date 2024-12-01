@@ -116,10 +116,9 @@ async function readData() {
     const distanceToSink = {};
     // identify sink nodes
     for (const [id, connections] of Object.entries(connectionsMap)) {
-      if (connections.length === 0) {
+      if (Object.keys(connections).length === 0) {
         sinkIds.push(id);
         distanceToSink[id] = 0;
-        lastRound.push(id);
       }
     }
 
@@ -131,11 +130,15 @@ async function readData() {
           continue;
         }
 
-        for (let i = 0; i < connections.length; i++) {
-          const d = distanceToSink[connections[i].id];
-          if (d) {
-            newDist[id] = d;
-            break;
+        for (const [outputName, connections2] of Object.entries(connections)) {
+          for (let i = 0; i < connections2.length; i++) {
+            const connection = connections2[i];
+            console.log("connection", connection);
+            const d = distanceToSink[Number(connection.id)];
+            if (d !== undefined) {
+              newDist[id] = d;
+              break;
+            }
           }
         }
       }
@@ -147,6 +150,16 @@ async function readData() {
           distanceToSink[id] = d;
         }
         newDist = {};
+      }
+    }
+
+    for (const [id, value] of Object.entries(data)) {
+      if (distanceToSink[id] === undefined) {
+        console.log("id", id);
+        console.log("distanceToSink", distanceToSink);
+        console.log("connectionsMap", connectionsMap);
+        console.log("data", data);
+        throw new Error();
       }
     }
 

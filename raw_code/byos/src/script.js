@@ -133,7 +133,6 @@ async function readData() {
         for (const [outputName, connections2] of Object.entries(connections)) {
           for (let i = 0; i < connections2.length; i++) {
             const connection = connections2[i];
-            console.log("connection", connection);
             const d = distanceToSink[Number(connection.id)];
             if (d !== undefined) {
               if (newDist[id] !== undefined) {
@@ -175,7 +174,7 @@ async function readData() {
         countOfDist[dist] = countOfDist[dist] + 1;
       }
       const count = countOfDist[dist];
-      console.log(countOfDist);
+
       position[id] = { posX: -dist * 300 + 800, posY: 500 * count };
     }
 
@@ -197,12 +196,10 @@ async function readData() {
     }
     // then connect the nodes
     for (const [id, connections] of Object.entries(connectionsMap)) {
-      console.log(connections);
       for (const [outputName, connectionList] of Object.entries(connections)) {
         for (let i = 0; i < connectionList.length; i++) {
           const inputId = connectionList[i].id;
           const inputName = connectionList[i].inputName;
-          console.log(inputName);
           editor.addConnection(
             idMap[id],
             idMap[inputId],
@@ -352,7 +349,6 @@ editor.on("moduleCreated", function (name) {});
 
 editor.on("moduleChanged", function (name) {});
 
-console.log("sample rate", audioContext.sampleRate);
 class NoiseNode extends AudioBufferSourceNode {
   constructor() {
     super(audioContext);
@@ -439,7 +435,7 @@ class Envelope extends GainNode {
   applyEnvelope() {
     var setValue;
     var currentTime = audioContext.currentTime;
-    console.log(this.data);
+
     this.gain.cancelScheduledValues(currentTime);
     switch (this.data.ramptype) {
       case "linear":
@@ -528,9 +524,6 @@ BiquadFilterNode.prototype.updateData = function (data) {
 };
 
 editor.on("connectionCreated", function (connection) {
-  console.log("Connection created");
-  console.log(connection);
-
   const sendingNode = audioNodes[connection.output_id];
   const recievingNode = audioNodes[connection.input_id];
   if (sendingNode && recievingNode) {
@@ -540,8 +533,6 @@ editor.on("connectionCreated", function (connection) {
 });
 
 editor.on("connectionRemoved", function (connection) {
-  console.log("Connection removed");
-  console.log(connection);
   audioNodes[connection.output_id]?.disconnect(
     audioNodes[connection.input_id].getInput(connection.input_class)
   );
@@ -549,35 +540,27 @@ editor.on("connectionRemoved", function (connection) {
 });
 
 editor.on("mouseMove", function (position) {
-  //console.log("Position mouse x:" + position.x + " y:" + position.y);
+  //
 });
 
 editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
-  console.log(data, audioNodes[id]);
+
   audioNodes[id].updateData(data);
   saveData();
 });
 
-editor.on("nodeMoved", function (id) {
-  console.log("Node moved " + id);
-});
+editor.on("nodeMoved", function (id) {});
 
-editor.on("zoom", function (zoom) {
-  console.log("Zoom level " + zoom);
-});
+editor.on("zoom", function (zoom) {});
 
 editor.on("translate", function (position) {
-  //console.log("Translate x:" + position.x + " y:" + position.y);
+  //
 });
 
-editor.on("addReroute", function (id) {
-  console.log("Reroute added " + id);
-});
+editor.on("addReroute", function (id) {});
 
-editor.on("removeReroute", function (id) {
-  console.log("Reroute removed " + id);
-});
+editor.on("removeReroute", function (id) {});
 
 /* DRAG EVENT */
 
@@ -601,7 +584,6 @@ function allowDrop(ev) {
 }
 
 function drag(ev) {
-  console.log(ev);
   if (ev.type === "touchstart") {
     mobile_item_selec = ev.target
       .closest(".drag-drawflow")
@@ -612,7 +594,6 @@ function drag(ev) {
 }
 
 function drop(ev) {
-  console.log(ev);
   if (ev.type === "touchend") {
     var parentdrawflow = document
       .elementFromPoint(
@@ -823,7 +804,6 @@ function showpopup(e) {
   editor.precanvas.style.transform = "";
   editor.precanvas.style.left = editor.canvas_x + "px";
   editor.precanvas.style.top = editor.canvas_y + "px";
-  console.log(transform);
 
   //e.target.children[0].style.top  =  -editor.canvas_y - editor.container.offsetTop +'px';
   //e.target.children[0].style.left  =  -editor.canvas_x  - editor.container.offsetLeft +'px';
@@ -849,7 +829,7 @@ function changeModule(event) {
 }
 
 function changeMode(option) {
-  //console.log(lock.id);
+  //
   if (option == "lock") {
     lock.style.display = "none";
     unlock.style.display = "block";
@@ -861,7 +841,6 @@ function changeMode(option) {
 
 function trigger() {
   for (const [_, audioNode] of Object.entries(audioNodes)) {
-    console.log(audioNode);
     if (audioNode.applyEnvelope) {
       audioNode.applyEnvelope();
     }

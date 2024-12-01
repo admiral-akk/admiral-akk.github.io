@@ -49,8 +49,16 @@ async function concatUint8Arrays(uint8arrays) {
   return new Uint8Array(buffer);
 }
 
+function toString(data) {
+  return JSON.stringify(data);
+}
+
+function fromString(str) {
+  return str;
+}
+
 async function encodeToUrl(data) {
-  const dataString = JSON.stringify(data);
+  const dataString = toString(data);
   compress(dataString).then((uint8Array) => {
     const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
     const base64UrlSafe = base64.replace(/\+/g, "-").replace(/\//g, "_");
@@ -73,55 +81,103 @@ async function decodeFromUrl() {
       .map((char) => char.charCodeAt(0))
   );
   return decompress(uint8Array).then((str) => {
-    return str;
+    return fromString(str);
   });
 }
 
 async function readData() {
   const urlData = await decodeFromUrl();
   const state = urlData ?? localStorage.getItem(stateString);
-  if (state && state != "undefined") {
+  if (state && state != "undefined" && state !== null) {
     const { data } = JSON.parse(state).drawflow.Home;
 
     const connectionsMap = {};
     const idMap = {};
+    const newIdMap = {};
+
+    // first identify the network graph
 
     for (const [_, value] of Object.entries(data)) {
-      const { id, name, data, html, inputs, outputs, pos_x, pos_y } = value;
-
-      console.log(
-        value,
-        Object.keys(inputs).length,
-        Object.keys(outputs).length
-      );
-      const newId = editor.addNode(
-        name,
-        Object.keys(inputs).length,
-        Object.keys(outputs).length,
-        pos_x,
-        pos_y,
-        value.class,
-        data,
-        html
-      );
-
-      audioNodes[newId].updateData(data);
-
-      idMap[id] = newId;
-      connectionsMap[newId] = {};
+      const { id, outputs } = value;
+      connectionsMap[id] = {};
       for (const [outputName, value] of Object.entries(outputs)) {
-        connectionsMap[newId][outputName] = [];
+        connectionsMap[id][outputName] = [];
         for (let i = 0; i < value.connections.length; i++) {
-          connectionsMap[newId][outputName].push(value.connections[i]);
+          const { node, output } = value.connections[i];
+          connectionsMap[id][outputName].push({ id: node, inputName: output });
         }
       }
     }
 
-    for (const [newId, connections] of Object.entries(connectionsMap)) {
+    // identify sink nodes, then measure distance to sink, and that's the x value
+    // then use different y per node
+
+    const sinkIds = [];
+    const distanceToSink = {};
+    // identify sink nodes
+    for (const [id, connections] of Object.entries(connectionsMap)) {
+      if (connections.length === 0) {
+        sinkIds.push(id);
+        distanceToSink[id] = 0;
+        lastRound.push(id);
+      }
+    }
+
+    // measure distance to sink
+    var newDist = {};
+    while (true) {
+      for (const [id, connections] of Object.entries(connectionsMap)) {
+        if (id.toString() in distanceToSink) {
+          continue;
+        }
+
+        for (let i = 0; i < connections.length; i++) {
+          const d = distanceToSink[connections[i].id];
+          if (d) {
+            newDist[id] = d;
+            break;
+          }
+        }
+      }
+
+      if (Object.keys(newDist).length === 0) {
+        break;
+      } else {
+        for (const [id, d] of Object.entries(newDist)) {
+          distanceToSink[id] = d;
+        }
+        newDist = {};
+      }
+    }
+
+    // then figure out which positions to put nodes in and create the nodes
+
+    for (const [_, value] of Object.entries(data)) {
+      const { id, name, data } = value;
+
+      const newId = addNodeToDrawFlow(name, 400, 400);
+
+      console.log(newId, audioNodes[newId]);
+
+      audioNodes[newId].updateData(data);
+
+      idMap[id] = newId;
+      newIdMap[newId] = id;
+    }
+    // then connect the nodes
+    for (const [id, connections] of Object.entries(connectionsMap)) {
+      console.log(connections);
       for (const [outputName, connectionList] of Object.entries(connections)) {
         for (let i = 0; i < connectionList.length; i++) {
-          const { node, output } = connectionList[i];
-          editor.addConnection(newId, idMap[node], outputName, output);
+          const inputId = connectionList[i].id;
+          const inputName = connectionList[i].inputName;
+          console.log(inputName);
+          editor.addConnection(
+            idMap[id],
+            idMap[inputId],
+            outputName,
+            inputName
+          );
         }
       }
     }
@@ -134,9 +190,6 @@ async function saveData() {
   localStorage.setItem(stateString, JSON.stringify(data));
   await encodeToUrl(data);
 }
-
-var exportdata = editor.export();
-editor.import(exportdata);
 
 function draw() {
   audioContext.resume();
@@ -197,27 +250,27 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
-editor.on("nodeCreated", function (id) {
+function nodeCreated(id) {
   const node = editor.getNodeFromId(id);
 
   switch (node.class) {
-    case "oscillator":
+    case "o":
       audioNodes[id] = audioContext.createOscillator();
       audioNodes[id].start();
       break;
-    case "output":
+    case "s":
       audioNodes[id] = audioContext;
       break;
-    case "gain":
+    case "g":
       audioNodes[id] = audioContext.createGain();
       break;
-    case "envelope":
+    case "e":
       audioNodes[id] = new Envelope();
       break;
-    case "filter":
+    case "f":
       audioNodes[id] = audioContext.createBiquadFilter();
       break;
-    case "noise":
+    case "n":
       audioNodes[id] = new NoiseNode();
       break;
     default:
@@ -225,11 +278,11 @@ editor.on("nodeCreated", function (id) {
   }
 
   switch (node.class) {
-    case "oscillator":
-    case "gain":
-    case "envelope":
-    case "filter":
-    case "noise":
+    case "o":
+    case "g":
+    case "e":
+    case "f":
+    case "n":
       const htmlBody = document
         .getElementById(`node-${id}`)
         .getElementsByClassName("drawflow_content_node")[0].children[0];
@@ -251,6 +304,9 @@ editor.on("nodeCreated", function (id) {
     default:
       break;
   }
+}
+
+editor.on("nodeCreated", () => {
   saveData();
 });
 
@@ -514,6 +570,7 @@ function allowDrop(ev) {
 }
 
 function drag(ev) {
+  console.log(ev);
   if (ev.type === "touchstart") {
     mobile_item_selec = ev.target
       .closest(".drag-drawflow")
@@ -524,6 +581,7 @@ function drag(ev) {
 }
 
 function drop(ev) {
+  console.log(ev);
   if (ev.type === "touchend") {
     var parentdrawflow = document
       .elementFromPoint(
@@ -548,7 +606,7 @@ function drop(ev) {
 
 function addNodeToDrawFlow(name, pos_x, pos_y) {
   if (editor.editor_mode === "fixed") {
-    return false;
+    return null;
   }
   pos_x =
     pos_x *
@@ -564,16 +622,17 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
     editor.precanvas.getBoundingClientRect().y *
       (editor.precanvas.clientHeight /
         (editor.precanvas.clientHeight * editor.zoom));
+  var nodeId = null;
   switch (name) {
-    case "output":
+    case "s":
       var output = `
       <div>
         <div class="title-box"><i class="fas fa-at"></i> Audio Out </div>
       </div>
       `;
-      editor.addNode("output", 1, 0, pos_x, pos_y, "output", {}, output);
+      nodeId = editor.addNode("s", 1, 0, pos_x, pos_y, "s", {}, output);
       break;
-    case "gain":
+    case "g":
       var gain = `
         <div>
           <div class="title-box"><i class="fas fa-at"></i> Gain</div>
@@ -583,10 +642,10 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
       </div>
         </div>
         `;
-      editor.addNode("gain", 2, 1, pos_x, pos_y, "gain", { gain: 1 }, gain);
+      nodeId = editor.addNode("g", 2, 1, pos_x, pos_y, "g", { gain: 1 }, gain);
       break;
 
-    case "env":
+    case "e":
       var env = `
       <div>
         <div class="title-box"><i class="fab fa-telegram-plane"></i> Envelope</div>
@@ -612,19 +671,19 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         </div>
       </div>
       `;
-      editor.addNode(
-        "envelope",
+      nodeId = editor.addNode(
+        "e",
         0,
         1,
         pos_x,
         pos_y,
-        "envelope",
+        "e",
         { ramptype: "exp", attack: 1, peak: 1, decay: 1 },
         env
       );
       break;
 
-    case "noise":
+    case "n":
       var noise = `
         <div>
           <div class="title-box"><i class="fab fa-telegram-plane"></i> Noise</div>
@@ -638,19 +697,19 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
           </div>
         </div>
         `;
-      editor.addNode(
-        "noise",
+      nodeId = editor.addNode(
+        "n",
         0,
         1,
         pos_x,
         pos_y,
-        "noise",
+        "n",
         { type: "white" },
         noise
       );
       break;
 
-    case "filter":
+    case "f":
       var filter = `
       <div>
         <div class="title-box"><i class="fab fa-telegram-plane"></i> Filter</div>
@@ -672,19 +731,19 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         </div>
       </div>
       `;
-      editor.addNode(
-        "filter",
+      nodeId = editor.addNode(
+        "f",
         2,
         1,
         pos_x,
         pos_y,
-        "filter",
+        "f",
         { type: "lowpass", frequency: 200 },
         filter
       );
       break;
 
-    case "osc":
+    case "o":
       var osc = `
     <div>
       <div class="title-box"><i class="fab fa-telegram-plane"></i> Oscillator</div>
@@ -703,209 +762,23 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
       </div>
     </div>
     `;
-      editor.addNode(
-        "oscillator",
+      nodeId = editor.addNode(
+        "o",
         1,
         1,
         pos_x,
         pos_y,
-        "oscillator",
+        "o",
         { type: "sine", frequency: 260 },
         osc
       );
       break;
-    case "facebook":
-      var facebook = `
-  <div>
-    <div class="title-box"><i class="fab fa-facebook"></i> Facebook Message</div>
-  </div>
-  `;
-      editor.addNode("facebook", 0, 1, pos_x, pos_y, "facebook", {}, facebook);
-      break;
-    case "slack":
-      var slackchat = `
-    <div>
-      <div class="title-box"><i class="fab fa-slack"></i> Slack chat message</div>
-    </div>
-    `;
-      editor.addNode("slack", 1, 0, pos_x, pos_y, "slack", {}, slackchat);
-      break;
-    case "github":
-      var githubtemplate = `
-    <div>
-      <div class="title-box"><i class="fab fa-github "></i> Github Stars</div>
-      <div class="box">
-        <p>Enter repository url</p>
-      <input type="text" df-name>
-      </div>
-    </div>
-    `;
-      editor.addNode(
-        "github",
-        0,
-        1,
-        pos_x,
-        pos_y,
-        "github",
-        { name: "" },
-        githubtemplate
-      );
-      break;
-    case "telegram":
-      var telegrambot = `
-    <div>
-      <div class="title-box"><i class="fab fa-telegram-plane"></i> Telegram bot</div>
-      <div class="box">
-        <p>Send to telegram</p>
-        <p>select channel</p>
-        <select df-channel>
-          <option value="channel_1">Channel 1</option>
-          <option value="channel_2">Channel 2</option>
-          <option value="channel_3">Channel 3</option>
-          <option value="channel_4">Channel 4</option>
-        </select>
-      </div>
-    </div>
-    `;
-      editor.addNode(
-        "telegram",
-        1,
-        0,
-        pos_x,
-        pos_y,
-        "telegram",
-        { channel: "channel_3" },
-        telegrambot
-      );
-      break;
-    case "aws":
-      var aws = `
-    <div>
-      <div class="title-box"><i class="fab fa-aws"></i> Aws Save </div>
-      <div class="box">
-        <p>Save in aws</p>
-        <input type="text" df-db-dbname placeholder="DB name"><br><br>
-        <input type="text" df-db-key placeholder="DB key">
-        <p>Output Log</p>
-      </div>
-    </div>
-    `;
-      editor.addNode(
-        "aws",
-        1,
-        1,
-        pos_x,
-        pos_y,
-        "aws",
-        { db: { dbname: "", key: "" } },
-        aws
-      );
-      break;
-    case "log":
-      var log = `
-      <div>
-        <div class="title-box"><i class="fas fa-file-signature"></i> Save log file </div>
-      </div>
-      `;
-      editor.addNode("log", 1, 0, pos_x, pos_y, "log", {}, log);
-      break;
-    case "google":
-      var google = `
-      <div>
-        <div class="title-box"><i class="fab fa-google-drive"></i> Google Drive save </div>
-      </div>
-      `;
-      editor.addNode("google", 1, 0, pos_x, pos_y, "google", {}, google);
-      break;
-    case "email":
-      var email = `
-      <div>
-        <div class="title-box"><i class="fas fa-at"></i> Send Email </div>
-      </div>
-      `;
-      editor.addNode("email", 1, 0, pos_x, pos_y, "email", {}, email);
-      break;
-
-    case "template":
-      var template = `
-      <div>
-        <div class="title-box"><i class="fas fa-code"></i> Template</div>
-        <div class="box">
-          Ger Vars
-          <textarea df-template></textarea>
-          Output template with vars
-        </div>
-      </div>
-      `;
-      editor.addNode(
-        "template",
-        1,
-        1,
-        pos_x,
-        pos_y,
-        "template",
-        { template: "Write your template" },
-        template
-      );
-      break;
-    case "multiple":
-      var multiple = `
-      <div>
-        <div class="box">
-          Multiple!
-        </div>
-      </div>
-      `;
-      editor.addNode("multiple", 3, 4, pos_x, pos_y, "multiple", {}, multiple);
-      break;
-    case "personalized":
-      var personalized = `
-      <div>
-        Personalized
-      </div>
-      `;
-      editor.addNode(
-        "personalized",
-        1,
-        1,
-        pos_x,
-        pos_y,
-        "personalized",
-        {},
-        personalized
-      );
-      break;
-    case "dbclick":
-      var dbclick = `
-      <div>
-      <div class="title-box"><i class="fas fa-mouse"></i> Db Click</div>
-        <div class="box dbclickbox" ondblclick="showpopup(event)">
-          Db Click here
-          <div class="modal" style="display:none">
-            <div class="modal-content">
-              <span class="close" onclick="closemodal(event)">&times;</span>
-              Change your variable {name} !
-              <input type="text" df-name>
-            </div>
-
-          </div>
-        </div>
-      </div>
-      `;
-      editor.addNode(
-        "dbclick",
-        1,
-        1,
-        pos_x,
-        pos_y,
-        "dbclick",
-        { name: "" },
-        dbclick
-      );
-      break;
 
     default:
+      return null;
   }
+  nodeCreated(nodeId);
+  return nodeId;
 }
 
 var transform = "";
@@ -967,8 +840,8 @@ function trigger() {
 window.drop = drop;
 window.drag = drag;
 window.allowDrop = allowDrop;
-window.editor = editor;
 window.trigger = trigger;
+window.editor = editor;
 
 readData();
 requestAnimationFrame(draw);

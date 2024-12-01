@@ -29,7 +29,7 @@ async function decompressFromBase64UrlStr(base64UrlStr) {
   const base64 = base64UrlStr
     .replace(/-/g, "+")
     .replace(/_/g, "/")
-    .replace(/./g, "=");
+    .replace(/\./g, "=");
   const uint8Array = new Uint8Array(
     atob(base64)
       .split("")

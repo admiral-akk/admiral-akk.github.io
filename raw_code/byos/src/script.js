@@ -21,8 +21,6 @@ function minifyData(editorData) {
       id,
       name,
       outputs,
-      pos_x,
-      pos_y,
     };
   }
   console.log(newData);

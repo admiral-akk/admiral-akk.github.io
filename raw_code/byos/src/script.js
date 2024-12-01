@@ -321,7 +321,6 @@ class NoiseNode extends AudioBufferSourceNode {
         }
         break;
     }
-    this.buffer = this.buffer;
   }
 
   getInput(key) {

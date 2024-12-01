@@ -1,4 +1,4 @@
-import { saveData, fetchData } from "./compression.js";
+import { saveData, fetchData } from "./util/compression.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);

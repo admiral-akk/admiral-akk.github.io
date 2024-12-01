@@ -1,4 +1,4 @@
-import { saveData, fetchData } from "./util/compression.js";
+import { DataManager, UrlApiCompressor } from "./util/compression.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -6,9 +6,14 @@ var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 editor.reroute = true;
 editor.start();
 
+const dataManager = new DataManager(new UrlApiCompressor("deflate"));
+
 // Events!
 const audioNodes = new Map();
 
+// compression scheme:
+
+// store entries by num seperated by ||?
 function minifyData(editorData) {
   if (typeof editorData !== "object" || editorData === null) {
     return null;
@@ -21,6 +26,8 @@ function minifyData(editorData) {
       id,
       name,
       outputs,
+      pos_x,
+      pos_y,
     };
   }
   console.log(newData);
@@ -36,11 +43,11 @@ function unminifyData(urlData) {
 }
 
 async function saveTransformedData() {
-  return saveData(minifyData(editor.export()));
+  return dataManager.saveData(minifyData(editor.export()));
 }
 
 async function readData() {
-  const dataP = unminifyData(await fetchData());
+  const dataP = unminifyData(await dataManager.fetchData());
   if (dataP && dataP != "undefined" && dataP !== null) {
     const { data } = dataP.drawflow.Home;
 

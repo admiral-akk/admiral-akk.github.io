@@ -1,3 +1,5 @@
+import { saveData, fetchData } from "./compression.js";
+
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
 var audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -6,90 +8,11 @@ editor.start();
 
 // Events!
 const audioNodes = new Map();
-const stateString = "synth";
-
-async function compress(str) {
-  // Convert the string to a byte stream.
-  const stream = new Blob([str]).stream();
-
-  // Create a compressed stream.
-  const compressedStream = stream.pipeThrough(new CompressionStream("gzip"));
-
-  // Read all the bytes from this stream.
-  const chunks = [];
-  for await (const chunk of compressedStream) {
-    chunks.push(chunk);
-  }
-  return await concatUint8Arrays(chunks);
-}
-
-async function decompress(compressedBytes) {
-  // Convert the bytes to a stream.
-  const stream = new Blob([compressedBytes]).stream();
-
-  // Create a decompressed stream.
-  const decompressedStream = stream.pipeThrough(
-    new DecompressionStream("gzip")
-  );
-
-  // Read all the bytes from this stream.
-  const chunks = [];
-  for await (const chunk of decompressedStream) {
-    chunks.push(chunk);
-  }
-  const stringBytes = await concatUint8Arrays(chunks);
-
-  // Convert the bytes to a string.
-  return new TextDecoder().decode(stringBytes);
-}
-
-async function concatUint8Arrays(uint8arrays) {
-  const blob = new Blob(uint8arrays);
-  const buffer = await blob.arrayBuffer();
-  return new Uint8Array(buffer);
-}
-
-function toString(data) {
-  return JSON.stringify(data);
-}
-
-function fromString(str) {
-  return str;
-}
-
-async function encodeToUrl(data) {
-  const dataString = toString(data);
-  compress(dataString).then((uint8Array) => {
-    const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
-    const base64UrlSafe = base64.replace(/\+/g, "-").replace(/\//g, "_");
-    const url = new URL(window.location.href);
-    url.searchParams.set("d", base64UrlSafe);
-    window.history.pushState(null, "", url.toString());
-  });
-}
-
-async function decodeFromUrl() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const base64UrlSafe = urlParams.get("d");
-  if (!base64UrlSafe) {
-    return null;
-  }
-  let base64 = base64UrlSafe.replace(/-/g, "+").replace(/_/g, "/");
-  let uint8Array = new Uint8Array(
-    atob(base64)
-      .split("")
-      .map((char) => char.charCodeAt(0))
-  );
-  return decompress(uint8Array).then((str) => {
-    return fromString(str);
-  });
-}
 
 async function readData() {
-  const urlData = await decodeFromUrl();
-  const state = urlData ?? localStorage.getItem(stateString);
-  if (state && state != "undefined" && state !== null) {
-    const { data } = JSON.parse(state).drawflow.Home;
+  const dataP = await fetchData();
+  if (dataP && dataP != "undefined" && dataP !== null) {
+    const { data } = dataP.drawflow.Home;
     console.log("data", data);
 
     const connectionsMap = {};
@@ -212,13 +135,7 @@ async function readData() {
       }
     }
   }
-  await encodeToUrl(editor.export());
-}
-
-async function saveData() {
-  const data = editor.export();
-  localStorage.setItem(stateString, JSON.stringify(data));
-  await encodeToUrl(data);
+  await saveData(editor.export());
 }
 
 function draw() {
@@ -337,11 +254,11 @@ function nodeCreated(id) {
 }
 
 editor.on("nodeCreated", () => {
-  saveData();
+  saveData(editor.export());
 });
 
 editor.on("nodeRemoved", function (id) {
-  saveData();
+  saveData(editor.export());
   // remove connections
 });
 
@@ -531,14 +448,14 @@ editor.on("connectionCreated", function (connection) {
   if (sendingNode && recievingNode) {
     sendingNode.connect(recievingNode.getInput(connection.input_class));
   }
-  saveData();
+  saveData(editor.export());
 });
 
 editor.on("connectionRemoved", function (connection) {
   audioNodes[connection.output_id]?.disconnect(
     audioNodes[connection.input_id].getInput(connection.input_class)
   );
-  saveData();
+  saveData(editor.export());
 });
 
 editor.on("mouseMove", function (position) {
@@ -549,7 +466,7 @@ editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
 
   audioNodes[id].updateData(data);
-  saveData();
+  saveData(editor.export());
 });
 
 editor.on("nodeMoved", function (id) {});

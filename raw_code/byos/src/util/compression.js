@@ -4,13 +4,15 @@ async function concatUint8Arrays(uint8arrays) {
   const buffer = await blob.arrayBuffer();
   return new Uint8Array(buffer);
 }
-class UrlApiCompressor {
-  constructor(compressionType) {
+
+class ApiCompressor {
+  constructor(compressionType = "gzip") {
     this.compressionType = compressionType;
   }
 
-  async compress(data) {
-    const jsonString = JSON.stringify(data);
+  // https://evanhahn.com/javascript-compression-streams-api-with-strings/
+  async compressJSONToBase64(jsonData) {
+    const jsonString = JSON.stringify(jsonData);
     // Convert the string to a byte stream.
     const stream = new Blob([jsonString]).stream();
 
@@ -25,15 +27,11 @@ class UrlApiCompressor {
       chunks.push(chunk);
     }
     const uint8Array = await concatUint8Arrays(chunks);
-    const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
-    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, ".");
+    return btoa(String.fromCharCode.apply(null, uint8Array));
   }
 
-  async decompress(base64UrlStr) {
-    const base64 = base64UrlStr
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .replace(/\./g, "=");
+  // https://evanhahn.com/javascript-compression-streams-api-with-strings/
+  async decompressBase64ToJSON(base64) {
     const uint8Array = new Uint8Array(
       atob(base64)
         .split("")
@@ -65,10 +63,16 @@ class DataManager {
     this.compressor = compressor;
   }
 
-  async saveData(data) {
-    const base64UrlStr = await this.compressor.compress(data);
+  async saveData(jsonData) {
+    const base64 = await this.compressor.compressJSONToBase64(jsonData);
+    const base64UrlStr = base64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, ".");
     const url = new URL(window.location.href);
     url.searchParams.set("d", base64UrlStr);
+
+    console.log("string length", base64UrlStr.length);
     window.history.pushState(null, "", url.toString());
   }
 
@@ -78,8 +82,12 @@ class DataManager {
     if (!base64UrlStr) {
       return null;
     }
-    return await this.compressor.decompress(base64UrlStr);
+    const base64 = base64UrlStr
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .replace(/\./g, "=");
+    return await this.compressor.decompressBase64ToJSON(base64);
   }
 }
 
-export { DataManager, UrlApiCompressor };
+export { DataManager, ApiCompressor };

@@ -1,4 +1,4 @@
-import { DataManager, UrlApiCompressor } from "./util/compression.js";
+import { DataManager, ApiCompressor } from "./util/compression.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -6,14 +6,92 @@ var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 editor.reroute = true;
 editor.start();
 
-const dataManager = new DataManager(new UrlApiCompressor("deflate"));
+class DrawflowCompressor {
+  async compressJSONToBase64(jsonData) {
+    const arrayForm = [];
+    for (const [key, value] of Object.entries(jsonData)) {
+      console.log("uncompressedData", jsonData);
+      console.log("key", key);
+      console.log("value", value);
+      const { data, id, name, outputs, pos_x, pos_y } = value;
+
+      const outputList = [];
+      for (const [outputName, c] of Object.entries(outputs)) {
+        const connections = c.connections;
+        if (connections.length > 0) {
+          outputList.push([outputName.replace("output_", ""), connections]);
+        }
+      }
+      const x = Math.round(pos_x);
+      const y = Math.round(pos_y);
+      const compressedObj = {
+        id,
+        name,
+        x,
+        y,
+      };
+
+      const outputListNullable =
+        outputList.length > 0 ? JSON.stringify(outputList) : "";
+      const dataNullable =
+        Object.keys(data).length > 0 ? JSON.stringify(data) : "";
+
+      const compressedStr = `${id}|${name}|${x}|${y}|${outputListNullable}|${dataNullable}`;
+
+      if (outputList.length > 0) {
+        compressedObj.o = outputList;
+      }
+      if (Object.keys(data).length > 0) {
+        compressedObj.data = data;
+      }
+
+      arrayForm.push(compressedStr);
+    }
+
+    const jsonStr = JSON.stringify(arrayForm);
+    console.log("jsonStr", jsonStr);
+    return btoa(jsonStr);
+  }
+  async decompressBase64ToJSON(base64Str) {
+    const jsonStr = atob(base64Str);
+    const arrayForm = JSON.parse(jsonStr);
+
+    const drawflowData = {};
+    for (let i = 0; i < arrayForm.length; i++) {
+      const compressedStr = arrayForm[i];
+
+      const [id, name, x, y, outputListNullable, dataNullable] =
+        compressedStr.split("|");
+
+      const data = dataNullable === "" ? {} : JSON.parse(dataNullable);
+      const outputList =
+        outputListNullable === "" ? [] : JSON.parse(outputListNullable);
+      const outputs = {};
+      for (let i = 0; i < outputList.length; i++) {
+        const [output_id, connections] = outputList[i];
+        outputs[`output_${output_id}`] = { connections };
+      }
+      drawflowData[id] = {
+        data,
+        id: id,
+        name: name,
+        outputs,
+        pos_x: Number(x),
+        pos_y: Number(y),
+      };
+    }
+
+    return drawflowData;
+  }
+}
+
+const dataManager = new DataManager(new DrawflowCompressor());
 
 // Events!
 const audioNodes = new Map();
 
 // compression scheme:
 
-// store entries by num seperated by ||?
 function minifyData(editorData) {
   if (typeof editorData !== "object" || editorData === null) {
     return null;
@@ -316,6 +394,31 @@ class NoiseNode extends AudioBufferSourceNode {
     this.start(0);
   }
 
+  dataToString(data) {
+    switch (data.type) {
+      default:
+      case "white":
+        return "0";
+      case "pink":
+        return "1";
+      case "brown":
+        return "2";
+    }
+  }
+
+  dataFromString(str) {
+    const num = Number(str);
+    switch (num) {
+      default:
+      case "0":
+        return "white";
+      case "1":
+        return "pink";
+      case "2":
+        return "brown";
+    }
+  }
+
   regenerateBuffer() {
     // https://noisehack.com/generate-noise-web-audio-api/
     const output = this.buffer.getChannelData(0);
@@ -368,6 +471,7 @@ class NoiseNode extends AudioBufferSourceNode {
 }
 
 class Envelope extends GainNode {
+  static types = ["linear", "instant", "exp"];
   constructor() {
     super(audioContext);
     this.constantNode = audioContext.createConstantSource();
@@ -379,6 +483,35 @@ class Envelope extends GainNode {
       attack: 1,
       decay: 1,
     };
+  }
+
+  dataToString(data) {
+    const { ramptype, peak, attack, delay } = data;
+    const typeIndex = Envelope.types.indexOf(ramptype);
+    return `${typeIndex}${peak},${attack},${delay}`;
+  }
+
+  dataFromString(str) {
+    const ramptype = Envelope.types[Number(str[0])];
+    const [peak, attack, delay] = str.substring(1).split(",");
+    return {
+      ramptype,
+      attack: Number(attack),
+      delay: Number(delay),
+      peak: Number(peak),
+    };
+  }
+
+  getInput(key) {
+    return this;
+  }
+
+  updateData(data) {
+    this.data.ramptype = data.ramptype;
+    this.data.peak = Number(data.peak);
+    this.data.attack = Number(data.attack);
+    this.data.decay = Number(data.decay);
+    this.applyEnvelope();
   }
 
   applyEnvelope() {
@@ -411,19 +544,28 @@ class Envelope extends GainNode {
     addStep(this.data.peak, this.data.attack);
     addStep(0.001, this.data.decay);
   }
-
-  getInput(key) {
-    return this;
-  }
-
-  updateData(data) {
-    this.data.ramptype = data.ramptype;
-    this.data.peak = Number(data.peak);
-    this.data.attack = Number(data.attack);
-    this.data.decay = Number(data.decay);
-    this.applyEnvelope();
-  }
 }
+
+BiquadFilterNode.prototype.types = [
+  "lowpass",
+  "highpass",
+  "bandpass",
+  "lowshelf",
+  "peaking",
+  "notch",
+  "allpass",
+];
+BiquadFilterNode.prototype.dataToString = function (data) {
+  const { type, frequency } = data;
+  const typeIndex = BiquadFilterNode.types.indexOf(type);
+  return `${typeIndex}${frequency}`;
+};
+BiquadFilterNode.prototype.dataFromString = function (str) {
+  return {
+    type: BiquadFilterNode.types[Number(str[0])],
+    frequency: Number(str.substring(1)),
+  };
+};
 
 BiquadFilterNode.prototype.getInput = function (key) {
   switch (key) {
@@ -441,6 +583,12 @@ AudioContext.prototype.getInput = function (key) {
       return this.destination;
   }
 };
+AudioContext.prototype.dataToString = function (data) {
+  return ``;
+};
+AudioContext.prototype.dataFromString = function (str) {
+  return {};
+};
 
 GainNode.prototype.getInput = function (key) {
   switch (key) {
@@ -451,12 +599,32 @@ GainNode.prototype.getInput = function (key) {
       return this.gain;
   }
 };
+GainNode.prototype.dataToString = function (data) {
+  return `${data.gain}`;
+};
+GainNode.prototype.dataFromString = function (str) {
+  return {
+    gain: Number(str),
+  };
+};
 
+OscillatorNode.types = ["sine", "square", "sawtooth", "triangle"];
 OscillatorNode.prototype.getInput = function (key) {
   switch (key) {
     default:
       return this.frequency;
   }
+};
+OscillatorNode.prototype.dataToString = function (data) {
+  const { type, frequency } = data;
+  const typeIndex = OscillatorNode.types.indexOf(type);
+  return `${typeIndex}${frequency}`;
+};
+OscillatorNode.prototype.dataFromString = function (str) {
+  return {
+    type: OscillatorNode.types[Number(str[0])],
+    frequency: Number(str.substring(1)),
+  };
 };
 
 AudioContext.prototype.updateData = () => {};

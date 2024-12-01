@@ -8,26 +8,78 @@ editor.start();
 const audioNodes = new Map();
 const stateString = "synth";
 
-function encodeDataInUrl(data) {
-  const url = new URL(window.location.href);
-  const d = window.btoa(JSON.stringify(data));
-  url.searchParams.set("d", d);
-  window.history.pushState(null, "", url.toString());
+async function compress(str) {
+  // Convert the string to a byte stream.
+  const stream = new Blob([str]).stream();
+
+  // Create a compressed stream.
+  const compressedStream = stream.pipeThrough(new CompressionStream("gzip"));
+
+  // Read all the bytes from this stream.
+  const chunks = [];
+  for await (const chunk of compressedStream) {
+    chunks.push(chunk);
+  }
+  return await concatUint8Arrays(chunks);
 }
 
-function decodeDataFromUrl() {
+async function decompress(compressedBytes) {
+  // Convert the bytes to a stream.
+  const stream = new Blob([compressedBytes]).stream();
+
+  // Create a decompressed stream.
+  const decompressedStream = stream.pipeThrough(
+    new DecompressionStream("gzip")
+  );
+
+  // Read all the bytes from this stream.
+  const chunks = [];
+  for await (const chunk of decompressedStream) {
+    chunks.push(chunk);
+  }
+  const stringBytes = await concatUint8Arrays(chunks);
+
+  // Convert the bytes to a string.
+  return new TextDecoder().decode(stringBytes);
+}
+
+async function concatUint8Arrays(uint8arrays) {
+  const blob = new Blob(uint8arrays);
+  const buffer = await blob.arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
+async function encodeToUrl(data) {
+  const dataString = JSON.stringify(data);
+  compress(dataString).then((uint8Array) => {
+    const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
+    const base64UrlSafe = base64.replace(/\+/g, "-").replace(/\//g, "_");
+    const url = new URL(window.location.href);
+    url.searchParams.set("d", base64UrlSafe);
+    window.history.pushState(null, "", url.toString());
+  });
+}
+
+async function decodeFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
-  const myData = urlParams.get("d");
-  if (!myData) {
+  const base64UrlSafe = urlParams.get("d");
+  if (!base64UrlSafe) {
     return null;
   }
-  return window.atob(myData);
+  let base64 = base64UrlSafe.replace(/-/g, "+").replace(/_/g, "/");
+  let uint8Array = new Uint8Array(
+    atob(base64)
+      .split("")
+      .map((char) => char.charCodeAt(0))
+  );
+  return decompress(uint8Array).then((str) => {
+    return str;
+  });
 }
 
-function readData() {
-  const urlData = decodeDataFromUrl();
+async function readData() {
+  const urlData = await decodeFromUrl();
   const state = urlData ?? localStorage.getItem(stateString);
-  console.log(state);
   if (state && state != "undefined") {
     const { data } = JSON.parse(state).drawflow.Home;
 
@@ -74,13 +126,13 @@ function readData() {
       }
     }
   }
-  encodeDataInUrl(editor.export());
+  await encodeToUrl(editor.export());
 }
 
-function saveData() {
+async function saveData() {
   const data = editor.export();
   localStorage.setItem(stateString, JSON.stringify(data));
-  encodeDataInUrl(data);
+  await encodeToUrl(data);
 }
 
 var exportdata = editor.export();
@@ -146,7 +198,6 @@ function draw() {
 }
 
 editor.on("nodeCreated", function (id) {
-  console.log("Node created " + id);
   const node = editor.getNodeFromId(id);
 
   switch (node.class) {
@@ -205,21 +256,14 @@ editor.on("nodeCreated", function (id) {
 
 editor.on("nodeRemoved", function (id) {
   saveData();
-  console.log("Node removed " + id);
   // remove connections
 });
 
-editor.on("nodeSelected", function (id) {
-  console.log("Node selected " + id);
-});
+editor.on("nodeSelected", function (id) {});
 
-editor.on("moduleCreated", function (name) {
-  console.log("Module Created " + name);
-});
+editor.on("moduleCreated", function (name) {});
 
-editor.on("moduleChanged", function (name) {
-  console.log("Module Changed " + name);
-});
+editor.on("moduleChanged", function (name) {});
 
 console.log("sample rate", audioContext.sampleRate);
 class NoiseNode extends AudioBufferSourceNode {

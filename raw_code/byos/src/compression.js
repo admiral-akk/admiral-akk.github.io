@@ -52,17 +52,8 @@ async function decompressFromBase64UrlStr(base64UrlStr) {
   return JSON.parse(jsonString);
 }
 
-function minifyData(data) {
-  return data;
-}
-
-function unminifyData(data) {
-  return data;
-}
-
 async function saveData(data) {
-  const minifiedData = minifyData(data);
-  const base64UrlStr = await compressToBase64UrlStr(minifiedData);
+  const base64UrlStr = await compressToBase64UrlStr(data);
   const url = new URL(window.location.href);
   url.searchParams.set("d", base64UrlStr);
   window.history.pushState(null, "", url.toString());
@@ -74,9 +65,7 @@ async function fetchData() {
   if (!base64UrlStr) {
     return null;
   }
-  const minifiedData = await decompressFromBase64UrlStr(base64UrlStr);
-  const data = unminifyData(minifiedData);
-  return data;
+  return await decompressFromBase64UrlStr(base64UrlStr);
 }
 
 export { saveData, fetchData };

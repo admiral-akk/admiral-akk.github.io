@@ -1,4 +1,8 @@
-import { DataManager, ApiCompressor } from "./util/compression.js";
+import {
+  DataManager,
+  ApiCompressor,
+  DefaultCompressor,
+} from "./util/compression.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -7,13 +11,10 @@ editor.reroute = true;
 editor.start();
 
 var toAudioNodeType = {};
-class DrawflowCompressor {
-  async compressJSONToBase64(jsonData) {
+class DrawflowPreprocessor {
+  async jsonToString(jsonData) {
     const arrayForm = [];
     for (const [key, value] of Object.entries(jsonData)) {
-      console.log("uncompressedData", jsonData);
-      console.log("key", key);
-      console.log("value", value);
       const { data, id, name, outputs, pos_x, pos_y } = value;
 
       const outputList = [];
@@ -48,12 +49,9 @@ class DrawflowCompressor {
       arrayForm.push(compressedStr);
     }
 
-    const jsonStr = JSON.stringify(arrayForm);
-    console.log("jsonStr", jsonStr);
-    return btoa(jsonStr);
+    return JSON.stringify(arrayForm);
   }
-  async decompressBase64ToJSON(base64Str) {
-    const jsonStr = atob(base64Str);
+  async jsonFromString(jsonStr) {
     const arrayForm = JSON.parse(jsonStr);
 
     const drawflowData = {};
@@ -85,7 +83,10 @@ class DrawflowCompressor {
   }
 }
 
-const dataManager = new DataManager(new DrawflowCompressor());
+const dataManager = new DataManager(
+  new DefaultCompressor(),
+  new DrawflowPreprocessor()
+);
 
 // Events!
 const audioNodes = new Map();
@@ -108,7 +109,7 @@ function minifyData(editorData) {
       pos_y,
     };
   }
-  console.log(newData);
+
   return newData;
 }
 
@@ -489,7 +490,7 @@ class Envelope extends GainNode {
     const { ramptype, peak, attack, decay } = data;
     const typeIndex = Envelope.types.indexOf(ramptype);
     const dataStr = `${typeIndex}${peak},${attack},${decay}`;
-    console.log("Env", dataStr);
+
     return dataStr;
   }
 

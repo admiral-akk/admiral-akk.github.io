@@ -90,6 +90,7 @@ async function readData() {
   const state = urlData ?? localStorage.getItem(stateString);
   if (state && state != "undefined" && state !== null) {
     const { data } = JSON.parse(state).drawflow.Home;
+    console.log("data", data);
 
     const connectionsMap = {};
     const idMap = {};
@@ -186,9 +187,11 @@ async function readData() {
       const newId = addNodeToDrawFlow(
         name,
         position[id].posX,
-        position[id].posY
+        position[id].posY,
+        data
       );
 
+      console.log(data);
       audioNodes[newId].updateData(data);
 
       idMap[id] = newId;
@@ -513,14 +516,14 @@ OscillatorNode.prototype.getInput = function (key) {
 AudioContext.prototype.updateData = () => {};
 OscillatorNode.prototype.updateData = function (data) {
   this.type = data.type;
-  this.frequency.value = data.frequency;
+  this.frequency.value = Number(data.frequency);
 };
 GainNode.prototype.updateData = function (data) {
-  this.gain.value = data.gain;
+  this.gain.value = Number(data.gain);
 };
 BiquadFilterNode.prototype.updateData = function (data) {
   this.type = data.type;
-  this.frequency.value = data.frequency;
+  this.frequency.value = Number(data.frequency);
 };
 
 editor.on("connectionCreated", function (connection) {
@@ -616,7 +619,7 @@ function drop(ev) {
   }
 }
 
-function addNodeToDrawFlow(name, pos_x, pos_y) {
+function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
   if (editor.editor_mode === "fixed") {
     return null;
   }
@@ -642,7 +645,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         <div class="title-box"><i class="fas fa-at"></i> Audio Out </div>
       </div>
       `;
-      nodeId = editor.addNode("s", 1, 0, pos_x, pos_y, "s", {}, output);
+      nodeId = editor.addNode("s", 1, 0, pos_x, pos_y, "s", data ?? {}, output);
       break;
     case "g":
       var gain = `
@@ -654,7 +657,16 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
       </div>
         </div>
         `;
-      nodeId = editor.addNode("g", 2, 1, pos_x, pos_y, "g", { gain: 1 }, gain);
+      nodeId = editor.addNode(
+        "g",
+        2,
+        1,
+        pos_x,
+        pos_y,
+        "g",
+        data ?? { gain: 1 },
+        gain
+      );
       break;
 
     case "e":
@@ -690,7 +702,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         pos_x,
         pos_y,
         "e",
-        { ramptype: "exp", attack: 1, peak: 1, decay: 1 },
+        data ?? { ramptype: "exp", attack: 1, peak: 1, decay: 1 },
         env
       );
       break;
@@ -716,7 +728,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         pos_x,
         pos_y,
         "n",
-        { type: "white" },
+        data ?? { type: "white" },
         noise
       );
       break;
@@ -750,7 +762,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         pos_x,
         pos_y,
         "f",
-        { type: "lowpass", frequency: 200 },
+        data ?? { type: "lowpass", frequency: 200 },
         filter
       );
       break;
@@ -781,7 +793,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y) {
         pos_x,
         pos_y,
         "o",
-        { type: "sine", frequency: 260 },
+        data ?? { type: "sine", frequency: 260 },
         osc
       );
       break;

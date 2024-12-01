@@ -12,6 +12,44 @@ editor.start();
 
 var toAudioNodeType = {};
 class DrawflowPreprocessor {
+  minifyConnections(outputs) {
+    var str = "";
+    for (const [outputName, { connections }] of Object.entries(outputs)) {
+      const shortName = outputName.replace("output_", "");
+      for (let i = 0; i < connections.length; i++) {
+        const { node, output } = connections[i];
+        const shortInputName = output.replace("input_", "");
+        if (str !== "") {
+          str += ",";
+        }
+        str += `${shortName},${node},${shortInputName}`;
+      }
+    }
+    return str;
+  }
+
+  unminifyConnections(outputStr) {
+    if (outputStr === "") {
+      return {};
+    }
+
+    const outputs = {};
+
+    const splitStr = outputStr.split(",");
+
+    for (let i = 0; i < splitStr.length / 3; i++) {
+      const outputName = `output_${splitStr[3 * i]}`;
+      const node = `${splitStr[3 * i + 1]}`;
+      const output = `input_${splitStr[3 * i + 2]}`;
+      if (!(outputName in outputs)) {
+        outputs[outputName] = { connections: [] };
+      }
+      outputs[outputName].connections.push({ node, output });
+    }
+
+    return outputs;
+  }
+
   async jsonToString(jsonData) {
     const arrayForm = [];
     for (const [key, value] of Object.entries(jsonData)) {
@@ -33,8 +71,7 @@ class DrawflowPreprocessor {
         y,
       };
 
-      const outputListNullable =
-        outputList.length > 0 ? JSON.stringify(outputList) : "";
+      const outputListNullable = this.minifyConnections(outputs);
       const dataNullable = toAudioNodeType[name].dataToString(data);
 
       const compressedStr = `${id}|${name}|${x}|${y}|${outputListNullable}|${dataNullable}`;
@@ -58,17 +95,12 @@ class DrawflowPreprocessor {
     for (let i = 0; i < arrayForm.length; i++) {
       const compressedStr = arrayForm[i];
 
-      const [id, name, x, y, outputListNullable, dataNullable] =
+      const [id, name, x, y, outputsNullable, dataNullable] =
         compressedStr.split("|");
 
       const data = toAudioNodeType[name].dataFromString(dataNullable);
-      const outputList =
-        outputListNullable === "" ? [] : JSON.parse(outputListNullable);
-      const outputs = {};
-      for (let i = 0; i < outputList.length; i++) {
-        const [output_id, connections] = outputList[i];
-        outputs[`output_${output_id}`] = { connections };
-      }
+      const outputs = this.unminifyConnections(outputsNullable);
+      console.log(outputs);
       drawflowData[id] = {
         data,
         id: id,

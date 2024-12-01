@@ -159,7 +159,6 @@ async function readData() {
 
     for (const [id, value] of Object.entries(data)) {
       if (distanceToSink[id] === undefined) {
-        throw new Error();
       }
     }
 
@@ -793,7 +792,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
         pos_x,
         pos_y,
         "o",
-        data ?? { type: "sine", frequency: 260 },
+        { type: "sine", frequency: 260 },
         osc
       );
       break;

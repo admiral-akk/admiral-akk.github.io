@@ -942,7 +942,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
         pos_x,
         pos_y,
         "o",
-        { type: "sine", frequency: 260 },
+        data ?? { type: "sine", frequency: 260 },
         osc
       );
       break;

@@ -83,5 +83,5 @@ var R=Object.defineProperty;var M=(e,t,o)=>t in e?R(e,t,{enumerable:!0,configura
         <input type="number" df-frequency>
       </div>
     </div>
-    `;n=r.addNode("o",1,1,t,o,"o",{type:"sine",frequency:260},u);break;default:return null}return J(n),n}function K(){for(const[e,t]of Object.entries(h))t.applyEnvelope&&t.applyEnvelope()}window.drop=_;window.drag=P;window.allowDrop=Y;window.trigger=K;window.editor=r;T={s:AudioContext,g:GainNode,e:B,n:L,f:BiquadFilterNode,o:OscillatorNode};W();requestAnimationFrame($);
-//# sourceMappingURL=index-9958ace5.js.map
+    `;n=r.addNode("o",1,1,t,o,"o",i??{type:"sine",frequency:260},u);break;default:return null}return J(n),n}function K(){for(const[e,t]of Object.entries(h))t.applyEnvelope&&t.applyEnvelope()}window.drop=_;window.drag=P;window.allowDrop=Y;window.trigger=K;window.editor=r;T={s:AudioContext,g:GainNode,e:B,n:L,f:BiquadFilterNode,o:OscillatorNode};W();requestAnimationFrame($);
+//# sourceMappingURL=index-10aad4f1.js.map

@@ -6,6 +6,7 @@ var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 editor.reroute = true;
 editor.start();
 
+var toAudioNodeType = {};
 class DrawflowCompressor {
   async compressJSONToBase64(jsonData) {
     const arrayForm = [];
@@ -33,8 +34,7 @@ class DrawflowCompressor {
 
       const outputListNullable =
         outputList.length > 0 ? JSON.stringify(outputList) : "";
-      const dataNullable =
-        Object.keys(data).length > 0 ? JSON.stringify(data) : "";
+      const dataNullable = toAudioNodeType[name].dataToString(data);
 
       const compressedStr = `${id}|${name}|${x}|${y}|${outputListNullable}|${dataNullable}`;
 
@@ -63,7 +63,7 @@ class DrawflowCompressor {
       const [id, name, x, y, outputListNullable, dataNullable] =
         compressedStr.split("|");
 
-      const data = dataNullable === "" ? {} : JSON.parse(dataNullable);
+      const data = toAudioNodeType[name].dataFromString(dataNullable);
       const outputList =
         outputListNullable === "" ? [] : JSON.parse(outputListNullable);
       const outputs = {};
@@ -394,7 +394,7 @@ class NoiseNode extends AudioBufferSourceNode {
     this.start(0);
   }
 
-  dataToString(data) {
+  static dataToString(data) {
     switch (data.type) {
       default:
       case "white":
@@ -406,7 +406,7 @@ class NoiseNode extends AudioBufferSourceNode {
     }
   }
 
-  dataFromString(str) {
+  static dataFromString(str) {
     const num = Number(str);
     switch (num) {
       default:
@@ -485,19 +485,21 @@ class Envelope extends GainNode {
     };
   }
 
-  dataToString(data) {
-    const { ramptype, peak, attack, delay } = data;
+  static dataToString(data) {
+    const { ramptype, peak, attack, decay } = data;
     const typeIndex = Envelope.types.indexOf(ramptype);
-    return `${typeIndex}${peak},${attack},${delay}`;
+    const dataStr = `${typeIndex}${peak},${attack},${decay}`;
+    console.log("Env", dataStr);
+    return dataStr;
   }
 
-  dataFromString(str) {
+  static dataFromString(str) {
     const ramptype = Envelope.types[Number(str[0])];
-    const [peak, attack, delay] = str.substring(1).split(",");
+    const [peak, attack, decay] = str.substring(1).split(",");
     return {
       ramptype,
       attack: Number(attack),
-      delay: Number(delay),
+      decay: Number(decay),
       peak: Number(peak),
     };
   }
@@ -546,7 +548,7 @@ class Envelope extends GainNode {
   }
 }
 
-BiquadFilterNode.prototype.types = [
+BiquadFilterNode.types = [
   "lowpass",
   "highpass",
   "bandpass",
@@ -555,12 +557,12 @@ BiquadFilterNode.prototype.types = [
   "notch",
   "allpass",
 ];
-BiquadFilterNode.prototype.dataToString = function (data) {
+BiquadFilterNode.dataToString = function (data) {
   const { type, frequency } = data;
   const typeIndex = BiquadFilterNode.types.indexOf(type);
   return `${typeIndex}${frequency}`;
 };
-BiquadFilterNode.prototype.dataFromString = function (str) {
+BiquadFilterNode.dataFromString = function (str) {
   return {
     type: BiquadFilterNode.types[Number(str[0])],
     frequency: Number(str.substring(1)),
@@ -583,10 +585,10 @@ AudioContext.prototype.getInput = function (key) {
       return this.destination;
   }
 };
-AudioContext.prototype.dataToString = function (data) {
+AudioContext.dataToString = function (data) {
   return ``;
 };
-AudioContext.prototype.dataFromString = function (str) {
+AudioContext.dataFromString = function (str) {
   return {};
 };
 
@@ -599,10 +601,10 @@ GainNode.prototype.getInput = function (key) {
       return this.gain;
   }
 };
-GainNode.prototype.dataToString = function (data) {
+GainNode.dataToString = function (data) {
   return `${data.gain}`;
 };
-GainNode.prototype.dataFromString = function (str) {
+GainNode.dataFromString = function (str) {
   return {
     gain: Number(str),
   };
@@ -615,12 +617,12 @@ OscillatorNode.prototype.getInput = function (key) {
       return this.frequency;
   }
 };
-OscillatorNode.prototype.dataToString = function (data) {
+OscillatorNode.dataToString = function (data) {
   const { type, frequency } = data;
   const typeIndex = OscillatorNode.types.indexOf(type);
   return `${typeIndex}${frequency}`;
 };
-OscillatorNode.prototype.dataFromString = function (str) {
+OscillatorNode.dataFromString = function (str) {
   return {
     type: OscillatorNode.types[Number(str[0])],
     frequency: Number(str.substring(1)),
@@ -978,6 +980,15 @@ window.drag = drag;
 window.allowDrop = allowDrop;
 window.trigger = trigger;
 window.editor = editor;
+
+toAudioNodeType = {
+  s: AudioContext,
+  g: GainNode,
+  e: Envelope,
+  n: NoiseNode,
+  f: BiquadFilterNode,
+  o: OscillatorNode,
+};
 
 readData();
 requestAnimationFrame(draw);

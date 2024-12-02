@@ -3,7 +3,7 @@ class Output {
     this.context = context;
   }
 
-  static shortName = "c";
+  static shortName = "s";
 
   getInput(key) {
     switch (key) {

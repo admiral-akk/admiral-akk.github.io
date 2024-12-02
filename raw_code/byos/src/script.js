@@ -351,32 +351,12 @@ function draw() {
 function nodeCreated(id) {
   const node = editor.getNodeFromId(id);
 
-  switch (node.class) {
-    case "o":
-      audioNodes[id] = new Oscillator(audioContext);
-      audioNodes[id].start();
-      break;
-    case "s":
-      audioNodes[id] = new Output(audioContext);
-      break;
-    case "g":
-      audioNodes[id] = new Gain(audioContext);
-      break;
-    case "e":
-      audioNodes[id] = new EnvelopeNode(audioContext);
-      break;
-    case "f":
-      audioNodes[id] = new BiquadFilter(audioContext);
-      break;
-    case "n":
-      audioNodes[id] = new NoiseNode(audioContext);
-      break;
-    case "c":
-      audioNodes[id] = new ClockNode(audioContext);
-      break;
-    default:
-      break;
-  }
+  console.log(node.class.toString());
+
+  console.log(toAudioNodeType.get(node.class.toString()));
+  audioNodes[id] = new (toAudioNodeType.get(
+    node.class.toString()
+  ).prototype.constructor)(audioContext);
 
   switch (node.class) {
     case "o":
@@ -714,6 +694,28 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
         "o",
         data ?? { type: "sine", frequency: 260 },
         osc
+      );
+      break;
+
+    case "d":
+      var delay = `
+      <div>
+        <div class="title-box"><i class="fab fa-telegram-plane"></i> Delay</div>
+        <div class="box">
+          <p>Delay Time</p>
+          <input type="number" df-delay>
+        </div>
+      </div>
+      `;
+      nodeId = editor.addNode(
+        "d",
+        2,
+        1,
+        pos_x,
+        pos_y,
+        "d",
+        data ?? { delay: 0.2 },
+        delay
       );
       break;
 

@@ -1,6 +1,7 @@
 class Oscillator extends OscillatorNode {
   constructor(context) {
     super(context);
+    this.start();
   }
   static shortName = "o";
   static types = ["sine", "square", "sawtooth", "triangle"];

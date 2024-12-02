@@ -43,12 +43,11 @@ class EnvelopeNode extends GainNode {
     this.data.peak = Number(data.peak);
     this.data.attack = Number(data.attack);
     this.data.decay = Number(data.decay);
-    this.applyEnvelope();
   }
 
-  applyEnvelope() {
+  applyEnvelope(time) {
     var setValue;
-    var currentTime = this.context.currentTime;
+    var currentTime = time;
 
     this.gain.cancelAndHoldAtTime(currentTime);
     switch (this.data.ramptype) {

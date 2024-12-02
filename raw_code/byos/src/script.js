@@ -860,7 +860,7 @@ function changeMode(option) {
 function trigger() {
   for (const [_, audioNode] of Object.entries(audioNodes)) {
     if (audioNode.applyEnvelope) {
-      audioNode.applyEnvelope();
+      audioNode.applyEnvelope(audioContext.currentTime);
     }
   }
 }

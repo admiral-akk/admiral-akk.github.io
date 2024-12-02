@@ -5,6 +5,7 @@ class EnvelopeNode extends GainNode {
     this.constantNode = audioContext.createConstantSource();
     this.constantNode.connect(this);
     this.constantNode.start();
+    this.gain.value = 0;
     this.data = {
       ramptype: "exp",
       peak: 1,

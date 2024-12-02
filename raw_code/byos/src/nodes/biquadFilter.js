@@ -26,12 +26,14 @@ class BiquadFilter extends BiquadFilterNode {
     "notch",
     "allpass",
   ];
-  dataToString(data) {
+
+  static dataToString(data) {
     const { type, frequency } = data;
     const typeIndex = BiquadFilter.types.indexOf(type);
     return `${typeIndex}${frequency}`;
   }
-  dataFromString(str) {
+
+  static dataFromString(str) {
     return {
       type: BiquadFilter.types[Number(str[0])],
       frequency: Number(str.substring(1)),

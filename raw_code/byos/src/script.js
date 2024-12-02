@@ -1,12 +1,9 @@
-import {
-  DataManager,
-  ApiCompressor,
-  DefaultCompressor,
-} from "./util/compression.js";
+import { DataManager, DefaultCompressor } from "./util/compression.js";
 import { EnvelopeNode } from "./nodes/envelopeNode.js";
 import { NoiseNode } from "./nodes/noiseNode.js";
 import { ClockNode } from "./nodes/clockNode.js";
 import { BiquadFilter } from "./nodes/biquadFilter.js";
+import { Gain } from "./nodes/gain.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -76,6 +73,8 @@ class DrawflowPreprocessor {
       };
 
       const outputListNullable = this.minifyConnections(outputs);
+      console.log(name);
+      console.log(toAudioNodeType[name]);
       const dataNullable = toAudioNodeType[name].dataToString(data);
 
       const compressedStr = `${id}|${name}|${x}|${y}|${outputListNullable}|${dataNullable}`;
@@ -354,7 +353,7 @@ function nodeCreated(id) {
       audioNodes[id] = audioContext;
       break;
     case "g":
-      audioNodes[id] = audioContext.createGain();
+      audioNodes[id] = new Gain(audioContext);
       break;
     case "e":
       audioNodes[id] = new EnvelopeNode(audioContext);
@@ -446,6 +445,9 @@ GainNode.dataFromString = function (str) {
     gain: Number(str),
   };
 };
+GainNode.prototype.updateData = function (data) {
+  this.gain.value = Number(data.gain);
+};
 
 OscillatorNode.types = ["sine", "square", "sawtooth", "triangle"];
 OscillatorNode.prototype.getInput = function (key) {
@@ -470,9 +472,6 @@ AudioContext.prototype.updateData = () => {};
 OscillatorNode.prototype.updateData = function (data) {
   this.type = data.type;
   this.frequency.value = Number(data.frequency);
-};
-GainNode.prototype.updateData = function (data) {
-  this.gain.value = Number(data.gain);
 };
 
 editor.on("connectionCreated", function (connection) {
@@ -839,7 +838,7 @@ window.editor = editor;
 
 toAudioNodeType = {
   s: AudioContext,
-  g: GainNode,
+  g: Gain,
   e: EnvelopeNode,
   n: NoiseNode,
   f: BiquadFilter,

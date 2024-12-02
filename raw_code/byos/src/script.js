@@ -3,6 +3,7 @@ import { EnvelopeNode } from "./nodes/envelopeNode.js";
 import { NoiseNode } from "./nodes/noiseNode.js";
 import { ClockNode } from "./nodes/clockNode.js";
 import { BiquadFilter } from "./nodes/biquadFilter.js";
+import { Oscillator } from "./nodes/oscillator.js";
 import { Gain } from "./nodes/gain.js";
 
 var id = document.getElementById("drawflow");
@@ -346,7 +347,7 @@ function nodeCreated(id) {
 
   switch (node.class) {
     case "o":
-      audioNodes[id] = audioContext.createOscillator();
+      audioNodes[id] = new Oscillator(audioContext);
       audioNodes[id].start();
       break;
     case "s":
@@ -428,51 +429,7 @@ AudioContext.dataFromString = function (str) {
   return {};
 };
 
-GainNode.prototype.getInput = function (key) {
-  switch (key) {
-    case "input_1":
-      return this;
-    case "input_2":
-    default:
-      return this.gain;
-  }
-};
-GainNode.dataToString = function (data) {
-  return `${data.gain}`;
-};
-GainNode.dataFromString = function (str) {
-  return {
-    gain: Number(str),
-  };
-};
-GainNode.prototype.updateData = function (data) {
-  this.gain.value = Number(data.gain);
-};
-
-OscillatorNode.types = ["sine", "square", "sawtooth", "triangle"];
-OscillatorNode.prototype.getInput = function (key) {
-  switch (key) {
-    default:
-      return this.frequency;
-  }
-};
-OscillatorNode.dataToString = function (data) {
-  const { type, frequency } = data;
-  const typeIndex = OscillatorNode.types.indexOf(type);
-  return `${typeIndex}${frequency}`;
-};
-OscillatorNode.dataFromString = function (str) {
-  return {
-    type: OscillatorNode.types[Number(str[0])],
-    frequency: Number(str.substring(1)),
-  };
-};
-
 AudioContext.prototype.updateData = () => {};
-OscillatorNode.prototype.updateData = function (data) {
-  this.type = data.type;
-  this.frequency.value = Number(data.frequency);
-};
 
 editor.on("connectionCreated", function (connection) {
   const sendingNode = audioNodes[connection.output_id];
@@ -842,7 +799,7 @@ toAudioNodeType = {
   e: EnvelopeNode,
   n: NoiseNode,
   f: BiquadFilter,
-  o: OscillatorNode,
+  o: Oscillator,
   c: ClockNode,
 };
 

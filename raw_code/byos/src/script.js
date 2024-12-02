@@ -5,6 +5,7 @@ import {
 } from "./util/compression.js";
 import { EnvelopeNode } from "./nodes/envelopeNode.js";
 import { NoiseNode } from "./nodes/noiseNode.js";
+import { ClockNode } from "./nodes/clockNode.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -363,6 +364,9 @@ function nodeCreated(id) {
     case "n":
       audioNodes[id] = new NoiseNode(audioContext);
       break;
+    case "c":
+      audioNodes[id] = new ClockNode(audioContext);
+      break;
     default:
       break;
   }
@@ -527,6 +531,7 @@ editor.on("mouseMove", function (position) {
 
 editor.on("nodeDataChanged", function (id) {
   const { data } = editor.getNodeFromId(id);
+  console.log(data);
 
   audioNodes[id].updateData(data);
   saveTransformedData();
@@ -676,7 +681,7 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
       `;
       nodeId = editor.addNode(
         "e",
-        0,
+        1,
         1,
         pos_x,
         pos_y,
@@ -743,6 +748,28 @@ function addNodeToDrawFlow(name, pos_x, pos_y, data = null) {
         "f",
         data ?? { type: "lowpass", frequency: 200 },
         filter
+      );
+      break;
+
+    case "c":
+      var clk = `
+      <div>
+        <div class="title-box"><i class="fab fa-telegram-plane"></i> Clock</div>
+        <div class="box">
+          <p>BPM</p>
+          <input type="number" value=60 df-bpm>
+        </div>
+      </div>
+      `;
+      nodeId = editor.addNode(
+        "c",
+        0,
+        1,
+        pos_x,
+        pos_y,
+        "c",
+        data ?? { bpm: 60 },
+        clk
       );
       break;
 
@@ -851,6 +878,7 @@ toAudioNodeType = {
   n: NoiseNode,
   f: BiquadFilterNode,
   o: OscillatorNode,
+  c: ClockNode,
 };
 
 readData();

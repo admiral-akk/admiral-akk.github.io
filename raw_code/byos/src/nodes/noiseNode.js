@@ -16,6 +16,8 @@ class NoiseNode extends AudioBufferSourceNode {
     this.start(0);
   }
 
+  static shortName = "n";
+
   static dataToString(data) {
     switch (data.type) {
       default:
@@ -44,7 +46,7 @@ class NoiseNode extends AudioBufferSourceNode {
   regenerateBuffer() {
     // https://noisehack.com/generate-noise-web-audio-api/
     const output = this.buffer.getChannelData(0);
-    const bufferSize = 2 * audioContext.sampleRate;
+    const bufferSize = 2 * this.context.sampleRate;
     switch (this.type) {
       case "pink":
         var b0, b1, b2, b3, b4, b5, b6;

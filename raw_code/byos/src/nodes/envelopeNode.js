@@ -2,7 +2,6 @@ class EnvelopeNode extends GainNode {
   static types = ["linear", "instant", "exp"];
   constructor(audioContext) {
     super(audioContext);
-    this.audioContext = audioContext;
     this.constantNode = audioContext.createConstantSource();
     this.constantNode.connect(this);
     this.constantNode.start();
@@ -13,6 +12,8 @@ class EnvelopeNode extends GainNode {
       decay: 1,
     };
   }
+
+  static shortName = "e";
 
   static dataToString(data) {
     const { ramptype, peak, attack, decay } = data;
@@ -47,9 +48,9 @@ class EnvelopeNode extends GainNode {
 
   applyEnvelope() {
     var setValue;
-    var currentTime = this.audioContext.currentTime;
+    var currentTime = this.context.currentTime;
 
-    this.gain.cancelScheduledValues(currentTime);
+    this.gain.cancelAndHoldAtTime(currentTime);
     switch (this.data.ramptype) {
       case "linear":
         setValue = (val, t) => this.gain.linearRampToValueAtTime(val, t);
@@ -74,6 +75,7 @@ class EnvelopeNode extends GainNode {
 
     addStep(this.data.peak, this.data.attack);
     addStep(0.001, this.data.decay);
+    this.gain.setTargetAtTime(0, currentTime, 0.013);
   }
 }
 

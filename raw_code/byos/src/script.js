@@ -5,6 +5,7 @@ import { ClockNode } from "./nodes/clockNode.js";
 import { BiquadFilter } from "./nodes/biquadFilter.js";
 import { Oscillator } from "./nodes/oscillator.js";
 import { Gain } from "./nodes/gain.js";
+import { Output } from "./nodes/output.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -351,7 +352,7 @@ function nodeCreated(id) {
       audioNodes[id].start();
       break;
     case "s":
-      audioNodes[id] = audioContext;
+      audioNodes[id] = new Output(audioContext);
       break;
     case "g":
       audioNodes[id] = new Gain(audioContext);
@@ -415,21 +416,6 @@ editor.on("nodeSelected", function (id) {});
 editor.on("moduleCreated", function (name) {});
 
 editor.on("moduleChanged", function (name) {});
-
-AudioContext.prototype.getInput = function (key) {
-  switch (key) {
-    default:
-      return this.destination;
-  }
-};
-AudioContext.dataToString = function (data) {
-  return ``;
-};
-AudioContext.dataFromString = function (str) {
-  return {};
-};
-
-AudioContext.prototype.updateData = () => {};
 
 editor.on("connectionCreated", function (connection) {
   const sendingNode = audioNodes[connection.output_id];
@@ -794,7 +780,7 @@ window.trigger = trigger;
 window.editor = editor;
 
 toAudioNodeType = {
-  s: AudioContext,
+  s: Output,
   g: Gain,
   e: EnvelopeNode,
   n: NoiseNode,

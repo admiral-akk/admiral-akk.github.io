@@ -6,6 +6,7 @@ import {
 import { EnvelopeNode } from "./nodes/envelopeNode.js";
 import { NoiseNode } from "./nodes/noiseNode.js";
 import { ClockNode } from "./nodes/clockNode.js";
+import { BiquadFilter } from "./nodes/biquadFilter.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -359,7 +360,7 @@ function nodeCreated(id) {
       audioNodes[id] = new EnvelopeNode(audioContext);
       break;
     case "f":
-      audioNodes[id] = audioContext.createBiquadFilter();
+      audioNodes[id] = new BiquadFilter(audioContext);
       break;
     case "n":
       audioNodes[id] = new NoiseNode(audioContext);
@@ -414,37 +415,6 @@ editor.on("nodeSelected", function (id) {});
 editor.on("moduleCreated", function (name) {});
 
 editor.on("moduleChanged", function (name) {});
-
-BiquadFilterNode.types = [
-  "lowpass",
-  "highpass",
-  "bandpass",
-  "lowshelf",
-  "peaking",
-  "notch",
-  "allpass",
-];
-BiquadFilterNode.dataToString = function (data) {
-  const { type, frequency } = data;
-  const typeIndex = BiquadFilterNode.types.indexOf(type);
-  return `${typeIndex}${frequency}`;
-};
-BiquadFilterNode.dataFromString = function (str) {
-  return {
-    type: BiquadFilterNode.types[Number(str[0])],
-    frequency: Number(str.substring(1)),
-  };
-};
-
-BiquadFilterNode.prototype.getInput = function (key) {
-  switch (key) {
-    case "input_1":
-      return this;
-    case "input_2":
-    default:
-      return this.frequency;
-  }
-};
 
 AudioContext.prototype.getInput = function (key) {
   switch (key) {
@@ -503,10 +473,6 @@ OscillatorNode.prototype.updateData = function (data) {
 };
 GainNode.prototype.updateData = function (data) {
   this.gain.value = Number(data.gain);
-};
-BiquadFilterNode.prototype.updateData = function (data) {
-  this.type = data.type;
-  this.frequency.value = Number(data.frequency);
 };
 
 editor.on("connectionCreated", function (connection) {
@@ -876,7 +842,7 @@ toAudioNodeType = {
   g: GainNode,
   e: EnvelopeNode,
   n: NoiseNode,
-  f: BiquadFilterNode,
+  f: BiquadFilter,
   o: OscillatorNode,
   c: ClockNode,
 };

@@ -1,0 +1,42 @@
+class BiquadFilter extends BiquadFilterNode {
+  constructor(context) {
+    super(context);
+  }
+  updateData(data) {
+    this.type = data.type;
+    this.frequency.value = Number(data.frequency);
+  }
+
+  getInput(key) {
+    switch (key) {
+      case "input_1":
+        return this;
+      case "input_2":
+      default:
+        return this.frequency;
+    }
+  }
+
+  static types = [
+    "lowpass",
+    "highpass",
+    "bandpass",
+    "lowshelf",
+    "peaking",
+    "notch",
+    "allpass",
+  ];
+  dataToString(data) {
+    const { type, frequency } = data;
+    const typeIndex = BiquadFilter.types.indexOf(type);
+    return `${typeIndex}${frequency}`;
+  }
+  dataFromString(str) {
+    return {
+      type: BiquadFilter.types[Number(str[0])],
+      frequency: Number(str.substring(1)),
+    };
+  }
+}
+
+export { BiquadFilter };

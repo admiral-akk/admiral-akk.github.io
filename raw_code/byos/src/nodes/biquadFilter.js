@@ -2,6 +2,7 @@ class BiquadFilter extends BiquadFilterNode {
   constructor(context) {
     super(context);
   }
+  static shortName = "f";
   updateData(data) {
     this.type = data.type;
     this.frequency.value = Number(data.frequency);

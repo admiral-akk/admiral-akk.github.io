@@ -2,7 +2,7 @@ class Oscillator extends OscillatorNode {
   constructor(context) {
     super(context);
   }
-
+  static shortName = "o";
   static types = ["sine", "square", "sawtooth", "triangle"];
   getInput(key) {
     switch (key) {

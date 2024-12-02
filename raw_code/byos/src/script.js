@@ -6,6 +6,7 @@ import { BiquadFilter } from "./nodes/biquadFilter.js";
 import { Oscillator } from "./nodes/oscillator.js";
 import { Gain } from "./nodes/gain.js";
 import { Output } from "./nodes/output.js";
+import { Delay } from "./nodes/delay.js";
 
 var id = document.getElementById("drawflow");
 const editor = new Drawflow(id);
@@ -76,8 +77,10 @@ class DrawflowPreprocessor {
 
       const outputListNullable = this.minifyConnections(outputs);
       console.log(name);
-      console.log(toAudioNodeType[name]);
-      const dataNullable = toAudioNodeType[name].dataToString(data);
+      console.log(toAudioNodeType.get(name.toString()));
+      const dataNullable = toAudioNodeType
+        .get(name.toString())
+        .dataToString(data);
 
       const compressedStr = `${id}|${name}|${x}|${y}|${outputListNullable}|${dataNullable}`;
 
@@ -103,7 +106,9 @@ class DrawflowPreprocessor {
       const [id, name, x, y, outputsNullable, dataNullable] =
         compressedStr.split("|");
 
-      const data = toAudioNodeType[name].dataFromString(dataNullable);
+      const data = toAudioNodeType
+        .get(name.toString())
+        .dataFromString(dataNullable);
       const outputs = this.unminifyConnections(outputsNullable);
       console.log(outputs);
       drawflowData[id] = {
@@ -779,15 +784,22 @@ window.allowDrop = allowDrop;
 window.trigger = trigger;
 window.editor = editor;
 
-toAudioNodeType = {
-  s: Output,
-  g: Gain,
-  e: EnvelopeNode,
-  n: NoiseNode,
-  f: BiquadFilter,
-  o: Oscillator,
-  c: ClockNode,
-};
+const nodeTypes = [
+  Output,
+  Gain,
+  EnvelopeNode,
+  NoiseNode,
+  BiquadFilter,
+  Oscillator,
+  ClockNode,
+  Delay,
+];
+
+toAudioNodeType = new Map(
+  nodeTypes.map((nodeType) => [nodeType.shortName, nodeType])
+);
+
+console.log(toAudioNodeType);
 
 readData();
 requestAnimationFrame(draw);

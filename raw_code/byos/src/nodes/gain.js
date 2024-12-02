@@ -2,6 +2,7 @@ class Gain extends GainNode {
   constructor(context) {
     super(context);
   }
+  static shortName = "g";
 
   getInput(key) {
     switch (key) {

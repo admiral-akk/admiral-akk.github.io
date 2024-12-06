@@ -246,24 +246,37 @@ async function readData() {
 
     const countOfDist = {};
     const position = {};
-    for (const [id, value] of Object.entries(data)) {
-      const dist = distanceToSink[id];
-      if (countOfDist[dist] === undefined) {
-        countOfDist[dist] = 1;
-      } else {
-        countOfDist[dist] = countOfDist[dist] + 1;
-      }
-      const count = countOfDist[dist];
 
-      position[id] = { posX: -dist * 300 + 800, posY: 500 * count };
+    var maxX = -1000000;
+    var minX = -maxX;
+    var maxY = maxX;
+    var minY = -maxY;
+    for (const [id, value] of Object.entries(data)) {
+      const { pos_x, pos_y } = value;
+      maxX = Math.max(pos_x, maxX);
+      minX = Math.min(pos_x, minX);
+      maxY = Math.max(pos_y, maxY);
+      minY = Math.min(pos_y, minY);
     }
+
+    // offset:
+
+    const viewY = document.getElementsByClassName("col-right")[0].clientHeight;
+    const viewX = document.getElementsByClassName("col-right")[0].clientWidth;
+    const offsetX = -(maxX + minX) / 2 + viewX / 2 + 200;
+    const offsetY = -(minY + maxY) / 2 + viewY / 2;
 
     // then figure out which positions to put nodes in and create the nodes
 
     for (const [_, value] of Object.entries(data)) {
       const { id, name, data, pos_x, pos_y } = value;
 
-      const newId = addNodeToDrawFlow(name, pos_x, pos_y, data);
+      const newId = addNodeToDrawFlow(
+        name,
+        pos_x + offsetX,
+        pos_y + offsetY,
+        data
+      );
 
       audioNodes[newId].updateData(data);
 

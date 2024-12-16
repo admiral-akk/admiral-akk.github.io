@@ -58,10 +58,6 @@ const aPointSizeLoc = 0;
 const aPositionLoc = 1;
 const aColorLoc = 2;
 
-gl.enableVertexAttribArray(aPointSizeLoc);
-gl.enableVertexAttribArray(aPositionLoc);
-gl.enableVertexAttribArray(aColorLoc);
-
 gl.linkProgram(program);
 
 if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -81,11 +77,21 @@ const buffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
 
+gl.vertexAttrib1f(aPointSizeLoc, 10);
+
+gl.vertexAttrib4f(aColorLoc, 1,1,1,1);
+gl.vertexAttrib2f(aPositionLoc, 0.25,0.25);
+
 gl.vertexAttribPointer(aPointSizeLoc, 1, gl.FLOAT, false, 6 * 4, 0);
 gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 6 * 4, 1 * 4);
-gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 6 * 4,3 * 4);
+gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
 
-gl.drawArrays(gl.TRIANGLES, 0, 3);
+gl.enableVertexAttribArray(aPointSizeLoc);
+gl.enableVertexAttribArray(aPositionLoc);
+gl.enableVertexAttribArray(aColorLoc);
+
+gl.drawArrays(gl.POINTS, 0, 3);
+
 
 // need to add:
 

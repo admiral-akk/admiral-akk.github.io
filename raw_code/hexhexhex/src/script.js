@@ -19,12 +19,18 @@ const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
-uniform vec2 uPosition;
-uniform float uPointSize;
+precision mediump float;
+
+layout(location = 0) in float aPointSize;
+layout(location = 1) in vec2 aPosition;
+layout(location = 2) in vec3 aColor;
+
+out vec3 vColour;
 
 void main() {
-    gl_Position = vec4(uPosition,0.,1.);
-    gl_PointSize = uPointSize;
+    gl_Position = vec4(aPosition,0.,1.);
+    gl_PointSize = aPointSize;
+    vColour = aColor;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -32,13 +38,12 @@ const fragmentShaderSource = `#version 300 es
 
 precision mediump float;
 
-uniform int uIndex;
-uniform vec4 uColors[3];
+in vec3 vColour;
 
 out vec4 fragColor; 
 
 void main() {
-  fragColor = uColors[uIndex];
+  fragColor = vec4(vColour,1.);
 }`;
 
 gl.shaderSource(vertexShader, vertexShaderSource);
@@ -49,6 +54,14 @@ gl.shaderSource(fragmentShader, fragmentShaderSource);
 gl.compileShader(fragmentShader);
 gl.attachShader(program, fragmentShader);
 
+const aPointSizeLoc = 0;
+const aPositionLoc = 1;
+const aColorLoc = 2;
+
+gl.enableVertexAttribArray(aPointSizeLoc);
+gl.enableVertexAttribArray(aPositionLoc);
+gl.enableVertexAttribArray(aColorLoc);
+
 gl.linkProgram(program);
 
 if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -58,21 +71,22 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 
 gl.useProgram(program);
 
-const uPositionLoc = gl.getUniformLocation(program, "uPosition");
-const uPointSizeLoc = gl.getUniformLocation(program, "uPointSize");
-const uIndexLoc = gl.getUniformLocation(program, "uIndex");
-const uColorsLoc = gl.getUniformLocation(program, "uColors");
+const bufferData = new Float32Array([
+  100,      0, 1,         1, 0, 0, 
+  20,       -1, -1,    0, 1, 0, 
+  150,      1, -1,      0, 0, 1,
+]);
 
-gl.uniform1f(uPointSizeLoc, 100);
-gl.uniform2f(uPositionLoc, 0.5, 0);
-gl.uniform1i(uIndexLoc, 2);
-gl.uniform4fv(uColorsLoc, [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1]);
+const buffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
 
-gl.drawArrays(gl.POINTS, 0, 1);
-gl.uniform1f(uPointSizeLoc, 20);
-gl.uniform2f(uPositionLoc, 0.25, 0.05);
+gl.vertexAttribPointer(aPointSizeLoc, 1, gl.FLOAT, false, 6 * 4, 0);
+gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 6 * 4, 1 * 4);
+gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 6 * 4,3 * 4);
 
-gl.drawArrays(gl.POINTS, 0, 1);
+gl.drawArrays(gl.TRIANGLES, 0, 3);
+
 // need to add:
 
 // 1. Camera support - can mimic this on the software side

@@ -87,11 +87,15 @@ const pixels = new Uint8Array([
 gl.vertexAttrib2f(aPositionLoc, 0.25,0.25);
 gl.vertexAttrib2f(aUvLoc, 0.25,0.25);
 
+const vao1 = gl.createVertexArray();
+gl.bindVertexArray(vao1);
+
 gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 4 * 4, 0 * 4);
 gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
 gl.enableVertexAttribArray(aPositionLoc);
 gl.enableVertexAttribArray(aUvLoc);
+gl.bindVertexArray(null);
 
 const loadImage = () => new Promise(resolve => {
   const image = new Image();
@@ -123,7 +127,9 @@ const run = async () => {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
   gl.generateMipmap(gl.TEXTURE_2D);
 
+  gl.bindVertexArray(vao1);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindVertexArray(null);
 }
 
 run();

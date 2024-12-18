@@ -4,7 +4,7 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
-import {mat4}from 'gl-matrix'
+import { mat4, vec3 } from "gl-matrix";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -32,7 +32,8 @@ layout(location = 5) in vec3 aColor;
 out vec3 vColor;
 
 void main() {
-    gl_Position = uProjection * uView * aModel * vec4(aPosition.x, 0., aPosition.y,1.);
+    gl_Position = uProjection * uView * aModel * 
+    vec4(aPosition.x, 0., aPosition.y,1.);
     vColor = aColor;
 }`;
 
@@ -69,57 +70,72 @@ gl.useProgram(program);
 const sqrt32 = Math.sqrt(3) / 2;
 
 const hexVerts = [
-  0.5, sqrt32,
-  1, 0,
-  0.5,  -sqrt32,
+  0.5,
+  sqrt32,
+  1,
+  0,
+  0.5,
+  -sqrt32,
 
-  0.5, sqrt32,
-  0.5,  -sqrt32,
-  -0.5,  -sqrt32,
+  0.5,
+  sqrt32,
+  0.5,
+  -sqrt32,
+  -0.5,
+  -sqrt32,
 
-  0.5, sqrt32,
-  -0.5,  -sqrt32,
-  0.5,  -sqrt32,
+  0.5,
+  sqrt32,
+  -0.5,
+  -sqrt32,
+  0.5,
+  -sqrt32,
 
-  0.5, sqrt32,
-  -0.5,  -sqrt32,
-  -1,  0,
+  0.5,
+  sqrt32,
+  -0.5,
+  -sqrt32,
+  -1,
+  0,
 
-  0.5, sqrt32,
-  -1,  0,
-  -0.5,  sqrt32,
+  0.5,
+  sqrt32,
+  -1,
+  0,
+  -0.5,
+  sqrt32,
 ];
 
+const modelData = new Float32Array(hexVerts);
 
+const transformArray = [];
 
-const modelData = new Float32Array(hexVerts)
+const xDim = 10;
+const yDim = 10;
+for (let x = 0; x < xDim; x++) {
+  for (let y = 0; y < yDim; y++) {
+    const model = mat4.create();
+    const xOffset = 1.5 * (x - (xDim - 1) / 2);
+    const yOffset = 2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
+    mat4.translate(model, model, [xOffset, 0, yOffset]);
+    for (let j = 0; j < model.length; j++) {
+      transformArray.push(model[j]);
+    }
 
-const transformArray = []
-
-const elementCount = 2;
-
-for (let i = 0; i < elementCount; i++) {
-  const model = mat4.create()
-  mat4.scale(model,model,[1,1,2])
-  mat4.translate(model,model,[i,0,2*i])
-  for (let j = 0; j < model.length; j++) {
-    transformArray.push(model[j])
-
+    transformArray.push(Math.random(), Math.random(), Math.random());
   }
-  transformArray.push(1, 0, 0)
 }
 
-const transformData = new Float32Array(transformArray)
+const transformData = new Float32Array(transformArray);
 
-// 
-
+//
 
 const vao1 = gl.createVertexArray();
 gl.bindVertexArray(vao1);
 const modelBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW)
-gl.vertexAttribPointer(0, 2, gl.FLOAT, false,  0, 0);
+gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 gl.enableVertexAttribArray(0);
 
 const transformBuffer = gl.createBuffer();
@@ -131,11 +147,11 @@ gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 19 * 4, 8 * 4);
 gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 19 * 4, 12 * 4);
 gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 19 * 4, 16 * 4);
 
-gl.vertexAttribDivisor(1,1);
-gl.vertexAttribDivisor(2,1);
-gl.vertexAttribDivisor(3,1);
-gl.vertexAttribDivisor(4,1);
-gl.vertexAttribDivisor(5,1);
+gl.vertexAttribDivisor(1, 1);
+gl.vertexAttribDivisor(2, 1);
+gl.vertexAttribDivisor(3, 1);
+gl.vertexAttribDivisor(4, 1);
+gl.vertexAttribDivisor(5, 1);
 
 gl.enableVertexAttribArray(1);
 gl.enableVertexAttribArray(2);
@@ -145,27 +161,38 @@ gl.enableVertexAttribArray(5);
 
 gl.bindVertexArray(null);
 
-const viewLoc = gl.getUniformLocation(program, 'uView');
-const projectionLoc = gl.getUniformLocation(program, 'uProjection');
+const viewLoc = gl.getUniformLocation(program, "uView");
+const projectionLoc = gl.getUniformLocation(program, "uProjection");
 
-const view = mat4.create()
-const projection = mat4.create()
+const view = mat4.create();
+const projection = mat4.create();
 
-mat4.lookAt(view, [0,-4,-1.5], [0,0,0],[0,1,0])
+mat4.perspective(
+  projection,
+  Math.PI / 2,
+  gl.canvas.width / gl.canvas.height,
+  0.01,
+  20
+);
 
-mat4.perspective(projection, Math.PI / 2, gl.canvas.width / gl.canvas.height,0.01,20);
+const cameraPos = vec3.create();
+cameraPos[0] = -4;
+cameraPos[1] = 10;
+const origin = vec3.create();
 
 const draw = () => {
-    requestAnimationFrame(draw)
-    gl.uniformMatrix4fv(viewLoc, false, view)
-    gl.uniformMatrix4fv(projectionLoc, false, projection)
-    gl.bindVertexArray(vao1);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 15, 2);
-    gl.bindVertexArray(null);
-}
+  requestAnimationFrame(draw);
+
+  //vec3.rotateY(cameraPos, cameraPos, origin, 0.002);
+  mat4.lookAt(view, cameraPos, origin, [0, 1, 0]);
+  gl.uniformMatrix4fv(viewLoc, false, view);
+  gl.uniformMatrix4fv(projectionLoc, false, projection);
+  gl.bindVertexArray(vao1);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 15, xDim * yDim);
+  gl.bindVertexArray(null);
+};
 
 draw();
-
 
 // webgl types
 
@@ -177,7 +204,7 @@ draw();
 // sampler??
 // query??
 
-// Containers 
+// Containers
 
 // VertexArray
 // Framebuffer

@@ -30,10 +30,14 @@ layout(location = 1) in mat4 aModel;
 layout(location = 5) in vec3 aColor;
 
 out vec3 vColor;
+out vec2 vUv;
+out vec4 vPos;
 
 void main() {
-    gl_Position = uProjection * uView * aModel * 
-    vec4(aPosition.x, 0., aPosition.y,1.);
+    vPos = aModel * vec4(aPosition.x, 0., aPosition.y,1.);
+
+    gl_Position = uProjection * uView * vPos;
+    vUv = aPosition;
     vColor = aColor;
 }`;
 
@@ -43,11 +47,18 @@ const fragmentShaderSource = `#version 300 es
 precision mediump float;
 
 in vec3 vColor;
+in vec2 vUv;
+in vec4 vPos;
+
+uniform sampler2D uSampler;
 
 out vec4 fragColor; 
 
 void main() {
-  fragColor = vec4(vColor, 1.);
+  float noiseVal = texture(uSampler, 0.9 * vPos.xz).r;
+  float dist = smoothstep(0.5,0.55,length(vUv)-  0.4 * noiseVal);
+
+  fragColor = vec4(dist * vColor, 1.);
 }`;
 
 gl.shaderSource(vertexShader, vertexShaderSource);
@@ -163,6 +174,7 @@ gl.bindVertexArray(null);
 
 const viewLoc = gl.getUniformLocation(program, "uView");
 const projectionLoc = gl.getUniformLocation(program, "uProjection");
+const textureLoc = gl.getUniformLocation(program, "uNoiseTexture");
 
 const view = mat4.create();
 const projection = mat4.create();
@@ -176,14 +188,14 @@ mat4.perspective(
 );
 
 const cameraPos = vec3.create();
-cameraPos[0] = -4;
-cameraPos[1] = 10;
+cameraPos[0] = -1.4;
+cameraPos[1] = 4;
 const origin = vec3.create();
 
 const draw = () => {
   requestAnimationFrame(draw);
 
-  //vec3.rotateY(cameraPos, cameraPos, origin, 0.002);
+  vec3.rotateY(cameraPos, cameraPos, origin, 0.002);
   mat4.lookAt(view, cameraPos, origin, [0, 1, 0]);
   gl.uniformMatrix4fv(viewLoc, false, view);
   gl.uniformMatrix4fv(projectionLoc, false, projection);
@@ -191,8 +203,42 @@ const draw = () => {
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 15, xDim * yDim);
   gl.bindVertexArray(null);
 };
+const loadImage = () =>
+  new Promise((resolve) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.src = "./noiseTexture.png";
+  });
 
-draw();
+const run = async () => {
+  const image = await loadImage();
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGB,
+    256,
+    256,
+    0,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    image
+  );
+
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(
+    gl.TEXTURE_2D,
+    gl.TEXTURE_MIN_FILTER,
+    gl.LINEAR_MIPMAP_LINEAR
+  );
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  draw();
+};
+
+run();
 
 // webgl types
 

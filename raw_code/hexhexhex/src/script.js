@@ -4,6 +4,7 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
+import {mat4}from 'gl-matrix'
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -21,14 +22,18 @@ const vertexShaderSource = `#version 300 es
 
 precision mediump float;
 
-layout(location = 0) in vec2 aPosition;
-layout(location = 1) in vec2 aUv;
+uniform mat4 uView;
+uniform mat4 uProjection;
 
-out vec2 vUv;
+layout(location = 0) in vec2 aPosition;
+layout(location = 1) in mat4 aModel;
+layout(location = 5) in vec3 aColor;
+
+out vec3 vColor;
 
 void main() {
-    gl_Position = vec4(aPosition,0.,1.);
-    vUv = aUv;
+    gl_Position = uProjection * uView * aModel * vec4(aPosition.x, 0., aPosition.y,1.);
+    vColor = aColor;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -36,15 +41,12 @@ const fragmentShaderSource = `#version 300 es
 
 precision mediump float;
 
-uniform sampler2D uSampler1;
-uniform sampler2D uSampler2;
-
-in vec2 vUv;
+in vec3 vColor;
 
 out vec4 fragColor; 
 
 void main() {
-  fragColor = texture(uSampler1, vUv) *texture(uSampler2, vUv) ;
+  fragColor = vec4(vColor, 1.);
 }`;
 
 gl.shaderSource(vertexShader, vertexShaderSource);
@@ -55,9 +57,6 @@ gl.shaderSource(fragmentShader, fragmentShaderSource);
 gl.compileShader(fragmentShader);
 gl.attachShader(program, fragmentShader);
 
-const aPositionLoc = 0;
-const aUvLoc = 1;
-
 gl.linkProgram(program);
 
 if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -67,72 +66,105 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 
 gl.useProgram(program);
 
-const bufferData = new Float32Array([
-   0, 1,  0.5, 1,
-  -1, -1, 0, 0,
-  1, -1,  1, 0
-]);
+const sqrt32 = Math.sqrt(3) / 2;
 
-const buffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
+const hexVerts = [
+  0.5, sqrt32,
+  1, 0,
+  0.5,  -sqrt32,
+
+  0.5, sqrt32,
+  0.5,  -sqrt32,
+  -0.5,  -sqrt32,
+
+  0.5, sqrt32,
+  -0.5,  -sqrt32,
+  0.5,  -sqrt32,
+
+  0.5, sqrt32,
+  -0.5,  -sqrt32,
+  -1,  0,
+
+  0.5, sqrt32,
+  -1,  0,
+  -0.5,  sqrt32,
+];
 
 
-const pixels = new Uint8Array([
-	255,255,255,		230,25,75,			60,180,75,			255,225,25,
-	67,99,216,			245,130,49,			145,30,180,			70,240,240,
-	240,50,230,			188,246,12,			250,190,190,		0,128,128,
-	230,190,255,		154,99,36,			255,250,200,		0,0,0,
-]);
-gl.vertexAttrib2f(aPositionLoc, 0.25,0.25);
-gl.vertexAttrib2f(aUvLoc, 0.25,0.25);
+
+const modelData = new Float32Array(hexVerts)
+
+const transformArray = []
+
+const elementCount = 2;
+
+for (let i = 0; i < elementCount; i++) {
+  const model = mat4.create()
+  mat4.scale(model,model,[1,1,2])
+  mat4.translate(model,model,[i,0,2*i])
+  for (let j = 0; j < model.length; j++) {
+    transformArray.push(model[j])
+
+  }
+  transformArray.push(1, 0, 0)
+}
+
+const transformData = new Float32Array(transformArray)
+
+// 
+
 
 const vao1 = gl.createVertexArray();
 gl.bindVertexArray(vao1);
+const modelBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW)
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false,  0, 0);
+gl.enableVertexAttribArray(0);
 
-gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 4 * 4, 0 * 4);
-gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+const transformBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, transformData, gl.STATIC_DRAW);
+gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 19 * 4, 0 * 4);
+gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 19 * 4, 4 * 4);
+gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 19 * 4, 8 * 4);
+gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 19 * 4, 12 * 4);
+gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 19 * 4, 16 * 4);
 
-gl.enableVertexAttribArray(aPositionLoc);
-gl.enableVertexAttribArray(aUvLoc);
+gl.vertexAttribDivisor(1,1);
+gl.vertexAttribDivisor(2,1);
+gl.vertexAttribDivisor(3,1);
+gl.vertexAttribDivisor(4,1);
+gl.vertexAttribDivisor(5,1);
+
+gl.enableVertexAttribArray(1);
+gl.enableVertexAttribArray(2);
+gl.enableVertexAttribArray(3);
+gl.enableVertexAttribArray(4);
+gl.enableVertexAttribArray(5);
+
 gl.bindVertexArray(null);
 
-const loadImage = () => new Promise(resolve => {
-  const image = new Image();
-  image.addEventListener('load', () => resolve(image))
-  image.src= './kitten.png'
-})
+const viewLoc = gl.getUniformLocation(program, 'uView');
+const projectionLoc = gl.getUniformLocation(program, 'uProjection');
 
-const run = async () => {
-  const image = await loadImage();
+const view = mat4.create()
+const projection = mat4.create()
 
-  const pixelTextureUnit = 0;
-  const kittenTextureUnit = 5;
+mat4.lookAt(view, [0,-4,-1.5], [0,0,0],[0,1,0])
 
-  gl.uniform1i(gl.getUniformLocation(program, 'uSampler1'), kittenTextureUnit);
-  gl.uniform1i(gl.getUniformLocation(program, 'uSampler2'), pixelTextureUnit);
+mat4.perspective(projection, Math.PI / 2, gl.canvas.width / gl.canvas.height,0.01,20);
 
-  const texture = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0 + 5);
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 500,300,0,gl.RGB, gl.UNSIGNED_BYTE, image);
-  gl.generateMipmap(gl.TEXTURE_2D);
-
-  const texture2 = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, texture2);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 4,4,0,gl.RGB, gl.UNSIGNED_BYTE, pixels);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-  gl.generateMipmap(gl.TEXTURE_2D);
-
-  gl.bindVertexArray(vao1);
-  gl.drawArrays(gl.TRIANGLES, 0, 3);
-  gl.bindVertexArray(null);
+const draw = () => {
+    requestAnimationFrame(draw)
+    gl.uniformMatrix4fv(viewLoc, false, view)
+    gl.uniformMatrix4fv(projectionLoc, false, projection)
+    gl.bindVertexArray(vao1);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 15, 2);
+    gl.bindVertexArray(null);
 }
 
-run();
+draw();
 
 
 // webgl types
@@ -159,20 +191,3 @@ run();
 // 4. Hex shader
 // 5. More complicated hex mesh
 // 6. Layout trees and stuff
-
-const sqrt32 = Math.sqrt(3) / 2;
-
-const hexVerts = [
-  0.5,
-  sqrt32,
-  1,
-  0,
-  0.5,
-  -sqrt32,
-  -0.5,
-  -sqrt32,
-  -1,
-  0,
-  -0.5,
-  sqrt32,
-];

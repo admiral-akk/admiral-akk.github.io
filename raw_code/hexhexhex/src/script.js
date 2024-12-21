@@ -161,25 +161,6 @@ gl.enableVertexAttribArray(6);
 
 gl.bindVertexArray(null);
 
-const viewLoc = gl.getUniformLocation(program, "uView");
-const projectionLoc = gl.getUniformLocation(program, "uProjection");
-const textureLoc = gl.getUniformLocation(program, "uNoiseTexture");
-
-const view = mat4.create();
-const projection = mat4.create();
-
-mat4.perspective(
-  projection,
-  Math.PI / 2,
-  gl.canvas.width / gl.canvas.height,
-  0.01,
-  20
-);
-
-const cameraPos = vec3.create();
-cameraPos[0] = 4;
-cameraPos[1] = 4;
-const origin = vec3.create();
 const camera = new Camera();
 
 const draw = () => {

@@ -25,19 +25,19 @@ precision mediump float;
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-layout(location = 0) in vec2 aPosition;
-layout(location = 1) in mat4 aModel;
-layout(location = 5) in vec3 aColor;
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aColor;
+layout(location = 2) in mat4 aModel;
 
 out vec3 vColor;
 out vec2 vUv;
 out vec4 vPos;
 
 void main() {
-    vPos = aModel * vec4(aPosition.x, 0., aPosition.y,1.);
+    vPos = aModel * vec4(aPosition,1.);
 
     gl_Position = uProjection * uView * vPos;
-    vUv = aPosition;
+    vUv = aPosition.xz;
     vColor = aColor;
 }`;
 
@@ -56,9 +56,9 @@ out vec4 fragColor;
 
 void main() {
   float noiseVal = texture(uSampler, 0.9 * vPos.xz).r;
-  float dist = smoothstep(0.5,0.55,length(vUv)-  0.4 * noiseVal);
+  float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
 
-  fragColor = vec4(dist * vColor, 1.);
+  fragColor = vec4((dist / 2. + 0.5) * vColor, 1.);
 }`;
 
 gl.shaderSource(vertexShader, vertexShaderSource);
@@ -80,7 +80,92 @@ gl.useProgram(program);
 
 const sqrt32 = Math.sqrt(3) / 2;
 
-const hexVerts = [
+vec3.pushAll = (vec, arr) => {
+  arr.push(vec[0], vec[1], vec[2]);
+};
+
+const generateHexVerts = () => {
+  const hex = [];
+  const baseWidth = 0.8;
+  const flareWidth = 0.2;
+  const flareDepth = 0.1;
+  const baseDepth = 0.15;
+  for (let i = 0; i < 6; i++) {
+    const angle = ((i + 0.5) * Math.PI * 2) / 6;
+    const v = vec3.create();
+    v[0] = Math.sin(angle);
+    v[1] = 0;
+    v[2] = Math.cos(angle);
+    vec3.scale(v, v, baseWidth);
+    hex.push(v);
+  }
+
+  const verts = [];
+
+  for (let i = 0; i < 4; i++) {
+    vec3.pushAll(hex[0], verts);
+    verts.push(0, 0.4, 0);
+    for (let j = 1; j < 3; j++) {
+      vec3.pushAll(hex[(i + j) % 6], verts);
+      verts.push(0, 0.4, 0);
+    }
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const v1 = vec3.create();
+    const v2 = vec3.create();
+    const v3 = vec3.create();
+    const v4 = vec3.create();
+    vec3.copy(v1, hex[i % 6]);
+    vec3.copy(v2, hex[(i + 1) % 6]);
+    vec3.copy(v3, v1);
+    vec3.copy(v4, v2);
+    vec3.scale(v3, v3, (baseWidth + flareWidth) / baseWidth);
+    vec3.scale(v4, v4, (baseWidth + flareWidth) / baseWidth);
+
+    v3[1] = -flareDepth;
+    v4[1] = -flareDepth;
+
+    vec3.pushAll(v1, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v2, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v3, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v4, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v2, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v3, verts);
+    verts.push(0.4, 0.4, 0.0);
+
+    vec3.scale(v1, v1, (baseWidth + flareWidth) / baseWidth);
+    vec3.scale(v2, v2, (baseWidth + flareWidth) / baseWidth);
+    v1[1] = -flareDepth;
+    v2[1] = -flareDepth;
+    v3[1] -= baseDepth;
+    v4[1] -= baseDepth;
+
+    vec3.pushAll(v1, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v2, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v3, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v4, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v2, verts);
+    verts.push(0.4, 0.4, 0.0);
+    vec3.pushAll(v3, verts);
+    verts.push(0.4, 0.4, 0.0);
+  }
+
+  return verts;
+};
+
+const hexVerts = generateHexVerts();
+console.log(hexVerts);
+[
   0.5,
   sqrt32,
   1,
@@ -121,19 +206,18 @@ const modelData = new Float32Array(hexVerts);
 
 const transformArray = [];
 
-const xDim = 10;
-const yDim = 10;
+const xDim = 2;
+const yDim = 2;
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
     const model = mat4.create();
     const xOffset = 1.5 * (x - (xDim - 1) / 2);
     const yOffset = 2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
     mat4.translate(model, model, [xOffset, 0, yOffset]);
+    mat4.scale(model, model, [0.9, 0.9, 0.9]);
     for (let j = 0; j < model.length; j++) {
       transformArray.push(model[j]);
     }
-
-    transformArray.push(Math.random(), Math.random(), Math.random());
   }
 }
 
@@ -146,25 +230,24 @@ gl.bindVertexArray(vao1);
 const modelBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW);
-gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
 gl.enableVertexAttribArray(0);
+gl.enableVertexAttribArray(1);
 
 const transformBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, transformData, gl.STATIC_DRAW);
-gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 19 * 4, 0 * 4);
-gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 19 * 4, 4 * 4);
-gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 19 * 4, 8 * 4);
-gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 19 * 4, 12 * 4);
-gl.vertexAttribPointer(5, 3, gl.FLOAT, false, 19 * 4, 16 * 4);
+gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 16 * 4, 0 * 4);
+gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 16 * 4, 4 * 4);
+gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 16 * 4, 8 * 4);
+gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 16 * 4, 12 * 4);
 
-gl.vertexAttribDivisor(1, 1);
 gl.vertexAttribDivisor(2, 1);
 gl.vertexAttribDivisor(3, 1);
 gl.vertexAttribDivisor(4, 1);
 gl.vertexAttribDivisor(5, 1);
 
-gl.enableVertexAttribArray(1);
 gl.enableVertexAttribArray(2);
 gl.enableVertexAttribArray(3);
 gl.enableVertexAttribArray(4);
@@ -189,7 +272,7 @@ mat4.perspective(
 
 const cameraPos = vec3.create();
 cameraPos[0] = -1.4;
-cameraPos[1] = 4;
+cameraPos[1] = 2;
 const origin = vec3.create();
 
 const draw = () => {
@@ -200,7 +283,7 @@ const draw = () => {
   gl.uniformMatrix4fv(viewLoc, false, view);
   gl.uniformMatrix4fv(projectionLoc, false, projection);
   gl.bindVertexArray(vao1);
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 15, xDim * yDim);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, modelData.length, xDim * yDim);
   gl.bindVertexArray(null);
 };
 const loadImage = () =>
@@ -225,7 +308,7 @@ const run = async () => {
     gl.UNSIGNED_BYTE,
     image
   );
-
+  gl.enable(gl.DEPTH_TEST);
   gl.generateMipmap(gl.TEXTURE_2D);
   gl.texParameteri(
     gl.TEXTURE_2D,

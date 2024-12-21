@@ -8,6 +8,7 @@ import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
 import { Camera } from "./camera.js";
 import { Program } from "./program.js";
+import { InstancedMesh } from "./instancedMesh.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -81,12 +82,9 @@ const generateHexVerts = () => {
   return generateSymmetricMesh(params, hexVerts);
 };
 
-const modelData = new Float32Array(generateHexVerts());
-
-const transformArray = [];
-
 const xDim = 10;
 const yDim = 10;
+const instancedMesh = new InstancedMesh(gl, generateHexVerts(), xDim * yDim);
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
     const model = mat4.create();
@@ -94,56 +92,13 @@ for (let x = 0; x < xDim; x++) {
     const yOffset = 2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
     mat4.translate(model, model, [xOffset, 0, yOffset]);
     mat4.scale(model, model, [0.9, 0.9, 0.9]);
-    for (let j = 0; j < model.length; j++) {
-      transformArray.push(model[j]);
-    }
-    transformArray.push(
+    instancedMesh.updateTransform(gl, x + y * xDim, model);
+    instancedMesh.updateCoordinates(gl, x + y * xDim, [
       Math.floor(x - xDim / 2),
       Math.floor(y - yDim / 2),
-      0,
-      0
-    );
+    ]);
   }
 }
-
-const transformData = new Float32Array(transformArray);
-
-//
-
-const vao1 = gl.createVertexArray();
-gl.bindVertexArray(vao1);
-const modelBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW);
-gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
-gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
-gl.enableVertexAttribArray(0);
-gl.enableVertexAttribArray(1);
-
-const transformBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, transformData, gl.STATIC_DRAW);
-
-const totalSize = 20;
-gl.vertexAttribPointer(2, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
-gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
-gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
-gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
-gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 16 * 4);
-
-gl.vertexAttribDivisor(2, 1);
-gl.vertexAttribDivisor(3, 1);
-gl.vertexAttribDivisor(4, 1);
-gl.vertexAttribDivisor(5, 1);
-gl.vertexAttribDivisor(6, 1);
-
-gl.enableVertexAttribArray(2);
-gl.enableVertexAttribArray(3);
-gl.enableVertexAttribArray(4);
-gl.enableVertexAttribArray(5);
-gl.enableVertexAttribArray(6);
-
-gl.bindVertexArray(null);
 
 const camera = new Camera();
 
@@ -153,9 +108,7 @@ const draw = () => {
   gl.useProgram(program.program);
   camera.rotateCamera();
   camera.applyCameraUniforms(gl, program.program);
-  gl.bindVertexArray(vao1);
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, modelData.length / 6, xDim * yDim);
-  gl.bindVertexArray(null);
+  instancedMesh.render(gl);
 };
 const loadImage = (src) =>
   new Promise((resolve) => {

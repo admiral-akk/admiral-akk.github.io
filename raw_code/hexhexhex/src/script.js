@@ -5,6 +5,8 @@ import {
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
 import { mat4, vec3 } from "gl-matrix";
+import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
+import { Camera } from "./camera.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -28,10 +30,12 @@ uniform mat4 uProjection;
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aColor;
 layout(location = 2) in mat4 aModel;
+layout(location = 6) in vec4 aCoordinates;
 
 out vec3 vColor;
 out vec2 vUv;
 out vec4 vPos;
+out vec4 vCoordinates;
 
 void main() {
     vPos = aModel * vec4(aPosition,1.);
@@ -39,6 +43,7 @@ void main() {
     gl_Position = uProjection * uView * vPos;
     vUv = aPosition.xz;
     vColor = aColor;
+    vCoordinates = aCoordinates;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -49,6 +54,7 @@ precision mediump float;
 in vec3 vColor;
 in vec2 vUv;
 in vec4 vPos;
+in vec4 vCoordinates;
 
 uniform sampler2D uSampler;
 
@@ -58,7 +64,10 @@ void main() {
   float noiseVal = texture(uSampler, 0.9 * vPos.xz).r;
   float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
 
-  fragColor = vec4((dist / 2. + 0.5) * vColor, 1.);
+  float distFromZero = length(vCoordinates.xy);
+
+
+  fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
 }`;
 
 gl.shaderSource(vertexShader, vertexShaderSource);
@@ -76,143 +85,24 @@ if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
   console.log(gl.getShaderInfoLog(fragmentShader));
 }
 
-gl.useProgram(program);
-
 const sqrt32 = Math.sqrt(3) / 2;
 
-vec3.pushAll = (vec, arr) => {
-  arr.push(vec[0], vec[1], vec[2]);
-};
-
-const temp1 = vec3.create();
-const temp2 = vec3.create();
-const temp3 = vec3.create();
-const temp4 = vec3.create();
-
-const generateRegularPolygon = (vertCount, radius) => {
-  const verts = [];
-
-  for (let i = 0; i < vertCount; i++) {
-    const angle = (2 * Math.PI * i) / vertCount;
-    const v = vec3.create();
-    v[0] = Math.cos(angle);
-    v[2] = Math.sin(angle);
-    vec3.scale(v, v, radius);
-    verts.push(v);
-  }
-
-  return verts;
-};
-
-// [(height, scale, extra)], [vertsInCircle]
-const generateSymmetricMesh = (paramArr, verts) => {
-  const mesh = [];
-
-  // create base
-  if (paramArr.length > 1) {
-    const [height, scale, extra] = paramArr[0];
-    for (let j = 1; j < verts.length; j++) {
-      vec3.copy(temp1, verts[0]);
-      vec3.copy(temp2, verts[(j + 1) % verts.length]);
-      vec3.copy(temp3, verts[j]);
-
-      vec3.scale(temp1, temp1, scale);
-      vec3.scale(temp2, temp2, scale);
-      vec3.scale(temp3, temp3, scale);
-      temp1[1] = height;
-      temp2[1] = height;
-      temp3[1] = height;
-
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-    }
-  }
-
-  for (let i = 1; i < paramArr.length; i++) {
-    const [prevHeight, prevScale, extra] = paramArr[i - 1];
-    const [height, scale, extra1] = paramArr[i];
-
-    for (let j = 0; j < verts.length; j++) {
-      vec3.copy(temp1, verts[j]);
-      vec3.copy(temp2, verts[(j + 1) % verts.length]);
-      vec3.copy(temp3, temp1);
-      vec3.copy(temp4, temp2);
-
-      vec3.scale(temp1, temp1, prevScale);
-      vec3.scale(temp2, temp2, prevScale);
-      vec3.scale(temp3, temp3, scale);
-      vec3.scale(temp4, temp4, scale);
-      temp1[1] = prevHeight;
-      temp2[1] = prevHeight;
-      temp3[1] = height;
-      temp4[1] = height;
-
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp4, mesh);
-      mesh.push(...extra);
-    }
-  }
-
-  // create top
-  {
-    const [height, scale, extra] = paramArr[paramArr.length - 1];
-    for (let j = 1; j < verts.length; j++) {
-      vec3.copy(temp1, verts[0]);
-      vec3.copy(temp2, verts[(j + 1) % verts.length]);
-      vec3.copy(temp3, verts[j]);
-
-      vec3.scale(temp1, temp1, scale);
-      vec3.scale(temp2, temp2, scale);
-      vec3.scale(temp3, temp3, scale);
-      temp1[1] = height;
-      temp2[1] = height;
-      temp3[1] = height;
-
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-    }
-  }
-
-  return mesh;
-};
-
-const params = [
-  [-0.5, 1, [0.3, 0.3, 0.3]],
-  [-0.25, 1, [0.4, 0.4, 0.0]],
-  [0, 0.8, [0.0, 0.4, 0.0]],
-];
-
 const generateHexVerts = () => {
+  const params = [
+    [-0.5, 1, [0.3, 0.3, 0.3]],
+    [-0.25, 1, [0.4, 0.4, 0.0]],
+    [0, 0.8, [0.0, 0.4, 0.0]],
+  ];
   const hexVerts = generateRegularPolygon(6, 1);
   return generateSymmetricMesh(params, hexVerts);
 };
 
-const hexVerts = generateHexVerts();
-
-const modelData = new Float32Array(hexVerts);
+const modelData = new Float32Array(generateHexVerts());
 
 const transformArray = [];
 
-const xDim = 2;
-const yDim = 2;
+const xDim = 10;
+const yDim = 10;
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
     const model = mat4.create();
@@ -223,6 +113,12 @@ for (let x = 0; x < xDim; x++) {
     for (let j = 0; j < model.length; j++) {
       transformArray.push(model[j]);
     }
+    transformArray.push(
+      Math.floor(x - xDim / 2),
+      Math.floor(y - yDim / 2),
+      0,
+      0
+    );
   }
 }
 
@@ -243,20 +139,25 @@ gl.enableVertexAttribArray(1);
 const transformBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, transformData, gl.STATIC_DRAW);
-gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 16 * 4, 0 * 4);
-gl.vertexAttribPointer(3, 4, gl.FLOAT, false, 16 * 4, 4 * 4);
-gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 16 * 4, 8 * 4);
-gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 16 * 4, 12 * 4);
+
+const totalSize = 20;
+gl.vertexAttribPointer(2, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
+gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
+gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
+gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
+gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 16 * 4);
 
 gl.vertexAttribDivisor(2, 1);
 gl.vertexAttribDivisor(3, 1);
 gl.vertexAttribDivisor(4, 1);
 gl.vertexAttribDivisor(5, 1);
+gl.vertexAttribDivisor(6, 1);
 
 gl.enableVertexAttribArray(2);
 gl.enableVertexAttribArray(3);
 gl.enableVertexAttribArray(4);
 gl.enableVertexAttribArray(5);
+gl.enableVertexAttribArray(6);
 
 gl.bindVertexArray(null);
 
@@ -279,27 +180,27 @@ const cameraPos = vec3.create();
 cameraPos[0] = 4;
 cameraPos[1] = 4;
 const origin = vec3.create();
+const camera = new Camera();
 
 const draw = () => {
   requestAnimationFrame(draw);
 
-  vec3.rotateY(cameraPos, cameraPos, origin, 0.002);
-  mat4.lookAt(view, cameraPos, origin, [0, 1, 0]);
-  gl.uniformMatrix4fv(viewLoc, false, view);
-  gl.uniformMatrix4fv(projectionLoc, false, projection);
+  gl.useProgram(program);
+  camera.rotateCamera();
+  camera.applyCameraUniforms(gl, program);
   gl.bindVertexArray(vao1);
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, hexVerts.length / 6, xDim * yDim);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, modelData.length / 6, xDim * yDim);
   gl.bindVertexArray(null);
 };
-const loadImage = () =>
+const loadImage = (src) =>
   new Promise((resolve) => {
     const image = new Image();
     image.addEventListener("load", () => resolve(image));
-    image.src = "./noiseTexture.png";
+    image.src = src;
   });
 
 const run = async () => {
-  const image = await loadImage();
+  const image = await loadImage("./kitten.png");
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(

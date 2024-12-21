@@ -4,9 +4,10 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
-import { mat4, vec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
 import { Camera } from "./camera.js";
+import { Program } from "./program.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -14,10 +15,6 @@ const dataManager = new DataManager(
 );
 const windowManager = new WindowManager(16 / 9);
 const gl = windowManager.canvas.getContext("webgl2");
-
-const program = gl.createProgram();
-const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
@@ -70,20 +67,7 @@ void main() {
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
 }`;
 
-gl.shaderSource(vertexShader, vertexShaderSource);
-gl.compileShader(vertexShader);
-gl.attachShader(program, vertexShader);
-
-gl.shaderSource(fragmentShader, fragmentShaderSource);
-gl.compileShader(fragmentShader);
-gl.attachShader(program, fragmentShader);
-
-gl.linkProgram(program);
-
-if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-  console.log(gl.getShaderInfoLog(vertexShader));
-  console.log(gl.getShaderInfoLog(fragmentShader));
-}
+const program = new Program(gl, vertexShaderSource, fragmentShaderSource);
 
 const sqrt32 = Math.sqrt(3) / 2;
 
@@ -166,9 +150,9 @@ const camera = new Camera();
 const draw = () => {
   requestAnimationFrame(draw);
 
-  gl.useProgram(program);
+  gl.useProgram(program.program);
   camera.rotateCamera();
-  camera.applyCameraUniforms(gl, program);
+  camera.applyCameraUniforms(gl, program.program);
   gl.bindVertexArray(vao1);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, modelData.length / 6, xDim * yDim);
   gl.bindVertexArray(null);

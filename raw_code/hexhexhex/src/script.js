@@ -133,8 +133,8 @@ const generateSymmetricMesh = (paramArr, verts) => {
   }
 
   for (let i = 1; i < paramArr.length; i++) {
-    const [prevHeight, prevScale, extra1] = paramArr[i];
-    const [height, scale, extra] = paramArr[i];
+    const [prevHeight, prevScale, extra] = paramArr[i - 1];
+    const [height, scale, extra1] = paramArr[i];
 
     for (let j = 0; j < verts.length; j++) {
       vec3.copy(temp1, verts[j]);
@@ -153,16 +153,16 @@ const generateSymmetricMesh = (paramArr, verts) => {
 
       vec3.pushAll(temp1, mesh);
       mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp2, mesh);
       mesh.push(...extra);
 
       vec3.pushAll(temp2, mesh);
       mesh.push(...extra);
-      vec3.pushAll(temp4, mesh);
-      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp4, mesh);
       mesh.push(...extra);
     }
   }
@@ -195,8 +195,8 @@ const generateSymmetricMesh = (paramArr, verts) => {
 };
 
 const params = [
+  [-0.5, 1, [0.3, 0.3, 0.3]],
   [-0.25, 1, [0.4, 0.4, 0.0]],
-  [-0.15, 1, [0.4, 0.4, 0.0]],
   [0, 0.8, [0.0, 0.4, 0.0]],
 ];
 

@@ -84,123 +84,128 @@ vec3.pushAll = (vec, arr) => {
   arr.push(vec[0], vec[1], vec[2]);
 };
 
-const generateHexVerts = () => {
-  const hex = [];
-  const baseWidth = 0.8;
-  const flareWidth = 0.2;
-  const flareDepth = 0.1;
-  const baseDepth = 0.15;
-  for (let i = 0; i < 6; i++) {
-    const angle = ((i + 0.5) * Math.PI * 2) / 6;
-    const v = vec3.create();
-    v[0] = Math.sin(angle);
-    v[1] = 0;
-    v[2] = Math.cos(angle);
-    vec3.scale(v, v, baseWidth);
-    hex.push(v);
-  }
+const temp1 = vec3.create();
+const temp2 = vec3.create();
+const temp3 = vec3.create();
+const temp4 = vec3.create();
 
+const generateRegularPolygon = (vertCount, radius) => {
   const verts = [];
 
-  for (let i = 0; i < 4; i++) {
-    vec3.pushAll(hex[0], verts);
-    verts.push(0, 0.4, 0);
-    for (let j = 1; j < 3; j++) {
-      vec3.pushAll(hex[(i + j) % 6], verts);
-      verts.push(0, 0.4, 0);
-    }
-  }
-
-  for (let i = 0; i < 6; i++) {
-    const v1 = vec3.create();
-    const v2 = vec3.create();
-    const v3 = vec3.create();
-    const v4 = vec3.create();
-    vec3.copy(v1, hex[i % 6]);
-    vec3.copy(v2, hex[(i + 1) % 6]);
-    vec3.copy(v3, v1);
-    vec3.copy(v4, v2);
-    vec3.scale(v3, v3, (baseWidth + flareWidth) / baseWidth);
-    vec3.scale(v4, v4, (baseWidth + flareWidth) / baseWidth);
-
-    v3[1] = -flareDepth;
-    v4[1] = -flareDepth;
-
-    vec3.pushAll(v1, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v2, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v3, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v4, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v2, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v3, verts);
-    verts.push(0.4, 0.4, 0.0);
-
-    vec3.scale(v1, v1, (baseWidth + flareWidth) / baseWidth);
-    vec3.scale(v2, v2, (baseWidth + flareWidth) / baseWidth);
-    v1[1] = -flareDepth;
-    v2[1] = -flareDepth;
-    v3[1] -= baseDepth;
-    v4[1] -= baseDepth;
-
-    vec3.pushAll(v1, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v2, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v3, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v4, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v2, verts);
-    verts.push(0.4, 0.4, 0.0);
-    vec3.pushAll(v3, verts);
-    verts.push(0.4, 0.4, 0.0);
+  for (let i = 0; i < vertCount; i++) {
+    const angle = (2 * Math.PI * i) / vertCount;
+    const v = vec3.create();
+    v[0] = Math.cos(angle);
+    v[2] = Math.sin(angle);
+    vec3.scale(v, v, radius);
+    verts.push(v);
   }
 
   return verts;
 };
 
-const hexVerts = generateHexVerts();
-console.log(hexVerts);
-[
-  0.5,
-  sqrt32,
-  1,
-  0,
-  0.5,
-  -sqrt32,
+// [(height, scale, extra)], [vertsInCircle]
+const generateSymmetricMesh = (paramArr, verts) => {
+  const mesh = [];
 
-  0.5,
-  sqrt32,
-  0.5,
-  -sqrt32,
-  -0.5,
-  -sqrt32,
+  // create base
+  if (paramArr.length > 1) {
+    const [height, scale, extra] = paramArr[0];
+    for (let j = 1; j < verts.length; j++) {
+      vec3.copy(temp1, verts[0]);
+      vec3.copy(temp2, verts[(j + 1) % verts.length]);
+      vec3.copy(temp3, verts[j]);
 
-  0.5,
-  sqrt32,
-  -0.5,
-  -sqrt32,
-  0.5,
-  -sqrt32,
+      vec3.scale(temp1, temp1, scale);
+      vec3.scale(temp2, temp2, scale);
+      vec3.scale(temp3, temp3, scale);
+      temp1[1] = height;
+      temp2[1] = height;
+      temp3[1] = height;
 
-  0.5,
-  sqrt32,
-  -0.5,
-  -sqrt32,
-  -1,
-  0,
+      vec3.pushAll(temp1, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp2, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+    }
+  }
 
-  0.5,
-  sqrt32,
-  -1,
-  0,
-  -0.5,
-  sqrt32,
+  for (let i = 1; i < paramArr.length; i++) {
+    const [prevHeight, prevScale, extra1] = paramArr[i];
+    const [height, scale, extra] = paramArr[i];
+
+    for (let j = 0; j < verts.length; j++) {
+      vec3.copy(temp1, verts[j]);
+      vec3.copy(temp2, verts[(j + 1) % verts.length]);
+      vec3.copy(temp3, temp1);
+      vec3.copy(temp4, temp2);
+
+      vec3.scale(temp1, temp1, prevScale);
+      vec3.scale(temp2, temp2, prevScale);
+      vec3.scale(temp3, temp3, scale);
+      vec3.scale(temp4, temp4, scale);
+      temp1[1] = prevHeight;
+      temp2[1] = prevHeight;
+      temp3[1] = height;
+      temp4[1] = height;
+
+      vec3.pushAll(temp1, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp2, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+
+      vec3.pushAll(temp2, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp4, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+    }
+  }
+
+  // create top
+  {
+    const [height, scale, extra] = paramArr[paramArr.length - 1];
+    for (let j = 1; j < verts.length; j++) {
+      vec3.copy(temp1, verts[0]);
+      vec3.copy(temp2, verts[(j + 1) % verts.length]);
+      vec3.copy(temp3, verts[j]);
+
+      vec3.scale(temp1, temp1, scale);
+      vec3.scale(temp2, temp2, scale);
+      vec3.scale(temp3, temp3, scale);
+      temp1[1] = height;
+      temp2[1] = height;
+      temp3[1] = height;
+
+      vec3.pushAll(temp1, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp2, mesh);
+      mesh.push(...extra);
+      vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
+    }
+  }
+
+  return mesh;
+};
+
+const params = [
+  [-0.25, 1, [0.4, 0.4, 0.0]],
+  [-0.15, 1, [0.4, 0.4, 0.0]],
+  [0, 0.8, [0.0, 0.4, 0.0]],
 ];
+
+const generateHexVerts = () => {
+  const hexVerts = generateRegularPolygon(6, 1);
+  return generateSymmetricMesh(params, hexVerts);
+};
+
+const hexVerts = generateHexVerts();
 
 const modelData = new Float32Array(hexVerts);
 
@@ -271,8 +276,8 @@ mat4.perspective(
 );
 
 const cameraPos = vec3.create();
-cameraPos[0] = -1.4;
-cameraPos[1] = 2;
+cameraPos[0] = 4;
+cameraPos[1] = 4;
 const origin = vec3.create();
 
 const draw = () => {
@@ -283,7 +288,7 @@ const draw = () => {
   gl.uniformMatrix4fv(viewLoc, false, view);
   gl.uniformMatrix4fv(projectionLoc, false, projection);
   gl.bindVertexArray(vao1);
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, modelData.length, xDim * yDim);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, hexVerts.length / 6, xDim * yDim);
   gl.bindVertexArray(null);
 };
 const loadImage = () =>

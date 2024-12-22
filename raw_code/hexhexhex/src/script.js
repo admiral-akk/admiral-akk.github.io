@@ -68,7 +68,30 @@ void main() {
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
 }`;
 
+const flatFragmentShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: frag
+
+precision mediump float;
+
+in vec3 vColor;
+in vec2 vUv;
+in vec4 vPos;
+in vec4 vCoordinates;
+
+uniform sampler2D uSampler;
+
+out vec4 fragColor; 
+
+void main() {
+  fragColor = vec4(vColor, 1.);
+}`;
+
 const program = new Program(gl, vertexShaderSource, fragmentShaderSource);
+const flatProgram = new Program(
+  gl,
+  vertexShaderSource,
+  flatFragmentShaderSource
+);
 
 const sqrt32 = Math.sqrt(3) / 2;
 
@@ -100,6 +123,19 @@ for (let x = 0; x < xDim; x++) {
   }
 }
 
+const backgroundInstance = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [[0, 1, [123 / 255, 217 / 255, 246 / 255]]],
+    generateRegularPolygon(4, 100)
+  ),
+  1
+);
+
+const model = mat4.create();
+mat4.translate(model, model, [0, -2, 0]);
+backgroundInstance.updateTransform(gl, 0, model);
+
 const camera = new Camera();
 
 const draw = () => {
@@ -109,6 +145,9 @@ const draw = () => {
   camera.rotateCamera();
   camera.applyCameraUniforms(gl, program.program);
   instancedMesh.render(gl);
+  gl.useProgram(flatProgram.program);
+  camera.applyCameraUniforms(gl, flatProgram.program);
+  backgroundInstance.render(gl);
 };
 const loadImage = (src) =>
   new Promise((resolve) => {

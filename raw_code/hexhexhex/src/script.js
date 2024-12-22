@@ -7,7 +7,7 @@ import { WindowManager } from "./util/window.js";
 import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
 import { Camera } from "./camera.js";
-import { Program } from "./program.js";
+import { createProgram } from "./program.js";
 import { InstancedMesh } from "./instancedMesh.js";
 
 const dataManager = new DataManager(
@@ -86,12 +86,67 @@ void main() {
   fragColor = vec4(vColor, 1.);
 }`;
 
-const program = new Program(gl, vertexShaderSource, fragmentShaderSource);
-const flatProgram = new Program(
+const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+const flatProgram = createProgram(
   gl,
   vertexShaderSource,
   flatFragmentShaderSource
 );
+
+// Step 5: Add the quad program and configure its buffers
+const quadVertexShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: vert
+
+layout(location=0) in vec4 aPosition;
+layout(location=1) in vec2 aTexCoord;
+
+out vec2 vTexCoord;
+
+void main()
+{
+    gl_Position = aPosition;
+    vTexCoord = aTexCoord;
+}`;
+
+const quadFragmentShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: frag
+
+precision mediump float;
+
+uniform sampler2D sampler;
+
+in vec2 vTexCoord;
+
+out vec4 fragColor;
+
+void main()
+{
+    fragColor = texture(sampler, vTexCoord);
+}`;
+
+const quadProgram = createProgram(
+  gl,
+  quadVertexShaderSource,
+  quadFragmentShaderSource
+);
+
+const quadData = new Float32Array([
+  // Pos (xy)         // UV coordinate
+  -1, 1, 0, 1, -1, -1, 0, 0, 1, 1, 1, 1, 1, -1, 1, 0,
+]);
+
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+
+const quadBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, quadData, gl.STATIC_DRAW);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
+gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
+gl.enableVertexAttribArray(0);
+gl.enableVertexAttribArray(1);
+
+gl.bindVertexArray(null);
 
 const sqrt32 = Math.sqrt(3) / 2;
 
@@ -138,16 +193,66 @@ backgroundInstance.updateTransform(gl, 0, model);
 
 const camera = new Camera();
 
+// FBO
+
+const fragColorTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
+gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
+
+gl.bindTexture(gl.TEXTURE_2D, null);
+
+const renderBuffer = gl.createRenderbuffer();
+gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
+gl.renderbufferStorage(
+  gl.RENDERBUFFER,
+  gl.DEPTH_COMPONENT16,
+  gl.canvas.width,
+  gl.canvas.height
+);
+gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
+const fbo = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+gl.framebufferTexture2D(
+  gl.FRAMEBUFFER,
+  gl.COLOR_ATTACHMENT0,
+  gl.TEXTURE_2D,
+  fragColorTexture,
+  0
+);
+gl.framebufferRenderbuffer(
+  gl.FRAMEBUFFER,
+  gl.DEPTH_ATTACHMENT,
+  gl.RENDERBUFFER,
+  renderBuffer
+);
+
+gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
 const draw = () => {
   requestAnimationFrame(draw);
 
-  gl.useProgram(program.program);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.useProgram(program);
   camera.rotateCamera();
-  camera.applyCameraUniforms(gl, program.program);
+  camera.applyCameraUniforms(gl, program);
   instancedMesh.render(gl);
-  gl.useProgram(flatProgram.program);
-  camera.applyCameraUniforms(gl, flatProgram.program);
+
+  gl.useProgram(program);
+  camera.applyCameraUniforms(gl, program);
   backgroundInstance.render(gl);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  gl.useProgram(quadProgram);
+  gl.bindVertexArray(quadVAO);
+  gl.bindTexture(gl.TEXTURE_2D, fragColorTexture); // fragColorTexture or solidColorTexture
+  gl.enable(gl.BLEND);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.disable(gl.BLEND);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  gl.bindVertexArray(null);
 };
 const loadImage = (src) =>
   new Promise((resolve) => {

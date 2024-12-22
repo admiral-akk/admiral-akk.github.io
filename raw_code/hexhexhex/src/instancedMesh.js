@@ -1,7 +1,7 @@
 import { mat4 } from "gl-matrix";
 
 class InstancedMesh {
-  constructor(gl, modelArray, counts) {
+  constructor(gl, modelArray, maxCount) {
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
     const modelBuffer = gl.createBuffer();
@@ -16,7 +16,7 @@ class InstancedMesh {
     gl.enableVertexAttribArray(0);
     gl.enableVertexAttribArray(1);
     const transformArray = [];
-    for (let i = 0; i < counts; i++) {
+    for (let i = 0; i < maxCount; i++) {
       const model = mat4.create();
       for (let j = 0; j < model.length; j++) {
         transformArray.push(model[j]);
@@ -56,7 +56,7 @@ class InstancedMesh {
     this.transformArray = transformArray;
     this.transformBuffer = transformBuffer;
     this.vao = vao;
-    this.counts = counts;
+    this.maxCount = maxCount;
   }
 
   updateTransform(gl, index, newMatrix) {
@@ -74,14 +74,9 @@ class InstancedMesh {
     );
   }
 
-  render(gl) {
+  render(gl, count = this.maxCount) {
     gl.bindVertexArray(this.vao);
-    gl.drawArraysInstanced(
-      gl.TRIANGLES,
-      0,
-      this.modelArray.length / 6,
-      this.counts
-    );
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, this.modelArray.length / 6, count);
     gl.bindVertexArray(null);
   }
 }

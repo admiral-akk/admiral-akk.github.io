@@ -172,12 +172,14 @@ const camera = new Camera();
 // FBO
 
 const fragColorTexture = gl.createTexture();
+gl.activeTexture(gl.TEXTURE1);
 gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
 gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
 
 gl.bindTexture(gl.TEXTURE_2D, null);
 
 const depthTexture = gl.createTexture();
+gl.activeTexture(gl.TEXTURE2);
 gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 gl.texImage2D(
   gl.TEXTURE_2D,
@@ -218,6 +220,7 @@ const draw = () => {
   gl.useProgram(program);
   camera.rotateCamera();
   camera.applyCameraUniforms(gl, program);
+  gl.uniform1i(gl.getUniformLocation(program, "uSampler"), 0);
   instancedMesh.render(gl);
 
   gl.useProgram(program);
@@ -234,6 +237,7 @@ const loadImage = (src) =>
 const run = async () => {
   const image = await loadImage("./kitten.png");
   const texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(
     gl.TEXTURE_2D,

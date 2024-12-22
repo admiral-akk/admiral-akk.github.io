@@ -62,9 +62,6 @@ body {
   container: ui;
 }
 
-.default-ui-table {
-}
-
 .ui-table {
   display: flex;
   flex-direction: column;

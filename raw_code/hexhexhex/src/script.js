@@ -37,6 +37,7 @@ layout(location = 6) in vec4 aCoordinates;
 out vec3 vColor;
 out vec2 vUv;
 out vec4 vPos;
+out vec4 vTransPos;
 out vec4 vCoordinates;
 
 void main() {
@@ -45,6 +46,7 @@ void main() {
     gl_Position = uProjection * uView * vPos;
     vUv = aPosition.xz;
     vColor = aColor;
+    vTransPos = gl_Position;
     vCoordinates = aCoordinates;
 }`;
 
@@ -56,12 +58,14 @@ precision mediump float;
 in vec3 vColor;
 in vec2 vUv;
 in vec4 vPos;
+in vec4 vTransPos;
 in vec4 vCoordinates;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uSampler2;
 
-out vec4 fragColor; 
+layout(location=0) out vec4 fragColor; 
+layout(location=1) out float depth; 
 
 void main() {
   float noiseVal = texture(uSampler2, 0.9 * vPos.xz).r - texture(uSampler1, 0.9 * vPos.xz).r;
@@ -71,39 +75,18 @@ void main() {
 
 
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
-}`;
-
-const flatFragmentShaderSource = `#version 300 es
-#pragma vscode_glsllint_stage: frag
-
-precision mediump float;
-
-in vec3 vColor;
-in vec2 vUv;
-in vec4 vPos;
-in vec4 vCoordinates;
-
-uniform sampler2D uSampler;
-
-out vec4 fragColor; 
-
-void main() {
-  fragColor = vec4(vColor, 1.);
+  depth = vTransPos.z / 20.;
 }`;
 
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-const flatProgram = createProgram(
-  gl,
-  vertexShaderSource,
-  flatFragmentShaderSource
-);
-
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
 precision mediump float;
 
-uniform sampler2D sampler;
+uniform sampler2D uDepth;
+uniform sampler2D uColor;
+uniform vec3 uBackgroundColor;
 
 in vec2 vTexCoord;
 
@@ -117,8 +100,16 @@ return (2.0 * n) / (f + n - depthSample * (f - n));
 }
 void main()
 {
-  float depth = linearDepth(texture(sampler, vTexCoord).r);
-    fragColor = vec4(vec3(depth, 2. * depth, 20.* depth), 1.0);
+float far = 10.0; //far plane
+float near =  0.01; //near plane
+float depthTexVal = texture(uDepth, vTexCoord).x ;
+float depth = near + texture(uDepth, vTexCoord).x * (far - near);
+float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
+  fragColor =  vec4(depth, 0., 0., 1.);
+  fragColor =  vec4(depth - 9., 0., 0., 1.);
+  fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
+
+  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), sqrt(depthTexVal));
 }`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -179,31 +170,28 @@ const depthLoc = 4;
 const catTexture = gl.createTexture();
 const noiseTexture = gl.createTexture();
 const fragColorTexture = gl.createTexture();
-const depthTexture = gl.createTexture();
-
-gl.activeTexture(gl.TEXTURE1);
-gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
-gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
-
-gl.bindTexture(gl.TEXTURE_2D, null);
-
-gl.activeTexture(gl.TEXTURE2);
-gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-gl.texImage2D(
-  gl.TEXTURE_2D,
-  0,
-  gl.DEPTH_COMPONENT24,
-  gl.canvas.width,
-  gl.canvas.height,
-  0,
-  gl.DEPTH_COMPONENT,
-  gl.UNSIGNED_INT,
-  null
-);
-gl.bindTexture(gl.TEXTURE_2D, null);
 
 const fbo = gl.createFramebuffer();
+
+gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
+gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.bindTexture(gl.TEXTURE_2D, null);
+
+const depthTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R8, gl.canvas.width, gl.canvas.height);
 gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+gl.framebufferTexture2D(
+  gl.FRAMEBUFFER,
+  gl.COLOR_ATTACHMENT1,
+  gl.TEXTURE_2D,
+  depthTexture,
+  0
+);
+gl.bindTexture(gl.TEXTURE_2D, null);
 gl.framebufferTexture2D(
   gl.FRAMEBUFFER,
   gl.COLOR_ATTACHMENT0,
@@ -211,19 +199,27 @@ gl.framebufferTexture2D(
   fragColorTexture,
   0
 );
-gl.framebufferTexture2D(
+
+const renderbuffer = gl.createRenderbuffer();
+gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+gl.renderbufferStorage(
+  gl.RENDERBUFFER,
+  gl.DEPTH_COMPONENT16,
+  gl.canvas.width,
+  gl.canvas.height
+);
+gl.framebufferRenderbuffer(
   gl.FRAMEBUFFER,
   gl.DEPTH_ATTACHMENT,
-  gl.TEXTURE_2D,
-  depthTexture,
-  0
+  gl.RENDERBUFFER,
+  renderbuffer
 );
 
+gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 const draw = () => {
   requestAnimationFrame(draw);
-  gl.enable(gl.DEPTH_TEST);
 
   gl.useProgram(program);
   camera.rotateCamera();
@@ -235,18 +231,35 @@ const draw = () => {
   gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler2"), otherLoc);
-  instancedMesh.render(gl);
 
-  gl.useProgram(program);
-  camera.applyCameraUniforms(gl, program);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  instancedMesh.render(gl);
   backgroundInstance.render(gl);
+  gl.disable(gl.DEPTH_TEST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  // Step 2: Draw the quad and pick a texture to render
+  gl.useProgram(quadProgram);
+  gl.bindVertexArray(quadVAO);
 
   gl.activeTexture(gl.TEXTURE0 + depthLoc);
   gl.bindTexture(gl.TEXTURE_2D, depthTexture);
   gl.activeTexture(gl.TEXTURE0 + colorLoc);
   gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
-  gl.uniform1i(gl.getUniformLocation(program, "uDepth"), depthLoc);
-  gl.uniform1i(gl.getUniformLocation(program, "uColor"), colorLoc);
+  gl.uniform3fv(
+    gl.getUniformLocation(quadProgram, "uBackgroundColor"),
+
+    new Float32Array([123 / 255, 217 / 255, 246 / 255])
+  );
+  gl.uniform1i(gl.getUniformLocation(quadProgram, "uDepth"), depthLoc);
+  gl.uniform1i(gl.getUniformLocation(quadProgram, "uColor"), colorLoc);
+
+  gl.enable(gl.BLEND);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.disable(gl.BLEND);
+  gl.bindVertexArray(null);
 };
 const loadImage = (src) =>
   new Promise((resolve) => {

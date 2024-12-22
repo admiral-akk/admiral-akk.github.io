@@ -43,7 +43,7 @@ void main()
 var postProcessVAO = null;
 
 function getPostProcessVao(gl) {
-  if (postProcessVAO) {
+  if (postProcessVAO != null) {
     return postProcessVAO;
   }
 
@@ -59,6 +59,7 @@ function getPostProcessVao(gl) {
   gl.enableVertexAttribArray(1);
 
   gl.bindVertexArray(null);
+  return postProcessVAO;
 }
 
 function createPostProcessProgram(gl, fragmentShader) {

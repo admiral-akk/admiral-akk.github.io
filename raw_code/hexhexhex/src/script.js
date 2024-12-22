@@ -7,7 +7,11 @@ import { WindowManager } from "./util/window.js";
 import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
 import { Camera } from "./camera.js";
-import { createProgram } from "./program.js";
+import {
+  createProgram,
+  createPostProcessProgram,
+  getPostProcessVao,
+} from "./program.js";
 import { InstancedMesh } from "./instancedMesh.js";
 
 const dataManager = new DataManager(
@@ -93,21 +97,6 @@ const flatProgram = createProgram(
   flatFragmentShaderSource
 );
 
-// Step 5: Add the quad program and configure its buffers
-const quadVertexShaderSource = `#version 300 es
-#pragma vscode_glsllint_stage: vert
-
-layout(location=0) in vec4 aPosition;
-layout(location=1) in vec2 aTexCoord;
-
-out vec2 vTexCoord;
-
-void main()
-{
-    gl_Position = aPosition;
-    vTexCoord = aTexCoord;
-}`;
-
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -119,34 +108,21 @@ in vec2 vTexCoord;
 
 out vec4 fragColor;
 
+float linearDepth(float depthSample)
+{
+float f = 10.0; //far plane
+float n =  0.01; //near plane
+return (2.0 * n) / (f + n - depthSample * (f - n));
+}
 void main()
 {
-    fragColor = texture(sampler, vTexCoord);
+  float depth = linearDepth(texture(sampler, vTexCoord).r);
+    fragColor = vec4(vec3(depth, 2. * depth, 20.* depth), 1.0);
 }`;
 
-const quadProgram = createProgram(
-  gl,
-  quadVertexShaderSource,
-  quadFragmentShaderSource
-);
+const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 
-const quadData = new Float32Array([
-  // Pos (xy)         // UV coordinate
-  -1, 1, 0, 1, -1, -1, 0, 0, 1, 1, 1, 1, 1, -1, 1, 0,
-]);
-
-const quadVAO = gl.createVertexArray();
-gl.bindVertexArray(quadVAO);
-
-const quadBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, quadData, gl.STATIC_DRAW);
-gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
-gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
-gl.enableVertexAttribArray(0);
-gl.enableVertexAttribArray(1);
-
-gl.bindVertexArray(null);
+const quadVAO = getPostProcessVao(gl);
 
 const sqrt32 = Math.sqrt(3) / 2;
 
@@ -201,15 +177,20 @@ gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
 
 gl.bindTexture(gl.TEXTURE_2D, null);
 
-const renderBuffer = gl.createRenderbuffer();
-gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
-gl.renderbufferStorage(
-  gl.RENDERBUFFER,
-  gl.DEPTH_COMPONENT16,
+const depthTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texImage2D(
+  gl.TEXTURE_2D,
+  0,
+  gl.DEPTH_COMPONENT24,
   gl.canvas.width,
-  gl.canvas.height
+  gl.canvas.height,
+  0,
+  gl.DEPTH_COMPONENT,
+  gl.UNSIGNED_INT,
+  null
 );
-gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+gl.bindTexture(gl.TEXTURE_2D, null);
 
 const fbo = gl.createFramebuffer();
 gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -220,19 +201,20 @@ gl.framebufferTexture2D(
   fragColorTexture,
   0
 );
-gl.framebufferRenderbuffer(
+gl.framebufferTexture2D(
   gl.FRAMEBUFFER,
   gl.DEPTH_ATTACHMENT,
-  gl.RENDERBUFFER,
-  renderBuffer
+  gl.TEXTURE_2D,
+  depthTexture,
+  0
 );
 
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 const draw = () => {
   requestAnimationFrame(draw);
+  gl.enable(gl.DEPTH_TEST);
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
   gl.useProgram(program);
   camera.rotateCamera();
   camera.applyCameraUniforms(gl, program);
@@ -241,18 +223,6 @@ const draw = () => {
   gl.useProgram(program);
   camera.applyCameraUniforms(gl, program);
   backgroundInstance.render(gl);
-  gl.clear(gl.DEPTH_BUFFER_BIT);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-  gl.useProgram(quadProgram);
-  gl.bindVertexArray(quadVAO);
-  gl.bindTexture(gl.TEXTURE_2D, fragColorTexture); // fragColorTexture or solidColorTexture
-  gl.enable(gl.BLEND);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  gl.disable(gl.BLEND);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-
-  gl.bindVertexArray(null);
 };
 const loadImage = (src) =>
   new Promise((resolve) => {
@@ -276,7 +246,6 @@ const run = async () => {
     gl.UNSIGNED_BYTE,
     image
   );
-  gl.enable(gl.DEPTH_TEST);
   gl.generateMipmap(gl.TEXTURE_2D);
   gl.texParameteri(
     gl.TEXTURE_2D,

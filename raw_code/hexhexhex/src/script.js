@@ -131,21 +131,6 @@ const generateHexVerts = () => {
 const xDim = 10;
 const yDim = 10;
 const instancedMesh = new InstancedMesh(gl, generateHexVerts(), xDim * yDim);
-for (let x = 0; x < xDim; x++) {
-  for (let y = 0; y < yDim; y++) {
-    const model = mat4.create();
-    const xOffset = 1.5 * (x - (xDim - 1) / 2);
-    const yOffset = 2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
-    mat4.translate(model, model, [xOffset, 0, yOffset]);
-    mat4.scale(model, model, [0.9, 0.9, 0.9]);
-    instancedMesh.updateTransform(gl, x + y * xDim, model);
-    instancedMesh.updateCoordinates(gl, x + y * xDim, [
-      Math.floor(x - xDim / 2),
-      Math.floor(y - yDim / 2),
-    ]);
-  }
-}
-
 const backgroundInstance = new InstancedMesh(
   gl,
   generateSymmetricMesh(
@@ -218,11 +203,37 @@ gl.framebufferRenderbuffer(
 gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
+const step = () => {
+  camera.rotateCamera();
+  const time = Date.now();
+
+  for (let x = 0; x < xDim; x++) {
+    for (let y = 0; y < yDim; y++) {
+      const model = mat4.create();
+      const xOffset = 1.5 * (x - (xDim - 1) / 2);
+      const yOffset =
+        2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
+      mat4.translate(model, model, [
+        xOffset,
+        Math.sin(time / 1000 + xOffset + yOffset / 4),
+        yOffset,
+      ]);
+      mat4.scale(model, model, [0.9, 0.9, 0.9]);
+      instancedMesh.updateTransform(gl, x + y * xDim, model);
+      instancedMesh.updateCoordinates(gl, x + y * xDim, [
+        Math.floor(x - xDim / 2),
+        Math.floor(y - yDim / 2),
+      ]);
+    }
+  }
+};
+
 const draw = () => {
   requestAnimationFrame(draw);
 
+  step();
+
   gl.useProgram(program);
-  camera.rotateCamera();
   camera.applyCameraUniforms(gl, program);
 
   gl.activeTexture(gl.TEXTURE0 + otherLoc);

@@ -64,9 +64,9 @@ class WindowManager {
         document.fullscreenElement || document.webkitFullscreenElement;
 
       if (fullscreenElement) {
-        document.exitFullscreen();
+        //document.exitFullscreen();
       } else {
-        container.requestFullscreen();
+        //container.requestFullscreen();
       }
     });
     this.update();

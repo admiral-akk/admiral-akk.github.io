@@ -1,4 +1,16 @@
-import { mat4 } from "gl-matrix";
+import { mat4, vec3, vec4 } from "gl-matrix";
+
+const temp = vec4.create();
+const temp2 = vec4.create();
+const temp3 = vec4.create();
+const tempMat = mat4.create();
+
+const posY = vec3.clone([0, 1, 0]);
+const negY = vec3.clone([0, -1, 0]);
+const posX = vec3.clone([1, 0, 0]);
+const negX = vec3.clone([-1, 0, 0]);
+const posZ = vec3.clone([0, 0, 1]);
+const negZ = vec3.clone([0, 0, -1]);
 
 class InstancedMesh {
   constructor(gl, modelArray, maxCount) {
@@ -51,9 +63,33 @@ class InstancedMesh {
     gl.enableVertexAttribArray(6);
 
     gl.bindVertexArray(null);
+
+    var minX = 100000000;
+    var minY = 100000000;
+    var minZ = 100000000;
+    var maxX = -100000000;
+    var maxY = -100000000;
+    var maxZ = -100000000;
+    for (let i = 0; i < modelArray.length / 3; i++) {
+      const x = modelArray[3 * i];
+      const y = modelArray[3 * i + 1];
+      const z = modelArray[3 * i + 2];
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      minZ = Math.min(minZ, z);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+      maxZ = Math.max(maxZ, z);
+    }
+
+    this.boundingBox = [
+      [minX, minY, minZ],
+      [maxX, maxY, maxZ],
+    ];
     this.modelArray = modelArray;
     this.modelBuffer = modelBuffer;
-    this.transformArray = transformArray;
+    this.transformArray = new Float32Array(transformArray);
     this.transformBuffer = transformBuffer;
     this.vao = vao;
     this.maxCount = maxCount;
@@ -62,11 +98,16 @@ class InstancedMesh {
   updateTransform(gl, index, newMatrix) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
-    gl.bufferSubData(gl.ARRAY_BUFFER, 4 * 20 * index, newMatrix);
+    const offset = 4 * 20 * index;
+    this.transformArray.set(newMatrix, offset / 4);
+    gl.bufferSubData(gl.ARRAY_BUFFER, offset, newMatrix);
   }
 
   updateCoordinates(gl, index, coordinates) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+
+    const offset = 4 * 20 * index + 4 * 16;
+    this.transformArray.set([coordinates[0], coordinates[1], 0, 0], offset / 4);
     gl.bufferSubData(
       gl.ARRAY_BUFFER,
       4 * 20 * index + 4 * 16,
@@ -79,6 +120,142 @@ class InstancedMesh {
     gl.drawArraysInstanced(gl.TRIANGLES, 0, this.modelArray.length / 6, count);
     gl.bindVertexArray(null);
   }
+
+  hit(startPos, dir, count) {
+    var closestIntersection = null;
+    var coord = null;
+
+    for (let i = 0; i < count; i++) {
+      temp[0] = startPos[0];
+      temp[1] = startPos[1];
+      temp[2] = startPos[2];
+      temp[3] = 1;
+      vec4.copy(temp2, temp);
+      temp2[0] += dir[0];
+      temp2[1] += dir[1];
+      temp2[2] += dir[2];
+
+      const offset = 20 * i;
+      mat4.copy(tempMat, this.transformArray.slice(offset, offset + 16));
+      mat4.invert(tempMat, tempMat);
+      vec4.transformMat4(temp, temp, tempMat);
+      vec4.transformMat4(temp2, temp2, tempMat);
+
+      vec4.sub(temp3, temp2, temp);
+      vec3.normalize(temp3, temp3);
+
+      const intersect = intersection(temp, temp3, this.boundingBox);
+
+      if (intersect !== null) {
+        const inter = vec4.create();
+        inter[0] = intersect[0];
+        inter[1] = intersect[1];
+        inter[2] = intersect[2];
+        inter[3] = 1;
+        mat4.invert(tempMat, tempMat);
+        vec4.transformMat4(inter, inter, tempMat);
+        console.log("intersection", inter[0], inter[1], inter[2]);
+
+        if (closestIntersection === null) {
+          closestIntersection = inter;
+          coord = i;
+        } else {
+          const test = vec3.create();
+          const test2 = vec3.create();
+          vec3.subtract(test, startPos, inter);
+          vec3.subtract(test2, startPos, closestIntersection);
+          if (vec3.length(test) > vec3.length(test2)) {
+            closestIntersection = inter;
+            coord = i;
+          }
+        }
+      }
+
+      // temp3 = dir
+      // temp2 = start
+    }
+    return [closestIntersection, coord];
+  }
+}
+
+const eps = 0.0001;
+
+// assumes plane is on the origin
+function planeIntersection(start, dir, planeNorm) {
+  const dot = -vec3.dot(dir, planeNorm);
+
+  // if negative or colinear, doesn't hit
+  if (dot < eps) {
+    return null;
+  }
+
+  const distToPlane = vec3.dot(start, planeNorm);
+
+  const hit = vec3.create();
+
+  vec3.scaleAndAdd(hit, start, dir, distToPlane / dot);
+
+  return hit;
+}
+
+const temp4 = vec3.create();
+
+const dirs = [
+  [negX, negY, negZ],
+  [posX, posY, posZ],
+];
+
+function intersection(start, dir, boundingBox) {
+  var closestIntersection = null;
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 3; j++) {
+      const normal = dirs[i][j];
+      const normalDist = boundingBox[i][j];
+
+      if (i === 0) {
+        vec3.scaleAndAdd(temp4, start, normal, normalDist);
+      } else {
+        vec3.scaleAndAdd(temp4, start, normal, -normalDist);
+      }
+
+      const intersection = planeIntersection(temp4, dir, normal);
+      if (intersection !== null) {
+        // check if it's in bounds
+
+        var inBox = true;
+        for (let k = 0; k < 3; k++) {
+          if (k === j) {
+            continue;
+          }
+          const min = boundingBox[0][k];
+          const max = boundingBox[1][k];
+          inBox &= min <= intersection[k];
+          inBox &= intersection[k] <= max;
+        }
+        if (inBox) {
+          if (i === 0) {
+            vec3.scaleAndAdd(intersection, intersection, normal, -normalDist);
+          } else {
+            vec3.scaleAndAdd(intersection, intersection, normal, normalDist);
+          }
+          console.log("normal hit", normal);
+          if (closestIntersection === null) {
+            closestIntersection = intersection;
+          } else {
+            const test = vec3.create();
+            const test2 = vec3.create();
+            vec3.subtract(test, start, closestIntersection);
+            vec3.subtract(test2, start, intersection);
+            if (vec3.length(test) > vec3.length(test2)) {
+              closestIntersection = intersection;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return closestIntersection;
 }
 
 export { InstancedMesh };

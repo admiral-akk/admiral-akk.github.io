@@ -63,11 +63,13 @@ in vec4 vCoordinates;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uSampler2;
+uniform ivec2 uClickedCoord;
 
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
 
 void main() {
+  
   float noiseVal = texture(uSampler2, 0.9 * vPos.xz).r - texture(uSampler1, 0.9 * vPos.xz).r;
   float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
 
@@ -75,6 +77,9 @@ void main() {
 
 
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
+  if (length(vCoordinates.xy - vec2(uClickedCoord)) < 0.001 ) {
+    fragColor = vec4(1.,0.,0.,1.);
+  }
   depth = vTransPos.z / 20.;
 }`;
 
@@ -109,7 +114,7 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(depth - 9., 0., 0., 1.);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
-  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), sqrt(depthTexVal));
+  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(depthTexVal, 0.25) * vTexCoord.y);
 }`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -128,8 +133,8 @@ const generateHexVerts = () => {
   return generateSymmetricMesh(params, hexVerts);
 };
 
-const xDim = 10;
-const yDim = 10;
+const xDim = 3;
+const yDim = 3;
 const instancedMesh = new InstancedMesh(gl, generateHexVerts(), xDim * yDim);
 const backgroundInstance = new InstancedMesh(
   gl,
@@ -140,6 +145,19 @@ const backgroundInstance = new InstancedMesh(
   1
 );
 
+const target = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-0.25, 0.25, [1, 0, 0]],
+      [0.25, 0.25, [1, 0, 0]],
+    ],
+    generateRegularPolygon(4, 1)
+  ),
+  1
+);
+
+var clickedIndex = null;
 const model = mat4.create();
 mat4.translate(model, model, [0, -2, 0]);
 backgroundInstance.updateTransform(gl, 0, model);
@@ -218,7 +236,7 @@ const step = () => {
         Math.sin(time / 1000 + xOffset + yOffset / 4),
         yOffset,
       ]);
-      mat4.scale(model, model, [0.9, 0.9, 0.9]);
+      mat4.scale(model, model, [1, 1, 1]);
       instancedMesh.updateTransform(gl, x + y * xDim, model);
       instancedMesh.updateCoordinates(gl, x + y * xDim, [
         Math.floor(x - xDim / 2),
@@ -227,6 +245,17 @@ const step = () => {
     }
   }
 };
+
+function clickedCoord() {
+  if (clickedIndex === null) {
+    return null;
+  }
+
+  const x = clickedIndex % xDim;
+  const y = Math.floor(clickedIndex / xDim);
+
+  return [Math.floor(x - xDim / 2), Math.floor(y - yDim / 2)];
+}
 
 const draw = () => {
   requestAnimationFrame(draw);
@@ -246,9 +275,18 @@ const draw = () => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
+
+  const clicked = clickedCoord();
+  if (clicked !== null) {
+    gl.uniform2iv(gl.getUniformLocation(program, "uClickedCoord"), clicked);
+  }
+
   instancedMesh.render(gl);
   backgroundInstance.render(gl);
+  target.render(gl);
+
   gl.disable(gl.DEPTH_TEST);
+
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   // Step 2: Draw the quad and pick a texture to render
@@ -272,6 +310,31 @@ const draw = () => {
   gl.disable(gl.BLEND);
   gl.bindVertexArray(null);
 };
+
+function printMousePos(event) {
+  const { horizontalOffset, verticalOffset } = windowManager.sizes;
+  if (event.target.id === "webgl") {
+    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
+    const y = (event.clientY - verticalOffset) / gl.canvas.height;
+
+    const [startPos, dir] = camera.rayCast(gl, [x, y]);
+
+    const [h, coord] = instancedMesh.hit(startPos, dir, xDim * yDim);
+
+    clickedIndex = coord;
+    if (h !== null) {
+      console.log(h);
+      console.log(coord);
+      const model = mat4.create();
+      mat4.translate(model, model, h);
+      target.updateTransform(gl, 0, model);
+    }
+    //console.log(h);
+  }
+}
+
+document.addEventListener("click", printMousePos);
+
 const loadImage = (src) =>
   new Promise((resolve) => {
     const image = new Image();

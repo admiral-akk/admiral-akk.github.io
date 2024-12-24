@@ -164,7 +164,7 @@ class InstancedMesh {
           const test2 = vec3.create();
           vec3.subtract(test, startPos, inter);
           vec3.subtract(test2, startPos, closestIntersection);
-          if (vec3.length(test) > vec3.length(test2)) {
+          if (vec3.length(test) < vec3.length(test2)) {
             closestIntersection = inter;
             coord = i;
           }

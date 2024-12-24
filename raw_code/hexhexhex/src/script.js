@@ -15,8 +15,10 @@ import {
 import { InstancedMesh } from "./instancedMesh.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
+import { Hex } from "./components/hex.js";
 import { Transform } from "./components/transform.js";
 import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
+import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -125,8 +127,6 @@ const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 
 const quadVAO = getPostProcessVao(gl);
 
-const sqrt32 = Math.sqrt(3) / 2;
-
 const generateHexVerts = () => {
   const params = [
     [-0.5, 1, [0.3, 0.3, 0.3]],
@@ -231,37 +231,21 @@ for (let x = 0; x < xDim; x++) {
     const e = new Entity();
     e.addComponent(new Mesh(gl, instancedMesh));
     e.addComponent(new Transform());
+    e.addComponent(new Hex([x, y], [xDim, yDim]));
     entities.push(e);
   }
 }
 
 const systems = [];
 
-systems.push(new UpdateMeshTransform());
+systems.push(new AnimateMeshTransform(), new UpdateMeshTransform());
 
 const step = () => {
   camera.rotateCamera();
-  const time = Date.now();
-
-  for (let x = 0; x < xDim; x++) {
-    for (let y = 0; y < yDim; y++) {
-      const xOffset = 1.5 * (x - (xDim - 1) / 2);
-      const yOffset =
-        2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
-      const index = x + y * xDim;
-
-      const transform = entities[index].components[1];
-
-      transform.setPosition([
-        xOffset,
-        Math.sin(time / 1000 + xOffset + yOffset / 4),
-        yOffset,
-      ]);
+  for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
+    for (let i = 0; i < entities.length; i++) {
+      systems[systemIndex].apply(entities[i].components);
     }
-  }
-
-  for (let i = 0; i < entities.length; i++) {
-    systems[0].apply(entities[i].components);
   }
 };
 

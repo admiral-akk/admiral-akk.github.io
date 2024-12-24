@@ -13,7 +13,9 @@ import {
   getPostProcessVao,
 } from "./program.js";
 import { InstancedMesh } from "./instancedMesh.js";
+import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
+import { Transform } from "./components/transform.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -221,12 +223,14 @@ gl.framebufferRenderbuffer(
 gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-const meshes = [];
+const entities = [];
 
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
-    const m = new Mesh(gl, instancedMesh);
-    meshes.push(m);
+    const e = new Entity();
+    e.addComponent(new Mesh(gl, instancedMesh));
+    e.addComponent(new Transform());
+    entities.push(e);
   }
 }
 
@@ -240,11 +244,16 @@ const step = () => {
       const yOffset =
         2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
       const index = x + y * xDim;
-      meshes[index].updatePosition(gl, [
+
+      const transform = entities[index].components[1];
+
+      transform.setPosition([
         xOffset,
         Math.sin(time / 1000 + xOffset + yOffset / 4),
         yOffset,
       ]);
+
+      instancedMesh.updateTransform(gl, index, transform.getMatrix());
     }
   }
 };

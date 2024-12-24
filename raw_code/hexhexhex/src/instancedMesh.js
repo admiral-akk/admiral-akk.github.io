@@ -15,6 +15,7 @@ const negZ = vec3.clone([0, 0, -1]);
 class InstancedMesh {
   constructor(gl, modelArray, maxCount) {
     const vao = gl.createVertexArray();
+    this.gl = gl;
     gl.bindVertexArray(vao);
     const modelBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
@@ -109,18 +110,18 @@ class InstancedMesh {
 
       const offset = 20 * (this.meshes.length - 1);
       const transformMat = this.transformArray.slice(offset, offset + 16);
-      this.updateTransform(gl, index, transformMat);
+      this.updateTransform(index, transformMat);
       this.updateIndex(gl, index);
     }
     this.meshes.pop();
   }
 
-  updateTransform(gl, index, newMatrix) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+  updateTransform(index, newMatrix) {
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
 
     const offset = 4 * 20 * index;
     this.transformArray.set(newMatrix, offset / 4);
-    gl.bufferSubData(gl.ARRAY_BUFFER, offset, newMatrix);
+    this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offset, newMatrix);
   }
 
   updateIndex(gl, index) {

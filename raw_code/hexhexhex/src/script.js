@@ -16,6 +16,7 @@ import { InstancedMesh } from "./instancedMesh.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
 import { Transform } from "./components/transform.js";
+import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -163,7 +164,7 @@ const target = new InstancedMesh(
 var clickedIndex = null;
 const model = mat4.create();
 mat4.translate(model, model, [0, -2, 0]);
-backgroundInstance.updateTransform(gl, 0, model);
+backgroundInstance.updateTransform(0, model);
 
 const camera = new Camera();
 
@@ -234,6 +235,10 @@ for (let x = 0; x < xDim; x++) {
   }
 }
 
+const systems = [];
+
+systems.push(new UpdateMeshTransform());
+
 const step = () => {
   camera.rotateCamera();
   const time = Date.now();
@@ -252,9 +257,11 @@ const step = () => {
         Math.sin(time / 1000 + xOffset + yOffset / 4),
         yOffset,
       ]);
-
-      instancedMesh.updateTransform(gl, index, transform.getMatrix());
     }
+  }
+
+  for (let i = 0; i < entities.length; i++) {
+    systems[0].apply(entities[i].components);
   }
 };
 
@@ -341,7 +348,7 @@ function printMousePos(event) {
       console.log(coord);
       const model = mat4.create();
       mat4.translate(model, model, h);
-      target.updateTransform(gl, 0, model);
+      target.updateTransform(0, model);
     }
     //console.log(h);
   }

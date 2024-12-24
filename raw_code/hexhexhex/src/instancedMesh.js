@@ -49,7 +49,7 @@ class InstancedMesh {
     gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
     gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
     gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
-    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 16 * 4);
+    gl.vertexAttribIPointer(6, 4, gl.INT, totalSize * 4, 16 * 4);
 
     gl.vertexAttribDivisor(2, 1);
     gl.vertexAttribDivisor(3, 1);
@@ -96,8 +96,9 @@ class InstancedMesh {
     this.maxCount = maxCount;
   }
 
-  addMesh(mesh) {
+  addMesh(gl, mesh) {
     this.meshes.push(mesh);
+    this.updateIndex(gl, this.meshes.length - 1);
     return this.meshes.length - 1;
   }
 
@@ -108,9 +109,8 @@ class InstancedMesh {
 
       const offset = 20 * (this.meshes.length - 1);
       const transformMat = this.transformArray.slice(offset, offset + 16);
-      const coord = this.transformArray.slice(offset + 16, offset + 20);
       this.updateTransform(gl, index, transformMat);
-      this.updateCoordinates(gl, index, coord);
+      this.updateIndex(gl, index);
     }
     this.meshes.pop();
   }
@@ -123,15 +123,15 @@ class InstancedMesh {
     gl.bufferSubData(gl.ARRAY_BUFFER, offset, newMatrix);
   }
 
-  updateCoordinates(gl, index, coordinates) {
+  updateIndex(gl, index) {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
-    const offset = 4 * 20 * index + 4 * 16;
-    this.transformArray.set([coordinates[0], coordinates[1], 0, 0], offset / 4);
+    const offset = 20 * index + 16;
+    this.transformArray.set([index, 0, 0, 0], offset);
     gl.bufferSubData(
       gl.ARRAY_BUFFER,
-      4 * 20 * index + 4 * 16,
-      new Float32Array([coordinates[0], coordinates[1], 0, 0])
+      4 * offset,
+      new Int32Array([index, 0, 0, 0])
     );
   }
 

@@ -33,13 +33,13 @@ uniform mat4 uProjection;
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aColor;
 layout(location = 2) in mat4 aModel;
-layout(location = 6) in vec4 aCoordinates;
+layout(location = 6) in ivec4 aInstancedMetadata;
 
 out vec3 vColor;
 out vec2 vUv;
 out vec4 vPos;
 out vec4 vTransPos;
-out vec4 vCoordinates;
+flat out ivec4 vInstancedMetadata;
 
 void main() {
     vPos = aModel * vec4(aPosition,1.);
@@ -48,7 +48,7 @@ void main() {
     vUv = aPosition.xz;
     vColor = aColor;
     vTransPos = gl_Position;
-    vCoordinates = aCoordinates;
+    vInstancedMetadata = aInstancedMetadata;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -60,11 +60,11 @@ in vec3 vColor;
 in vec2 vUv;
 in vec4 vPos;
 in vec4 vTransPos;
-in vec4 vCoordinates;
+flat in ivec4 vInstancedMetadata;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uSampler2;
-uniform ivec2 uClickedCoord;
+uniform ivec4 uClickedCoord;
 
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
@@ -74,11 +74,11 @@ void main() {
   float noiseVal = texture(uSampler2, 0.9 * vPos.xz).r - texture(uSampler1, 0.9 * vPos.xz).r;
   float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
 
-  float distFromZero = length(vCoordinates.xy);
+  float distFromZero = 0.;
 
 
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
-  if (length(vCoordinates.xy - vec2(uClickedCoord)) < 0.001 ) {
+  if (vInstancedMetadata.x - uClickedCoord.x == 0 ) {
     fragColor = vec4(1.,0.,0.,1.);
   }
   depth = vTransPos.z / 20.;
@@ -225,7 +225,7 @@ const meshes = [];
 
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
-    const m = new Mesh(instancedMesh);
+    const m = new Mesh(gl, instancedMesh);
     meshes.push(m);
   }
 }
@@ -254,10 +254,7 @@ function clickedCoord() {
     return null;
   }
 
-  const x = clickedIndex % xDim;
-  const y = Math.floor(clickedIndex / xDim);
-
-  return [Math.floor(x - xDim / 2), Math.floor(y - yDim / 2)];
+  return clickedIndex;
 }
 
 const draw = () => {
@@ -279,9 +276,14 @@ const draw = () => {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
 
-  const clicked = clickedCoord();
-  if (clicked !== null) {
-    gl.uniform2iv(gl.getUniformLocation(program, "uClickedCoord"), clicked);
+  const clickedIndex = clickedCoord();
+  if (clickedIndex !== null) {
+    gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
+      clickedIndex,
+      0,
+      0,
+      0,
+    ]);
   }
 
   instancedMesh.render(gl);

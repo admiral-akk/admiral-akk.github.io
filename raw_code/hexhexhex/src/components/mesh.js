@@ -1,9 +1,9 @@
 import { mat4 } from "gl-matrix";
 
 class Mesh {
-  constructor(instancedMesh) {
+  constructor(gl, instancedMesh) {
     this.instancedMesh = instancedMesh;
-    this.index = instancedMesh.addMesh(this);
+    this.index = instancedMesh.addMesh(gl, this);
   }
 
   updateIndex(index) {

@@ -6,13 +6,13 @@ import {
 import { WindowManager } from "./util/window.js";
 import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
-import { Camera } from "./camera.js";
+import { Camera } from "./renderer/camera.js";
 import {
   createProgram,
   createPostProcessProgram,
   getPostProcessVao,
 } from "./program.js";
-import { InstancedMesh } from "./instancedMesh.js";
+import { InstancedMesh } from "./renderer/instancedMesh.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
 import { Hex } from "./components/hex.js";
@@ -137,9 +137,9 @@ const generateHexVerts = () => {
   return generateSymmetricMesh(params, hexVerts);
 };
 
-const xDim = 3;
-const yDim = 3;
-const instancedMesh = new InstancedMesh(gl, generateHexVerts(), xDim * yDim);
+const xDim = 4;
+const yDim = 4;
+const instancedMesh = new InstancedMesh(gl, generateHexVerts(), 1000);
 const backgroundInstance = new InstancedMesh(
   gl,
   generateSymmetricMesh(
@@ -162,17 +162,14 @@ const target = new InstancedMesh(
 );
 
 var clickedIndex = null;
-const model = mat4.create();
-mat4.translate(model, model, [0, -2, 0]);
-backgroundInstance.updateTransform(0, model);
 
 const camera = new Camera();
 
 // FBO
 const catLoc = 1;
 const otherLoc = 2;
-const colorLoc = 3;
-const depthLoc = 4;
+const colorLoc = 1;
+const depthLoc = 2;
 const catTexture = gl.createTexture();
 const noiseTexture = gl.createTexture();
 const fragColorTexture = gl.createTexture();
@@ -234,6 +231,15 @@ for (let x = 0; x < xDim; x++) {
     e.addComponent(new Hex([x, y], [xDim, yDim]));
     entities.push(e);
   }
+}
+
+{
+  const e = new Entity();
+  e.addComponent(new Mesh(gl, backgroundInstance));
+  const t = new Transform();
+  t.setPosition([0, -4, 0]);
+  e.addComponent(t);
+  entities.push(e);
 }
 
 const systems = [];

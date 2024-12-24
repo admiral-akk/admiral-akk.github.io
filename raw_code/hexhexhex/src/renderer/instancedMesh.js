@@ -136,9 +136,14 @@ class InstancedMesh {
     );
   }
 
-  render(gl, count = this.maxCount) {
+  render(gl) {
     gl.bindVertexArray(this.vao);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, this.modelArray.length / 6, count);
+    gl.drawArraysInstanced(
+      gl.TRIANGLES,
+      0,
+      this.modelArray.length / 6,
+      this.meshes.length
+    );
     gl.bindVertexArray(null);
   }
 

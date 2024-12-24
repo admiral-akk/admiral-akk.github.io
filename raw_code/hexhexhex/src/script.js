@@ -13,6 +13,7 @@ import {
   getPostProcessVao,
 } from "./program.js";
 import { InstancedMesh } from "./instancedMesh.js";
+import { Mesh } from "./components/mesh.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -165,7 +166,6 @@ backgroundInstance.updateTransform(gl, 0, model);
 const camera = new Camera();
 
 // FBO
-
 const catLoc = 1;
 const otherLoc = 2;
 const colorLoc = 3;
@@ -221,26 +221,29 @@ gl.framebufferRenderbuffer(
 gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
+const meshes = [];
+
+for (let x = 0; x < xDim; x++) {
+  for (let y = 0; y < yDim; y++) {
+    const m = new Mesh(instancedMesh);
+    meshes.push(m);
+  }
+}
+
 const step = () => {
   camera.rotateCamera();
   const time = Date.now();
 
   for (let x = 0; x < xDim; x++) {
     for (let y = 0; y < yDim; y++) {
-      const model = mat4.create();
       const xOffset = 1.5 * (x - (xDim - 1) / 2);
       const yOffset =
         2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
-      mat4.translate(model, model, [
+      const index = x + y * xDim;
+      meshes[index].updatePosition(gl, [
         xOffset,
         Math.sin(time / 1000 + xOffset + yOffset / 4),
         yOffset,
-      ]);
-      mat4.scale(model, model, [1, 1, 1]);
-      instancedMesh.updateTransform(gl, x + y * xDim, model);
-      instancedMesh.updateCoordinates(gl, x + y * xDim, [
-        Math.floor(x - xDim / 2),
-        Math.floor(y - yDim / 2),
       ]);
     }
   }

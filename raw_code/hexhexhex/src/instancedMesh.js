@@ -23,6 +23,7 @@ class InstancedMesh {
       new Float32Array(modelArray),
       gl.STATIC_DRAW
     );
+    this.meshes = [];
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
     gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
     gl.enableVertexAttribArray(0);
@@ -93,6 +94,25 @@ class InstancedMesh {
     this.transformBuffer = transformBuffer;
     this.vao = vao;
     this.maxCount = maxCount;
+  }
+
+  addMesh(mesh) {
+    this.meshes.push(mesh);
+    return this.meshes.length - 1;
+  }
+
+  removeMesh(gl, index) {
+    if (index < this.meshes.length - 1) {
+      this.meshes[index] = this.meshes[this.meshes.length - 1];
+      this.meshes[index].updateIndex(index);
+
+      const offset = 20 * (this.meshes.length - 1);
+      const transformMat = this.transformArray.slice(offset, offset + 16);
+      const coord = this.transformArray.slice(offset + 16, offset + 20);
+      this.updateTransform(gl, index, transformMat);
+      this.updateCoordinates(gl, index, coord);
+    }
+    this.meshes.pop();
   }
 
   updateTransform(gl, index, newMatrix) {

@@ -243,8 +243,12 @@ systems.push(new AnimateMeshTransform(), new UpdateMeshTransform());
 const step = () => {
   camera.rotateCamera();
   for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
+    const system = systems[systemIndex];
     for (let i = 0; i < entities.length; i++) {
-      systems[systemIndex].apply(entities[i].components);
+      const entity = entities[i];
+      if (system.canApply(entity)) {
+        systems[systemIndex].apply(entity.components);
+      }
     }
   }
 };

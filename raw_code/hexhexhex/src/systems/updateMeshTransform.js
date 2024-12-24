@@ -1,13 +1,13 @@
+import { Mesh } from "../components/mesh";
+import { Transform } from "../components/transform";
 import { System } from "../ecs/system";
 
 class UpdateMeshTransform extends System {
   constructor() {
-    super([]);
+    super([Mesh, Transform]);
   }
 
-  apply(components) {
-    const mesh = components[0];
-    const transform = components[1];
+  apply({ mesh, transform }) {
     if (transform.updated) {
       transform.updated = false;
       mesh.instancedMesh.updateTransform(mesh.index, transform.getMatrix());

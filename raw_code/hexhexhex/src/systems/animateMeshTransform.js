@@ -1,15 +1,15 @@
+import { Hex } from "../components/hex";
+import { Transform } from "../components/transform.js";
 import { System } from "../ecs/system";
 
 const sqrt32 = Math.sqrt(3) / 2;
 class AnimateMeshTransform extends System {
   constructor() {
-    super([]);
+    super([Hex, Transform]);
   }
 
-  apply(components) {
+  apply({ hex, transform }) {
     const time = Date.now();
-    const transform = components[1];
-    const hex = components[2];
     const [x, y] = hex.coords;
     const [xDim, yDim] = hex.dim;
 

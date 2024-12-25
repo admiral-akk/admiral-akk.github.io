@@ -15,6 +15,7 @@ import {
   getPostProcessVao,
 } from "./renderer/program.js";
 import { InstancedMesh } from "./renderer/instancedMesh.js";
+import { Renderer } from "./renderer/renderer.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
 import { Hex } from "./components/hex.js";
@@ -173,54 +174,6 @@ const colorLoc = 1;
 const depthLoc = 2;
 const catTexture = gl.createTexture();
 const noiseTexture = gl.createTexture();
-const fragColorTexture = gl.createTexture();
-
-const fbo = gl.createFramebuffer();
-
-gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
-gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, gl.canvas.width, gl.canvas.height);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-gl.bindTexture(gl.TEXTURE_2D, null);
-
-const depthTexture = gl.createTexture();
-gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R8, gl.canvas.width, gl.canvas.height);
-gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-
-gl.framebufferTexture2D(
-  gl.FRAMEBUFFER,
-  gl.COLOR_ATTACHMENT1,
-  gl.TEXTURE_2D,
-  depthTexture,
-  0
-);
-gl.bindTexture(gl.TEXTURE_2D, null);
-gl.framebufferTexture2D(
-  gl.FRAMEBUFFER,
-  gl.COLOR_ATTACHMENT0,
-  gl.TEXTURE_2D,
-  fragColorTexture,
-  0
-);
-
-const renderbuffer = gl.createRenderbuffer();
-gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-gl.renderbufferStorage(
-  gl.RENDERBUFFER,
-  gl.DEPTH_COMPONENT16,
-  gl.canvas.width,
-  gl.canvas.height
-);
-gl.framebufferRenderbuffer(
-  gl.FRAMEBUFFER,
-  gl.DEPTH_ATTACHMENT,
-  gl.RENDERBUFFER,
-  renderbuffer
-);
-
-gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 const entities = [];
 
@@ -348,13 +301,16 @@ const step = () => {
   applySystems();
 };
 
+const renderer = new Renderer(gl);
+
 const draw = () => {
   requestAnimationFrame(draw);
 
   step();
 
   gl.useProgram(program);
-  cameraEntity.components.camera.applyCameraUniforms(gl, program);
+
+  renderer.applyUniforms(cameraEntity.components.camera, program);
 
   gl.activeTexture(gl.TEXTURE0 + otherLoc);
   gl.bindTexture(gl.TEXTURE_2D, catTexture);
@@ -362,11 +318,6 @@ const draw = () => {
   gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler2"), otherLoc);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.enable(gl.DEPTH_TEST);
-
   gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
     clickedIndex,
     0,
@@ -374,34 +325,18 @@ const draw = () => {
     0,
   ]);
 
-  instancedMesh.render(gl);
-  backgroundInstance.render(gl);
-  target.render(gl);
-
-  gl.disable(gl.DEPTH_TEST);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  renderer.render();
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);
-  gl.bindVertexArray(quadVAO);
 
-  gl.activeTexture(gl.TEXTURE0 + depthLoc);
-  gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-  gl.activeTexture(gl.TEXTURE0 + colorLoc);
-  gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
   gl.uniform3fv(
     gl.getUniformLocation(quadProgram, "uBackgroundColor"),
 
     new Float32Array([123 / 255, 217 / 255, 246 / 255])
   );
-  gl.uniform1i(gl.getUniformLocation(quadProgram, "uDepth"), depthLoc);
-  gl.uniform1i(gl.getUniformLocation(quadProgram, "uColor"), colorLoc);
 
-  gl.enable(gl.BLEND);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  gl.disable(gl.BLEND);
-  gl.bindVertexArray(null);
+  renderer.renderPostProcess(quadProgram);
 };
 
 const loadImage = (src) =>

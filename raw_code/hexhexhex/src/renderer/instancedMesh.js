@@ -12,8 +12,11 @@ const negX = vec3.clone([-1, 0, 0]);
 const posZ = vec3.clone([0, 0, 1]);
 const negZ = vec3.clone([0, 0, -1]);
 
+const instancedMeshes = [];
+
 class InstancedMesh {
   constructor(gl, modelArray, maxCount) {
+    instancedMeshes.push(this);
     const vao = gl.createVertexArray();
     this.gl = gl;
     gl.bindVertexArray(vao);
@@ -284,4 +287,4 @@ function intersection(start, dir, boundingBox) {
   return closestIntersection;
 }
 
-export { InstancedMesh };
+export { InstancedMesh, instancedMeshes };

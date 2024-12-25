@@ -25,28 +25,6 @@ class Camera extends Component {
     vec3.copy(this.origin, pos);
   }
 
-  applyCameraUniforms(gl, program) {
-    const view = mat4.create();
-    const projection = mat4.create();
-
-    vec3.add(temp, this.origin, this.offset);
-
-    mat4.lookAt(view, temp, this.origin, [0, 1, 0]);
-
-    mat4.perspective(
-      projection,
-      Math.PI / 2,
-      gl.canvas.width / gl.canvas.height,
-      0.01,
-      20
-    );
-
-    const viewLoc = gl.getUniformLocation(program, "uView");
-    const projectionLoc = gl.getUniformLocation(program, "uProjection");
-    gl.uniformMatrix4fv(viewLoc, false, view);
-    gl.uniformMatrix4fv(projectionLoc, false, projection);
-  }
-
   rayCast(gl, clickPos) {
     const viewX = 2 * (clickPos[0] - 0.5);
 

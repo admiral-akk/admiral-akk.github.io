@@ -18,6 +18,7 @@ import { Hex } from "./components/hex.js";
 import { Transform } from "./components/transform.js";
 import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
 import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
+import { MoveCamera } from "./systems/moveCamera.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -278,7 +279,11 @@ const targetTransform = new Transform();
 
 const systems = [];
 
-systems.push(new AnimateMeshTransform(), new UpdateMeshTransform());
+systems.push(
+  new MoveCamera(),
+  new AnimateMeshTransform(),
+  new UpdateMeshTransform()
+);
 
 document.addEventListener("click", handleClick);
 
@@ -295,8 +300,6 @@ function handleClick(event) {
 var clickedEntity = null;
 
 const step = () => {
-  cameraEntity.components.camera.animateCamera();
-
   if (clickedEntity) {
     cameraEntity.components.camera.setTarget(
       clickedEntity.components["transform"].pos

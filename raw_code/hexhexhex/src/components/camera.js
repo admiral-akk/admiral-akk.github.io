@@ -25,13 +25,6 @@ class Camera extends Component {
     vec3.copy(this.origin, pos);
   }
 
-  animateCamera() {
-    vec3.sub(temp, this.target, this.origin);
-    vec3.scale(temp, temp, 0.1);
-    vec3.add(this.origin, temp, this.origin);
-    // move origin towards target
-  }
-
   applyCameraUniforms(gl, program) {
     const view = mat4.create();
     const projection = mat4.create();

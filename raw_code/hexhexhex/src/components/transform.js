@@ -1,4 +1,4 @@
-import { vec3, vec4, mat4 } from "gl-matrix";
+import { vec3, vec4, mat4, quat } from "gl-matrix";
 import { Component } from "../ecs/component";
 
 const tempQuat = mat4.create();
@@ -10,8 +10,7 @@ class Transform extends Component {
     this.pos = vec3.create();
 
     // identity quaternion
-    this.rot = vec4.create();
-    this.rot[3] = 1;
+    this.rot = quat.create();
 
     this.scale = vec3.create();
     this.scale[0] = 1;
@@ -25,7 +24,7 @@ class Transform extends Component {
   }
 
   setRotation(rot) {
-    vec4.copy(this.rot, rot);
+    quat.copy(this.rot, rot);
     this.updated = true;
   }
 

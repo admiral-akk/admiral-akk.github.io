@@ -147,11 +147,11 @@ class InstancedMesh {
     gl.bindVertexArray(null);
   }
 
-  hit(startPos, dir, count) {
+  hit(startPos, dir) {
     var closestIntersection = null;
     var coord = null;
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < this.meshes.length; i++) {
       temp[0] = startPos[0];
       temp[1] = startPos[1];
       temp[2] = startPos[2];
@@ -200,7 +200,7 @@ class InstancedMesh {
       // temp3 = dir
       // temp2 = start
     }
-    return [closestIntersection, coord];
+    return [closestIntersection, coord, this.meshes[coord]];
   }
 }
 

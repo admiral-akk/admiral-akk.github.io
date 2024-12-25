@@ -223,13 +223,18 @@ gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 const entities = [];
 
+const spawnHexAt = (coord) => {
+  const e = new Entity();
+  e.addComponent(new Mesh(gl, instancedMesh));
+  e.addComponent(new Transform());
+  e.addComponent(new Hex(coord, [xDim, yDim]));
+  entities.push(e);
+  return e;
+};
+
 for (let x = 0; x < xDim; x++) {
   for (let y = 0; y < yDim; y++) {
-    const e = new Entity();
-    e.addComponent(new Mesh(gl, instancedMesh));
-    e.addComponent(new Transform());
-    e.addComponent(new Hex([x, y], [xDim, yDim]));
-    entities.push(e);
+    spawnHexAt([x, y]);
   }
 }
 
@@ -267,9 +272,30 @@ function handleClick(event) {
   }
 }
 
-const step = () => {
-  camera.rotateCamera();
+const spawn = (coord) => {
+  var nextExists = false;
+  for (let i = 0; i < entities.length; i++) {
+    const eCoord = entities[i].components["hex"];
+    if (eCoord) {
+      nextExists |=
+        coord[0] == eCoord.coords[0] && 1 + coord[1] == eCoord.coords[1];
+    }
+  }
 
+  if (!nextExists) {
+    const e = spawnHexAt([coord[0], coord[1] + 1]);
+    console.log(e.components["transform"].pos);
+  }
+};
+
+var clickedEntity = null;
+
+const step = () => {
+  camera.animateCamera();
+
+  if (clickedEntity) {
+    camera.setTarget(clickedEntity.components["transform"].pos);
+  }
   // handle user input
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
@@ -278,10 +304,15 @@ const step = () => {
         const val = action.val;
         const [startPos, dir] = camera.rayCast(gl, val);
 
-        const [h, coord] = instancedMesh.hit(startPos, dir, xDim * yDim);
+        const [h, coord, mesh] = instancedMesh.hit(startPos, dir, xDim * yDim);
         if (h !== null) {
+          const e = mesh.getEntity();
+          clickedEntity = e;
+          const [x, y] = e.components["hex"].coords;
           clickedIndex = coord;
           targetTransform.setPosition(h);
+          camera.setTarget(e.components["transform"].pos);
+          spawn([x, y]);
         }
 
         break;

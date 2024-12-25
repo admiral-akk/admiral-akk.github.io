@@ -1,42 +1,30 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
+import { mat4, vec3, vec4 } from "gl-matrix";
+import { Component } from "../ecs/component";
 
 const temp = vec3.create();
 const temp2 = vec4.create();
 
-class Camera {
+class Camera extends Component {
   constructor() {
-    this.offset = vec3.create();
-    this.offset[0] = 4;
-    this.offset[1] = 4;
-
-    this.rotation = quat.create();
-
+    this.cameraPos = vec3.create();
+    this.cameraPos[0] = 4;
+    this.cameraPos[1] = 4;
     this.origin = vec3.create();
-    this.target = vec3.create();
-  }
-
-  setTarget(pos) {
-    vec3.copy(this.target, pos);
   }
 
   setOrigin(pos) {
     vec3.copy(this.origin, pos);
   }
 
-  animateCamera() {
-    vec3.sub(temp, this.target, this.origin);
-    vec3.scale(temp, temp, 0.1);
-    vec3.add(this.origin, temp, this.origin);
-    // move origin towards target
+  rotateCamera(step = 0.002) {
+    vec3.rotateY(this.cameraPos, this.cameraPos, this.origin, step);
   }
 
   applyCameraUniforms(gl, program) {
     const view = mat4.create();
     const projection = mat4.create();
 
-    vec3.add(temp, this.origin, this.offset);
-
-    mat4.lookAt(view, temp, this.origin, [0, 1, 0]);
+    mat4.lookAt(view, this.cameraPos, this.origin, [0, 1, 0]);
 
     mat4.perspective(
       projection,
@@ -58,6 +46,7 @@ class Camera {
     // invert y
     const viewY = 2 * (0.5 - clickPos[1]);
 
+    vec3.copy(temp, this.cameraPos);
     temp2[0] = viewX;
     temp2[1] = viewY;
     temp2[2] = 1;
@@ -65,10 +54,9 @@ class Camera {
 
     const view = mat4.create();
     const projection = mat4.create();
+    const origin = vec3.create();
 
-    vec3.add(temp, this.origin, this.offset);
-
-    mat4.lookAt(view, temp, this.origin, [0, 1, 0]);
+    mat4.lookAt(view, this.cameraPos, origin, [0, 1, 0]);
 
     mat4.perspective(
       projection,

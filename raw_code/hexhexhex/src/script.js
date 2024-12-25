@@ -4,13 +4,16 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
-import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
+import {
+  generateRegularPolygon,
+  generateSymmetricMesh,
+} from "./renderer/mesh.js";
 import { Camera } from "./components/camera.js";
 import {
   createProgram,
   createPostProcessProgram,
   getPostProcessVao,
-} from "./program.js";
+} from "./renderer/program.js";
 import { InstancedMesh } from "./renderer/instancedMesh.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";

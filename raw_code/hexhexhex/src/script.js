@@ -1,3 +1,4 @@
+import "./util/array.js";
 import {
   DataManager,
   DefaultCompressor,
@@ -25,6 +26,7 @@ import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
 import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
 import { MoveCamera } from "./systems/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
+import { vec3, vec4, mat4 } from "gl-matrix";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -141,8 +143,6 @@ const generateHexVerts = () => {
   return generateSymmetricMesh(params, hexVerts);
 };
 
-const xDim = 4;
-const yDim = 4;
 const instancedMesh = new InstancedMesh(gl, generateHexVerts(), 1000);
 const backgroundInstance = new InstancedMesh(
   gl,
@@ -183,7 +183,7 @@ const entities = [];
 const cameraEntity = new Entity();
 
 {
-  cameraEntity.addComponent(new Camera());
+  cameraEntity.addComponent(new Camera(gl));
   const t = new Transform();
   t.setPosition([0, -4, 0]);
   cameraEntity.addComponent(t);
@@ -217,7 +217,7 @@ const spawnAroundHex = (entity) => {
 //
 
 const start = spawnHexAt([1, 0]);
-spawnAroundHex(start);
+//spawnAroundHex(start);
 
 {
   const e = new Entity();
@@ -244,6 +244,7 @@ const systems = [
 ];
 
 document.addEventListener("click", handleClick);
+document.addEventListener("mousemove", handleMove);
 
 const actions = [];
 function handleClick(event) {
@@ -255,23 +256,98 @@ function handleClick(event) {
   }
 }
 
+function handleMove(event) {
+  const { horizontalOffset, verticalOffset } = windowManager.sizes;
+  if (event.target.id === "webgl") {
+    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
+    const y = (event.clientY - verticalOffset) / gl.canvas.height;
+    actions.push({ type: "movedMouse", val: [x, y] });
+  }
+}
+
+// https://stackoverflow.com/a/56348846
+const getWorldRayFromCamera = (cameraEntity, viewPos) => {
+  const { camera, transform } = cameraEntity.components;
+
+  const viewX = 2 * (viewPos[0] - 0.5);
+
+  // invert y
+  const viewY = 2 * (0.5 - viewPos[1]);
+
+  const near = vec4.clone([viewX, viewY, -1, 1]);
+  const far = vec4.clone([viewX, viewY, 1, 1]);
+  const view = transform.getMatrix();
+  const projection = mat4.clone(camera.projection);
+
+  mat4.multiply(projection, projection, view);
+  mat4.invert(projection, projection);
+
+  vec4.transformMat4(near, near, projection);
+  vec4.transformMat4(far, far, projection);
+
+  vec4.scale(near, near, 1 / near[3]);
+  vec4.scale(far, far, 1 / far[3]);
+  vec4.sub(far, far, near);
+
+  const dir = vec3.clone([far[0], far[1], far[2]]);
+
+  vec3.normalize(dir, dir);
+
+  return [vec3.clone(transform.pos), dir];
+};
+
+const getRayCollision = (start, dir) => {
+  var best = null;
+  for (let i = 0; i < entities.length; i++) {
+    const { collider, transform } = entities[i].components;
+    if (collider && transform) {
+      const r = collider.raycast(start, dir, transform.getMatrix());
+      if (r) {
+        if (!best) {
+          best = [collider, r];
+        } else if (
+          vec3.distance(start, best[1][0]) > vec3.distance(start, r[0])
+        ) {
+          best = [collider, r];
+        }
+      }
+    }
+  }
+  return best;
+};
+
 const applyActions = () => {
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
     switch (action.type) {
       case "clicked":
-        const val = action.val;
-        const [startPos, dir] = cameraEntity.components.camera.rayCast(gl, val);
+        {
+          const val = action.val;
 
-        const [h, coord, mesh] = instancedMesh.hit(startPos, dir, xDim * yDim);
-        if (h !== null) {
-          const e = mesh.getEntity();
-          clickedIndex = coord;
-          targetTransform.setPosition(h);
-          cameraEntity.components.camera.setTarget(e.components.transform.pos);
-          spawnAroundHex(e);
+          const [worldPos, worldDir] = getWorldRayFromCamera(cameraEntity, val);
+
+          const collision = getRayCollision(worldPos, worldDir);
+          if (collision) {
+            const [collider, _] = collision;
+            const e = collider.getEntity();
+            cameraEntity.components.camera.setTarget(
+              e.components.transform.pos
+            );
+            spawnAroundHex(e);
+          }
         }
+        break;
+      case "movedMouse":
+        {
+          const val = action.val;
 
+          const [worldPos, worldDir] = getWorldRayFromCamera(cameraEntity, val);
+
+          const collision = getRayCollision(worldPos, worldDir);
+          if (collision) {
+            targetTransform.setPosition(collision[1][0]);
+          }
+        }
         break;
       default:
         break;

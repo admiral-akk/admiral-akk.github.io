@@ -149,62 +149,6 @@ class InstancedMesh {
     );
     gl.bindVertexArray(null);
   }
-
-  hit(startPos, dir) {
-    var closestIntersection = null;
-    var coord = null;
-
-    for (let i = 0; i < this.meshes.length; i++) {
-      temp[0] = startPos[0];
-      temp[1] = startPos[1];
-      temp[2] = startPos[2];
-      temp[3] = 1;
-      vec4.copy(temp2, temp);
-      temp2[0] += dir[0];
-      temp2[1] += dir[1];
-      temp2[2] += dir[2];
-
-      const offset = 20 * i;
-      mat4.copy(tempMat, this.transformArray.slice(offset, offset + 16));
-      mat4.invert(tempMat, tempMat);
-      vec4.transformMat4(temp, temp, tempMat);
-      vec4.transformMat4(temp2, temp2, tempMat);
-
-      vec4.sub(temp3, temp2, temp);
-      vec3.normalize(temp3, temp3);
-
-      const intersect = intersection(temp, temp3, this.boundingBox);
-
-      if (intersect !== null) {
-        const inter = vec4.create();
-        inter[0] = intersect[0];
-        inter[1] = intersect[1];
-        inter[2] = intersect[2];
-        inter[3] = 1;
-        mat4.invert(tempMat, tempMat);
-        vec4.transformMat4(inter, inter, tempMat);
-        console.log("intersection", inter[0], inter[1], inter[2]);
-
-        if (closestIntersection === null) {
-          closestIntersection = inter;
-          coord = i;
-        } else {
-          const test = vec3.create();
-          const test2 = vec3.create();
-          vec3.subtract(test, startPos, inter);
-          vec3.subtract(test2, startPos, closestIntersection);
-          if (vec3.length(test) < vec3.length(test2)) {
-            closestIntersection = inter;
-            coord = i;
-          }
-        }
-      }
-
-      // temp3 = dir
-      // temp2 = start
-    }
-    return [closestIntersection, coord, this.meshes[coord]];
-  }
 }
 
 const eps = 0.0001;
@@ -267,7 +211,6 @@ function intersection(start, dir, boundingBox) {
           } else {
             vec3.scaleAndAdd(intersection, intersection, normal, normalDist);
           }
-          console.log("normal hit", normal);
           if (closestIntersection === null) {
             closestIntersection = intersection;
           } else {

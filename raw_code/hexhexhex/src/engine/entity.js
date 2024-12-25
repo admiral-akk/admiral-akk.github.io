@@ -237,7 +237,6 @@ class Entity {
             }
             // hits the corner of the box
             if (delta.lenSq() <= 1) {
-              console.log("corner");
               return new Collision({ normal: delta.normalize().mul(-1) });
             }
             return null;

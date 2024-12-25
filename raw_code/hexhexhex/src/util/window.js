@@ -29,7 +29,6 @@ class WindowManager {
       const { buffer } = this.sizes;
       const adjustedHeight = window.innerHeight - 2 * buffer;
       const adjustedWidth = window.innerWidth - 2 * buffer;
-      console.log();
       if (adjustedHeight * this.sizes.aspect > adjustedWidth) {
         this.sizes.width = adjustedWidth;
         this.sizes.height = adjustedWidth / this.sizes.aspect;

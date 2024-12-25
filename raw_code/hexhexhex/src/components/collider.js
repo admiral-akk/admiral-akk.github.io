@@ -13,6 +13,10 @@ class Collider extends Component {
 
   // returns the hit location and normal, if one exists.
   raycast(origin, dir, transformMat = mat4.create()) {}
+
+  getName() {
+    return "collider";
+  }
 }
 
 const posY = vec3.clone([0, 1, 0]);
@@ -38,7 +42,12 @@ const checkPlaneCollision = (start, dir, planePoint, planeNormal) => {
 
   const normDist = vec3.dot(planeNormal, tempPos);
 
-  vec3.scaleAndAdd(tempPos, origin, dir, -normDist / dist);
+  // the start is behind the plan
+  if (normDist > -eps) {
+    return null;
+  }
+
+  vec3.scaleAndAdd(tempPos, start, dir, normDist / dist);
 
   return [tempPos, vec3.clone(planeNormal)];
 };
@@ -50,12 +59,12 @@ class BoxCollider extends Collider {
     super();
     // assume every collider is a standard size and symmetric about origin
     // TODO: allow for custom size.
-    this.dims = vec3.clone([0.5, 0.25, 0.5]);
+    this.dims = vec3.clone([Math.sqrt(3) / 2, 0.25, Math.sqrt(3) / 2]);
   }
 
   // returns the hit location and normal, if one exists.
   raycast(origin, dir, transformMat) {
-    const bestResult = null;
+    var bestResult = null;
     for (let i = 0; i < dirs.length; i++) {
       const normal = vec3.clone(dirs[i]);
 
@@ -68,15 +77,30 @@ class BoxCollider extends Collider {
 
       const result = checkPlaneCollision(origin, dir, tempTranslation, normal);
       if (result !== null) {
+        // check if the plane hit is within bounds
+        vec3.sub(tempTranslation, tempTranslation, result[0]);
+
+        vec3.abs(tempTranslation, tempTranslation);
+        vec3.div(tempTranslation, tempTranslation, this.dims);
+        const m = Math.max(
+          tempTranslation[0],
+          tempTranslation[1],
+          tempTranslation[2]
+        );
+
         // check best result
-        if (bestResult !== null) {
-          const lastHit = bestResult[0];
-          const newHit = result[0];
-          if (vec3.distance(newHit, origin) < vec3.distance(lastHit, origin)) {
+        if (m <= 1) {
+          if (bestResult !== null) {
+            const lastHit = bestResult[0];
+            const newHit = result[0];
+            if (
+              vec3.distance(newHit, origin) < vec3.distance(lastHit, origin)
+            ) {
+              bestResult = result;
+            }
+          } else {
             bestResult = result;
           }
-        } else {
-          bestResult = result;
         }
       }
     }

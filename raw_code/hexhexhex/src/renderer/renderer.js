@@ -110,7 +110,7 @@ class Renderer {
     gl.bindTexture(gl.TEXTURE_2D, this.fragColorTexture);
     gl.uniform1i(gl.getUniformLocation(program, "uDepth"), 0);
     gl.uniform1i(gl.getUniformLocation(program, "uColor"), 1);
-    gl.bindVertexArray(getPostProcessVao());
+    gl.bindVertexArray(getPostProcessVao(gl));
 
     gl.enable(gl.BLEND);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

@@ -7,13 +7,13 @@ class Entity {
   }
 
   addComponent(component) {
-    this.components[component.constructor.name.toLowerCase()] = component;
+    this.components[component.getName()] = component;
     component.addComponent(this);
   }
 
   removeComponent(component) {
     component.removeComponent();
-    delete this.components[component.constructor.name.toLowerCase()];
+    delete this.components[component.getName()];
   }
 }
 

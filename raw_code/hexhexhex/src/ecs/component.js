@@ -12,6 +12,10 @@ class Component {
   getEntity() {
     return entityMap.get(this);
   }
+
+  getName() {
+    return this.constructor.name.toLowerCase();
+  }
 }
 
 export { Component };

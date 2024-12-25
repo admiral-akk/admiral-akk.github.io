@@ -24,6 +24,7 @@ import { Transform } from "./components/transform.js";
 import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
 import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
 import { MoveCamera } from "./systems/moveCamera.js";
+import { BoxCollider } from "./components/collider.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -130,13 +131,11 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 
-const quadVAO = getPostProcessVao(gl);
-
 const generateHexVerts = () => {
   const params = [
-    [-0.5, 1, [0.3, 0.3, 0.3]],
-    [-0.25, 1, [0.4, 0.4, 0.0]],
-    [0, 0.8, [0.0, 0.4, 0.0]],
+    [-0.25, 1, [0.3, 0.3, 0.3]],
+    [0, 1, [0.4, 0.4, 0.0]],
+    [0.25, 0.8, [0.0, 0.4, 0.0]],
   ];
   const hexVerts = generateRegularPolygon(6, 1);
   return generateSymmetricMesh(params, hexVerts);
@@ -196,6 +195,7 @@ const spawnHexAt = (coord) => {
     e.addComponent(new Mesh(gl, instancedMesh));
     e.addComponent(new Transform());
     e.addComponent(new Hex(coord));
+    e.addComponent(new BoxCollider());
     entities.push(e);
     return e;
   }

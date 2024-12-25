@@ -161,7 +161,7 @@ const target = new InstancedMesh(
   1
 );
 
-var clickedIndex = null;
+var clickedIndex = -1;
 
 const camera = new Camera();
 
@@ -242,12 +242,56 @@ for (let x = 0; x < xDim; x++) {
   entities.push(e);
 }
 
+const targetTransform = new Transform();
+{
+  const targetEntity = new Entity();
+  targetEntity.addComponent(new Mesh(gl, target));
+  targetTransform.setPosition([0, -50, 0]);
+  targetEntity.addComponent(targetTransform);
+  entities.push(targetEntity);
+}
+
 const systems = [];
 
 systems.push(new AnimateMeshTransform(), new UpdateMeshTransform());
 
+document.addEventListener("click", handleClick);
+
+const actions = [];
+function handleClick(event) {
+  const { horizontalOffset, verticalOffset } = windowManager.sizes;
+  if (event.target.id === "webgl") {
+    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
+    const y = (event.clientY - verticalOffset) / gl.canvas.height;
+    actions.push({ type: "clicked", val: [x, y] });
+  }
+}
+
 const step = () => {
   camera.rotateCamera();
+
+  // handle user input
+  for (let i = 0; i < actions.length; i++) {
+    const action = actions[i];
+    switch (action.type) {
+      case "clicked":
+        const val = action.val;
+        const [startPos, dir] = camera.rayCast(gl, val);
+
+        const [h, coord] = instancedMesh.hit(startPos, dir, xDim * yDim);
+        if (h !== null) {
+          clickedIndex = coord;
+          targetTransform.setPosition(h);
+        }
+
+        break;
+      default:
+        break;
+    }
+  }
+  actions.length = 0;
+
+  // step through system
   for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
     const system = systems[systemIndex];
     for (let i = 0; i < entities.length; i++) {
@@ -258,14 +302,6 @@ const step = () => {
     }
   }
 };
-
-function clickedCoord() {
-  if (clickedIndex === null) {
-    return null;
-  }
-
-  return clickedIndex;
-}
 
 const draw = () => {
   requestAnimationFrame(draw);
@@ -286,15 +322,12 @@ const draw = () => {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
 
-  const clickedIndex = clickedCoord();
-  if (clickedIndex !== null) {
-    gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
-      clickedIndex,
-      0,
-      0,
-      0,
-    ]);
-  }
+  gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
+    clickedIndex,
+    0,
+    0,
+    0,
+  ]);
 
   instancedMesh.render(gl);
   backgroundInstance.render(gl);
@@ -325,30 +358,6 @@ const draw = () => {
   gl.disable(gl.BLEND);
   gl.bindVertexArray(null);
 };
-
-function printMousePos(event) {
-  const { horizontalOffset, verticalOffset } = windowManager.sizes;
-  if (event.target.id === "webgl") {
-    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
-    const y = (event.clientY - verticalOffset) / gl.canvas.height;
-
-    const [startPos, dir] = camera.rayCast(gl, [x, y]);
-
-    const [h, coord] = instancedMesh.hit(startPos, dir, xDim * yDim);
-
-    clickedIndex = coord;
-    if (h !== null) {
-      console.log(h);
-      console.log(coord);
-      const model = mat4.create();
-      mat4.translate(model, model, h);
-      target.updateTransform(0, model);
-    }
-    //console.log(h);
-  }
-}
-
-document.addEventListener("click", printMousePos);
 
 const loadImage = (src) =>
   new Promise((resolve) => {

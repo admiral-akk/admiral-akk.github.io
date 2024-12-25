@@ -316,6 +316,9 @@ const draw = () => {
 
   renderer.applyUniforms(cameraEntity.components.camera, program);
 
+  // TODO: good abstraction around uniforms
+  //
+  // need to handle ints vs floats vs matrices vs textures cleanly.
   gl.activeTexture(gl.TEXTURE0 + otherLoc);
   gl.bindTexture(gl.TEXTURE_2D, catTexture);
   gl.activeTexture(gl.TEXTURE0 + catLoc);
@@ -334,6 +337,9 @@ const draw = () => {
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);
 
+  // TODO: good abstraction around uniforms
+  //
+  // need to handle ints vs floats vs matrices vs textures cleanly.
   gl.uniform3fv(
     gl.getUniformLocation(quadProgram, "uBackgroundColor"),
 

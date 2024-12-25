@@ -299,13 +299,7 @@ function handleClick(event) {
 
 var clickedEntity = null;
 
-const step = () => {
-  if (clickedEntity) {
-    cameraEntity.components.camera.setTarget(
-      clickedEntity.components["transform"].pos
-    );
-  }
-  // handle user input
+const applyActions = () => {
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
     switch (action.type) {
@@ -332,8 +326,14 @@ const step = () => {
     }
   }
   actions.length = 0;
+};
 
-  // step through system
+// two kinds of steps - animation and game action
+//
+// idea for animation:
+// have an "animation stack" for things, so that the game state can be ahead of the animation
+
+const applySystems = () => {
   for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
     const system = systems[systemIndex];
     for (let i = 0; i < entities.length; i++) {
@@ -343,6 +343,14 @@ const step = () => {
       }
     }
   }
+};
+
+const step = () => {
+  // handle user input
+  applyActions();
+
+  // step through system
+  applySystems();
 };
 
 const draw = () => {

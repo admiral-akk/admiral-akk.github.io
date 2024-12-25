@@ -11,14 +11,14 @@ class AnimateMeshTransform extends System {
   apply({ hex, transform }) {
     const time = Date.now();
     const [x, y] = hex.coords;
-    const [xDim, yDim] = hex.dim;
 
-    const xOffset = 1.5 * (x - (xDim - 1) / 2);
-    const yOffset = 2 * sqrt32 * (y - (yDim - 1) / 2 + (x % 2 === 0 ? 0.5 : 0));
+    const xOffset = 1.5 * (x + 1 / 2);
+    const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0));
 
     transform.setPosition([
       xOffset,
-      Math.sin(time / 1000 + xOffset + yOffset / 4),
+      0,
+      //Math.sin(time / 1000 + xOffset + yOffset / 4),
       yOffset,
     ]);
   }

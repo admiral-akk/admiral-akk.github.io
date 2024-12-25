@@ -224,19 +224,33 @@ gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 const entities = [];
 
 const spawnHexAt = (coord) => {
-  const e = new Entity();
-  e.addComponent(new Mesh(gl, instancedMesh));
-  e.addComponent(new Transform());
-  e.addComponent(new Hex(coord, [xDim, yDim]));
-  entities.push(e);
-  return e;
+  if (!Hex.get(coord)) {
+    const e = new Entity();
+    e.addComponent(new Mesh(gl, instancedMesh));
+    e.addComponent(new Transform());
+    e.addComponent(new Hex(coord));
+    entities.push(e);
+    return e;
+  }
+  return null;
 };
 
-for (let x = 0; x < xDim; x++) {
-  for (let y = 0; y < yDim; y++) {
-    spawnHexAt([x, y]);
-  }
-}
+const spawnAroundHex = (entity) => {
+  const center = entity.components.hex.coords;
+  const offset = center[0] % 2 === 0 ? 0 : -1;
+  spawnHexAt([center[0], center[1] + 1]);
+  spawnHexAt([center[0], center[1] - 1]);
+  spawnHexAt([center[0] + 1, center[1] + offset]);
+  spawnHexAt([center[0] + 1, center[1] + offset + 1]);
+  spawnHexAt([center[0] - 1, center[1] + offset]);
+  spawnHexAt([center[0] - 1, center[1] + offset + 1]);
+};
+
+// to spawn around 0,0, we need
+//
+
+const start = spawnHexAt([1, 0]);
+spawnAroundHex(start);
 
 {
   const e = new Entity();
@@ -272,22 +286,6 @@ function handleClick(event) {
   }
 }
 
-const spawn = (coord) => {
-  var nextExists = false;
-  for (let i = 0; i < entities.length; i++) {
-    const eCoord = entities[i].components["hex"];
-    if (eCoord) {
-      nextExists |=
-        coord[0] == eCoord.coords[0] && 1 + coord[1] == eCoord.coords[1];
-    }
-  }
-
-  if (!nextExists) {
-    const e = spawnHexAt([coord[0], coord[1] + 1]);
-    console.log(e.components["transform"].pos);
-  }
-};
-
 var clickedEntity = null;
 
 const step = () => {
@@ -312,7 +310,7 @@ const step = () => {
           clickedIndex = coord;
           targetTransform.setPosition(h);
           camera.setTarget(e.components["transform"].pos);
-          spawn([x, y]);
+          spawnAroundHex(e);
         }
 
         break;

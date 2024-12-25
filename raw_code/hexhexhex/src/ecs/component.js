@@ -1,8 +1,6 @@
 const entityMap = new Map();
 
 class Component {
-  constructor() {}
-
   addComponent(entity) {
     entityMap.set(this, entity);
   }

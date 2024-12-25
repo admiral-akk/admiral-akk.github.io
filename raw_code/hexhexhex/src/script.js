@@ -4,9 +4,8 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { WindowManager } from "./util/window.js";
-import { mat4 } from "gl-matrix";
 import { generateRegularPolygon, generateSymmetricMesh } from "./mesh.js";
-import { Camera } from "./renderer/camera.js";
+import { Camera } from "./components/camera.js";
 import {
   createProgram,
   createPostProcessProgram,
@@ -163,8 +162,6 @@ const target = new InstancedMesh(
 
 var clickedIndex = -1;
 
-const camera = new Camera();
-
 // FBO
 const catLoc = 1;
 const otherLoc = 2;
@@ -223,6 +220,15 @@ gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 const entities = [];
 
+const cameraEntity = new Entity();
+
+{
+  cameraEntity.addComponent(new Camera());
+  const t = new Transform();
+  t.setPosition([0, -4, 0]);
+  cameraEntity.addComponent(t);
+  entities.push(cameraEntity);
+}
 const spawnHexAt = (coord) => {
   if (!Hex.get(coord)) {
     const e = new Entity();
@@ -289,10 +295,12 @@ function handleClick(event) {
 var clickedEntity = null;
 
 const step = () => {
-  camera.animateCamera();
+  cameraEntity.components.camera.animateCamera();
 
   if (clickedEntity) {
-    camera.setTarget(clickedEntity.components["transform"].pos);
+    cameraEntity.components.camera.setTarget(
+      clickedEntity.components["transform"].pos
+    );
   }
   // handle user input
   for (let i = 0; i < actions.length; i++) {
@@ -300,7 +308,7 @@ const step = () => {
     switch (action.type) {
       case "clicked":
         const val = action.val;
-        const [startPos, dir] = camera.rayCast(gl, val);
+        const [startPos, dir] = cameraEntity.components.camera.rayCast(gl, val);
 
         const [h, coord, mesh] = instancedMesh.hit(startPos, dir, xDim * yDim);
         if (h !== null) {
@@ -309,7 +317,9 @@ const step = () => {
           const [x, y] = e.components["hex"].coords;
           clickedIndex = coord;
           targetTransform.setPosition(h);
-          camera.setTarget(e.components["transform"].pos);
+          cameraEntity.components.camera.setTarget(
+            e.components["transform"].pos
+          );
           spawnAroundHex(e);
         }
 
@@ -338,7 +348,7 @@ const draw = () => {
   step();
 
   gl.useProgram(program);
-  camera.applyCameraUniforms(gl, program);
+  cameraEntity.components.camera.applyCameraUniforms(gl, program);
 
   gl.activeTexture(gl.TEXTURE0 + otherLoc);
   gl.bindTexture(gl.TEXTURE_2D, catTexture);

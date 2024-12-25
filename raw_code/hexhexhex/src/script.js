@@ -9,6 +9,7 @@ import {
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
 import { Camera } from "./components/camera.js";
+import { loadImageToTexture } from "./renderer/image.js";
 import {
   createProgram,
   createPostProcessProgram,
@@ -170,10 +171,13 @@ var clickedIndex = -1;
 // FBO
 const catLoc = 1;
 const otherLoc = 2;
-const colorLoc = 1;
-const depthLoc = 2;
-const catTexture = gl.createTexture();
-const noiseTexture = gl.createTexture();
+const catTexture = await loadImageToTexture(gl, "./kitten.png", 256, 256);
+const noiseTexture = await loadImageToTexture(
+  gl,
+  "./noiseTexture.png",
+  256,
+  256
+);
 
 const entities = [];
 
@@ -339,64 +343,7 @@ const draw = () => {
   renderer.renderPostProcess(quadProgram);
 };
 
-const loadImage = (src) =>
-  new Promise((resolve) => {
-    const image = new Image();
-    image.addEventListener("load", () => resolve(image));
-    image.src = src;
-  });
-
-const run = async () => {
-  const image = await loadImage("./kitten.png");
-  gl.bindTexture(gl.TEXTURE_2D, catTexture);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGB,
-    256,
-    256,
-    0,
-    gl.RGB,
-    gl.UNSIGNED_BYTE,
-    image
-  );
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR
-  );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  const noise = await loadImage("./noiseTexture.png");
-  gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGB,
-    256,
-    256,
-    0,
-    gl.RGB,
-    gl.UNSIGNED_BYTE,
-    noise
-  );
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR
-  );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  draw();
-};
-
-run();
+draw();
 
 // webgl types
 

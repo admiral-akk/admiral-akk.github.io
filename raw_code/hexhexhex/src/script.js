@@ -298,8 +298,6 @@ function handleClick(event) {
   }
 }
 
-var clickedEntity = null;
-
 const applyActions = () => {
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
@@ -311,13 +309,9 @@ const applyActions = () => {
         const [h, coord, mesh] = instancedMesh.hit(startPos, dir, xDim * yDim);
         if (h !== null) {
           const e = mesh.getEntity();
-          clickedEntity = e;
-          const [x, y] = e.components["hex"].coords;
           clickedIndex = coord;
           targetTransform.setPosition(h);
-          cameraEntity.components.camera.setTarget(
-            e.components["transform"].pos
-          );
+          cameraEntity.components.camera.setTarget(e.components.transform.pos);
           spawnAroundHex(e);
         }
 

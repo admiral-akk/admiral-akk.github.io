@@ -277,13 +277,11 @@ const targetTransform = new Transform();
   entities.push(targetEntity);
 }
 
-const systems = [];
-
-systems.push(
+const systems = [
   new MoveCamera(),
   new AnimateMeshTransform(),
-  new UpdateMeshTransform()
-);
+  new UpdateMeshTransform(),
+];
 
 document.addEventListener("click", handleClick);
 

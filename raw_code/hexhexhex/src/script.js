@@ -96,7 +96,9 @@ void main() {
   if (vInstancedMetadata.x - uClickedCoord.x == 0 ) {
     fragColor = vec4(1.,0.,0.,1.);
   }
-  depth = vTransPos.z / 20.;
+float far = 10.0; //far plane
+float near =  0.01; //near plane
+  depth = 1. - vTransPos.z / (far  - near);
 }`;
 
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
@@ -116,21 +118,21 @@ out vec4 fragColor;
 float linearDepth(float depthSample)
 {
 float f = 10.0; //far plane
-float n =  0.01; //near plane
-return (2.0 * n) / (f + n - depthSample * (f - n));
+float n = 0.01; //near plane
+  return (2.0 * n) / (f + n - depthSample * (f - n));
 }
 void main()
 {
 float far = 10.0; //far plane
 float near =  0.01; //near plane
-float depthTexVal = texture(uDepth, vTexCoord).x ;
-float depth = near + texture(uDepth, vTexCoord).x * (far - near);
+float depthTexVal = (1. - texture(uDepth, vTexCoord).x) ;
+float depth = near + (1. - texture(uDepth, vTexCoord).x) * (far - near);
 float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(depth, 0., 0., 1.);
   fragColor =  vec4(depth - 9., 0., 0., 1.);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
-  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(depthTexVal, 0.25) * vTexCoord.y);
+  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(depthTexVal, 0.95));
 }`;
 const renderTextureSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
@@ -198,14 +200,6 @@ const instancedMesh = new InstancedMesh(
     generateRegularPolygon(6, 1)
   ),
   1000
-);
-const backgroundInstance = new InstancedMesh(
-  gl,
-  generateSymmetricMesh(
-    [[0, 1, [123 / 255, 217 / 255, 246 / 255]]],
-    generateRegularPolygon(4, 100)
-  ),
-  1
 );
 
 const target = new InstancedMesh(
@@ -303,15 +297,6 @@ cameraEntity.components.camera.target = vec3.clone(
 );
 
 //spawnAroundHex(start);
-
-{
-  const e = new Entity();
-  e.addComponent(new Mesh(gl, backgroundInstance));
-  const t = new Transform();
-  t.setPosition([0, -4, 0]);
-  e.addComponent(t);
-  entities.push(e);
-}
 
 const targetTransform = new Transform();
 {

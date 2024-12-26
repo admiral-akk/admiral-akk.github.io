@@ -11,11 +11,7 @@ import {
 } from "./renderer/mesh.js";
 import { Camera } from "./components/camera.js";
 import { loadImageToTexture } from "./renderer/image.js";
-import {
-  createProgram,
-  createPostProcessProgram,
-  getPostProcessVao,
-} from "./renderer/program.js";
+import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity } from "./ecs/entity.js";
@@ -27,6 +23,7 @@ import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
 import { MoveCamera } from "./systems/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
 import { vec3, vec4, mat4 } from "gl-matrix";
+import { NoiseTexture } from "./renderer/noiseTextures.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -80,7 +77,6 @@ flat in ivec4 vInstancedMetadata;
 in vec3 vNormal;
 
 uniform sampler2D uSampler1;
-uniform sampler2D uSampler2;
 uniform ivec4 uClickedCoord;
 uniform vec3 uLightDir;
 
@@ -89,7 +85,7 @@ layout(location=1) out float depth;
 
 void main() {
   
-  float noiseVal = texture(uSampler2, 0.9 * vPos.xz).r - texture(uSampler1, 0.9 * vPos.xz).r;
+  float noiseVal = texture(uSampler1, 0.9 * vPos.xz).r;
   float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
 
   float distFromZero = 0.;
@@ -268,7 +264,7 @@ const spawnHexAt = (coord) => {
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
     entities.push(e);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 0; i++) {
       spawnTreeOn(e);
     }
     return e;
@@ -457,6 +453,9 @@ const step = () => {
 
 const renderer = new Renderer(gl);
 
+const noise = new NoiseTexture(gl);
+
+noise.generateValueNoise(renderer, [32, 32]);
 const draw = () => {
   requestAnimationFrame(draw);
 
@@ -469,12 +468,9 @@ const draw = () => {
   // TODO: good abstraction around uniforms
   //
   // need to handle ints vs floats vs matrices vs textures cleanly.
-  gl.activeTexture(gl.TEXTURE0 + otherLoc);
-  gl.bindTexture(gl.TEXTURE_2D, catTexture);
   gl.activeTexture(gl.TEXTURE0 + catLoc);
-  gl.bindTexture(gl.TEXTURE_2D, noiseTexture);
+  gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
-  gl.uniform1i(gl.getUniformLocation(program, "uSampler2"), otherLoc);
   gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
     clickedIndex,
     0,

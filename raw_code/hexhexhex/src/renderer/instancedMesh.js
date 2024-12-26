@@ -14,10 +14,9 @@ class InstancedMesh {
       gl.STATIC_DRAW
     );
     this.meshes = [];
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
-    gl.enableVertexAttribArray(0);
-    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
+    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
     const transformArray = [];
     const totalSize = 20;
     for (let i = 0; i < maxCount * 20; i++) {
@@ -43,6 +42,9 @@ class InstancedMesh {
     gl.vertexAttribDivisor(6, 1);
     gl.vertexAttribDivisor(7, 1);
 
+    gl.enableVertexAttribArray(0);
+    gl.enableVertexAttribArray(1);
+    gl.enableVertexAttribArray(2);
     gl.enableVertexAttribArray(3);
     gl.enableVertexAttribArray(4);
     gl.enableVertexAttribArray(5);

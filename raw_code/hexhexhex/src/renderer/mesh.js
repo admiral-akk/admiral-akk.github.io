@@ -44,9 +44,12 @@ const generateSymmetricMesh = (paramArr, verts) => {
 
       vec3.pushAll(temp1, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp2, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
       mesh.push(...extra);
     }
   }
@@ -72,16 +75,22 @@ const generateSymmetricMesh = (paramArr, verts) => {
 
       vec3.pushAll(temp1, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp2, mesh);
+      mesh.push(...extra);
       mesh.push(...extra);
 
       vec3.pushAll(temp2, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp4, mesh);
+      mesh.push(...extra);
       mesh.push(...extra);
     }
   }
@@ -103,9 +112,12 @@ const generateSymmetricMesh = (paramArr, verts) => {
 
       vec3.pushAll(temp1, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp2, mesh);
       mesh.push(...extra);
+      mesh.push(...extra);
       vec3.pushAll(temp3, mesh);
+      mesh.push(...extra);
       mesh.push(...extra);
     }
   }

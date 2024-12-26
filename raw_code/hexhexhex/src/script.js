@@ -132,7 +132,7 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(depth - 9., 0., 0., 1.);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
-  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(depthTexVal, 0.95));
+  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
 }`;
 const renderTextureSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag

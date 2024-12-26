@@ -4,7 +4,7 @@ const hexMap = new Map();
 
 class Hex extends Component {
   static get(coords) {
-    hexMap.get(`${coords[0]},${coords[1]}`);
+    return hexMap.get(`${coords[0]},${coords[1]}`);
   }
 
   constructor(coords) {

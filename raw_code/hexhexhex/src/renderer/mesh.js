@@ -32,12 +32,24 @@ const calculateNormal = ([v1, v2, v3]) => {
   return norm;
 };
 
-const addTriangle = (verts, extra, mesh) => {
+const hexToNum = (hexString) => {
+  return Number("0x" + hexString) / 255;
+};
+
+const addTriangle = (verts, color, mesh) => {
   const norm = calculateNormal(verts);
   for (let i = 0; i < verts.length; i++) {
     vec3.pushAll(verts[i], mesh);
     vec3.pushAll(norm, mesh);
-    mesh.push(...extra);
+    if (typeof color === "string") {
+      color = color.replace("#", "");
+      color = [
+        hexToNum(color.slice(0, 2)),
+        hexToNum(color.slice(2, 4)),
+        hexToNum(color.slice(4, 6)),
+      ];
+    }
+    mesh.push(...color);
   }
 };
 
@@ -46,7 +58,7 @@ const generateSymmetricMesh = (paramArr, verts) => {
   const mesh = [];
   // create base
   if (paramArr.length > 1) {
-    const [height, scale, extra] = paramArr[0];
+    const [height, scale, color] = paramArr[0];
     for (let j = 1; j < verts.length; j++) {
       vec3.copy(temp1, verts[0]);
       vec3.copy(temp2, verts[(j + 1) % verts.length]);
@@ -59,13 +71,13 @@ const generateSymmetricMesh = (paramArr, verts) => {
       temp2[1] = height;
       temp3[1] = height;
 
-      addTriangle([temp1, temp2, temp3], extra, mesh);
+      addTriangle([temp1, temp2, temp3], color, mesh);
     }
   }
 
   for (let i = 1; i < paramArr.length; i++) {
-    const [prevHeight, prevScale, extra] = paramArr[i - 1];
-    const [height, scale, extra1] = paramArr[i];
+    const [prevHeight, prevScale, color] = paramArr[i - 1];
+    const [height, scale, _] = paramArr[i];
 
     for (let j = 0; j < verts.length; j++) {
       vec3.copy(temp1, verts[j]);
@@ -82,27 +94,29 @@ const generateSymmetricMesh = (paramArr, verts) => {
       temp3[1] = height;
       temp4[1] = height;
 
-      addTriangle([temp1, temp3, temp2], extra, mesh);
-      addTriangle([temp2, temp3, temp4], extra, mesh);
+      addTriangle([temp1, temp3, temp2], color, mesh);
+      addTriangle([temp2, temp3, temp4], color, mesh);
     }
   }
 
   // create top
   {
-    const [height, scale, extra] = paramArr[paramArr.length - 1];
-    for (let j = 1; j < verts.length; j++) {
-      vec3.copy(temp1, verts[0]);
-      vec3.copy(temp2, verts[(j + 1) % verts.length]);
-      vec3.copy(temp3, verts[j]);
+    const [height, scale, color] = paramArr[paramArr.length - 1];
+    if (scale > 0) {
+      for (let j = 1; j < verts.length; j++) {
+        vec3.copy(temp1, verts[0]);
+        vec3.copy(temp2, verts[(j + 1) % verts.length]);
+        vec3.copy(temp3, verts[j]);
 
-      vec3.scale(temp1, temp1, scale);
-      vec3.scale(temp2, temp2, scale);
-      vec3.scale(temp3, temp3, scale);
-      temp1[1] = height;
-      temp2[1] = height;
-      temp3[1] = height;
+        vec3.scale(temp1, temp1, scale);
+        vec3.scale(temp2, temp2, scale);
+        vec3.scale(temp3, temp3, scale);
+        temp1[1] = height;
+        temp2[1] = height;
+        temp3[1] = height;
 
-      addTriangle([temp1, temp3, temp2], extra, mesh);
+        addTriangle([temp1, temp3, temp2], color, mesh);
+      }
     }
   }
 

@@ -139,17 +139,54 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 
-const generateHexVerts = () => {
-  const params = [
-    [-0.25, 1, [0.3, 0.3, 0.3]],
-    [0, 1, [0.4, 0.4, 0.0]],
-    [0.25, 0.8, [0.0, 0.4, 0.0]],
+const brown = "#5D4037";
+const darkGreen = "#2E7D32";
+
+const generateTreeVertices = () => {
+  var currHeight = 0.55;
+  var currScale = 0.6;
+  const vertices = [
+    [0, 0.1, brown],
+    [0.6, 0.1, darkGreen],
+    [0.58, 0.2, darkGreen],
+    [currHeight, currScale, darkGreen],
   ];
-  const hexVerts = generateRegularPolygon(6, 1);
-  return generateSymmetricMesh(params, hexVerts);
+
+  const heightStep = 0.45;
+  const scaleStep = 0.1;
+  const scaleInnerDelta = 0.15;
+  const heightInnerDelta = 0.3;
+  for (let i = 0; i < 10; i++) {
+    currHeight += heightStep;
+    currScale -= scaleStep;
+    let tempScale = Math.max(0, currScale - scaleInnerDelta);
+    vertices.push([currHeight + heightInnerDelta, tempScale, darkGreen]);
+    if (tempScale <= 0) {
+      break;
+    }
+    vertices.push([currHeight, currScale, darkGreen]);
+  }
+  return vertices;
 };
 
-const instancedMesh = new InstancedMesh(gl, generateHexVerts(), 1000);
+const treeMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
+  1000
+);
+
+const instancedMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-0.25, 1, "#444444"],
+      [0, 1, "#888800"],
+      [0.25, 0.8, "#008800"],
+    ],
+    generateRegularPolygon(6, 1)
+  ),
+  1000
+);
 const backgroundInstance = new InstancedMesh(
   gl,
   generateSymmetricMesh(
@@ -195,14 +232,45 @@ const cameraEntity = new Entity();
   cameraEntity.addComponent(t);
   entities.push(cameraEntity);
 }
+
+const sqrt32 = Math.sqrt(3) / 2;
+
+const getHexPosition = (coords) => {
+  const [x, y] = coords;
+
+  const xOffset = 1.5 * (x + 1 / 2);
+  const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0));
+
+  return [xOffset, 0, yOffset];
+};
+
+const spawnTreeOn = (hexEntity) => {
+  const e = new Entity();
+  e.addComponent(new Mesh(gl, treeMesh));
+  e.addComponent(new Transform());
+  const pos = vec3.clone(hexEntity.components.transform.pos);
+  pos[0] += (Math.random() - 0.5) * 0.5;
+  pos[1] += 0.25;
+  pos[2] += (Math.random() - 0.5) * 0.5;
+  e.components.transform.setPosition(pos);
+  e.components.transform.setScale([0.25, 0.25, 0.25]);
+  entities.push(e);
+};
+
 const spawnHexAt = (coord) => {
-  if (!Hex.get(coord)) {
+  console.log(Hex.get(coord));
+  console.log(Hex.get(coord) === undefined);
+  if (Hex.get(coord) === undefined) {
     const e = new Entity();
     e.addComponent(new Mesh(gl, instancedMesh));
     e.addComponent(new Transform());
+    e.components.transform.setPosition(getHexPosition(coord));
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
     entities.push(e);
+    for (let i = 0; i < 4; i++) {
+      spawnTreeOn(e);
+    }
     return e;
   }
   return null;

@@ -36,10 +36,10 @@ class Transform extends Component {
   getMatrix() {
     const mat = mat4.create();
 
-    mat4.scale(mat, mat, this.scale);
+    mat4.translate(mat, mat, this.pos);
     mat4.fromQuat(tempQuat, this.rot);
     mat4.mul(mat, tempQuat, mat);
-    mat4.translate(mat, mat, this.pos);
+    mat4.scale(mat, mat, this.scale);
 
     return mat;
   }

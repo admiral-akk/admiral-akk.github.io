@@ -132,8 +132,24 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
 
   fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(depthTexVal, 0.25) * vTexCoord.y);
 }`;
+const renderTextureSource = `#version 300 es
+#pragma vscode_glsllint_stage: frag
+
+precision mediump float;
+
+uniform sampler2D uTexture;
+
+in vec2 vTexCoord;
+
+out vec4 fragColor;
+
+void main()
+{
+  fragColor = vec4(texture(uTexture, vTexCoord).rgb, 1.);
+}`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
+const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
 const brown = "#5D4037";
 const darkGreen = "#2E7D32";
@@ -455,7 +471,8 @@ const renderer = new Renderer(gl);
 
 const noise = new NoiseTexture(gl);
 
-noise.generateValueNoise(renderer, [32, 32]);
+noise.generateSmoothValueNoise(renderer, [256, 256]);
+noise.generateValueNoise(renderer, [256, 256]);
 const draw = () => {
   requestAnimationFrame(draw);
 
@@ -470,6 +487,7 @@ const draw = () => {
   // need to handle ints vs floats vs matrices vs textures cleanly.
   gl.activeTexture(gl.TEXTURE0 + catLoc);
   gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
+  gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
   gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
   gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
     clickedIndex,
@@ -500,6 +518,14 @@ const draw = () => {
   );
 
   renderer.renderPostProcess(quadProgram);
+
+  gl.useProgram(renderTexture);
+  gl.activeTexture(gl.TEXTURE0 + 3);
+  gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
+  gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
+  gl.uniform1i(gl.getUniformLocation(renderTexture, "uTexture"), 3);
+
+  renderer.renderPostProcess(renderTexture);
 };
 
 draw();

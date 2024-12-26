@@ -69,6 +69,14 @@ const fragmentShaderSource = `#version 300 es
 
 precision mediump float;
 
+layout(std140) uniform Sun {
+  vec3 sunColor;
+  float sunStrength;
+  vec3 ambientColor;
+  float ambientStrength;
+  vec3 sunDirection;
+};
+
 in vec3 vColor;
 in vec2 vUv;
 in vec4 vPos;
@@ -90,12 +98,13 @@ void main() {
 
   float distFromZero = 0.;
 
-  float lightNorm = 0.5 + 0.5 * clamp(dot(uLightDir, vNormal),0.,1.);
+  float lightNorm =  clamp(dot(sunDirection, vNormal),0.,1.);
 
-  fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
-  if (vInstancedMetadata.x - uClickedCoord.x == 0 ) {
-    fragColor = vec4(1.,0.,0.,1.);
-  }
+  vec3 lightColor = ambientStrength * ambientColor + lightNorm * sunStrength * sunColor;
+
+  fragColor = vec4(vColor * lightColor, 1.);
+  
+  
 float far = 10.0; //far plane
 float near =  0.01; //near plane
   depth = 1. - vTransPos.z / (far  - near);
@@ -133,7 +142,7 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
   fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
-}`;
+  }`;
 const renderTextureSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -520,6 +529,40 @@ const draw = () => {
   vec3.normalize(lightingDir, lightingDir);
   gl.uniform3fv(gl.getUniformLocation(program, "uLightDir"), lightingDir);
 
+  const time = Date.now() / 1000;
+  const sunState = {
+    sunColor: [1, 0.9, 0.9],
+    sunStrength: 0.9,
+    ambientColor: [0.3, 0.3, 0.9],
+    ambientStrength: 1,
+    direction: [Math.sin(time), 1 + Math.sin(1.2 * time) / 2, Math.cos(time)],
+  };
+
+  const normDir = vec3.clone(sunState.direction);
+  vec3.normalize(normDir, normDir);
+
+  const sunData = [];
+  sunData.push(...sunState.sunColor);
+  sunData.push(sunState.sunStrength);
+  sunData.push(...sunState.ambientColor);
+  sunData.push(sunState.ambientStrength);
+  sunData.push(...normDir);
+  // padding
+  sunData.push(0);
+
+  const sunByteData = new Float32Array(sunData);
+  const SUN_BINDING_POINT = 0;
+
+  const sunBuffer = gl.createBuffer();
+  gl.bindBufferBase(gl.UNIFORM_BUFFER, SUN_BINDING_POINT, sunBuffer);
+
+  gl.bufferData(gl.UNIFORM_BUFFER, sunByteData, gl.DYNAMIC_DRAW);
+
+  gl.uniformBlockBinding(
+    program,
+    gl.getUniformBlockIndex(program, "Sun"),
+    SUN_BINDING_POINT
+  );
   renderer.render();
 
   // Step 2: Draw the quad and pick a texture to render

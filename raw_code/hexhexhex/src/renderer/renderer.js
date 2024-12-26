@@ -11,8 +11,6 @@ class Renderer {
     const depthTexture = gl.createTexture();
     const fragColorTexture = gl.createTexture();
 
-    const fbo = gl.createFramebuffer();
-
     gl.bindTexture(gl.TEXTURE_2D, fragColorTexture);
     gl.texStorage2D(
       gl.TEXTURE_2D,
@@ -27,6 +25,9 @@ class Renderer {
 
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R8, gl.canvas.width, gl.canvas.height);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    const fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
 
     gl.framebufferTexture2D(
@@ -36,7 +37,6 @@ class Renderer {
       depthTexture,
       0
     );
-    gl.bindTexture(gl.TEXTURE_2D, null);
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
@@ -62,6 +62,7 @@ class Renderer {
 
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
     this.fbo = fbo;
     this.depthTexture = depthTexture;
     this.fragColorTexture = fragColorTexture;

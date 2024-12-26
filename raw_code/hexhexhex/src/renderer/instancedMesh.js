@@ -49,23 +49,23 @@ class InstancedMesh {
     );
 
     const totalSize = 20;
-    gl.vertexAttribPointer(2, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
-    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
-    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
-    gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
-    gl.vertexAttribIPointer(6, 4, gl.INT, totalSize * 4, 16 * 4);
+    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
+    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
+    gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
+    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
+    gl.vertexAttribIPointer(7, 4, gl.INT, totalSize * 4, 16 * 4);
 
-    gl.vertexAttribDivisor(2, 1);
     gl.vertexAttribDivisor(3, 1);
     gl.vertexAttribDivisor(4, 1);
     gl.vertexAttribDivisor(5, 1);
     gl.vertexAttribDivisor(6, 1);
+    gl.vertexAttribDivisor(7, 1);
 
-    gl.enableVertexAttribArray(2);
     gl.enableVertexAttribArray(3);
     gl.enableVertexAttribArray(4);
     gl.enableVertexAttribArray(5);
     gl.enableVertexAttribArray(6);
+    gl.enableVertexAttribArray(7);
 
     gl.bindVertexArray(null);
 

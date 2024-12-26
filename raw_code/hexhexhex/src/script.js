@@ -45,8 +45,8 @@ uniform mat4 uProjection;
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aColor;
-layout(location = 2) in mat4 aModel;
-layout(location = 6) in ivec4 aInstancedMetadata;
+layout(location = 3) in mat4 aModel;
+layout(location = 7) in ivec4 aInstancedMetadata;
 
 out vec3 vColor;
 out vec2 vUv;

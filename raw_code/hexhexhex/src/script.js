@@ -54,6 +54,7 @@ out vec2 vUv;
 out vec4 vPos;
 out vec4 vTransPos;
 flat out ivec4 vInstancedMetadata;
+out vec3 vNormal;
 
 void main() {
     vPos = aModel * vec4(aPosition,1.);
@@ -61,6 +62,7 @@ void main() {
     gl_Position = uProjection * uView * vPos;
     vUv = aPosition.xz;
     vColor = aColor;
+    vNormal = aNormal;
     vTransPos = gl_Position;
     vInstancedMetadata = aInstancedMetadata;
 }`;
@@ -75,10 +77,12 @@ in vec2 vUv;
 in vec4 vPos;
 in vec4 vTransPos;
 flat in ivec4 vInstancedMetadata;
+in vec3 vNormal;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uSampler2;
 uniform ivec4 uClickedCoord;
+uniform vec3 uLightDir;
 
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
@@ -90,6 +94,7 @@ void main() {
 
   float distFromZero = 0.;
 
+  float lightNorm = 0.5 + 0.5 * clamp(dot(uLightDir, vNormal),0.,1.);
 
   fragColor = vec4((dist / 2. + 0.5 - distFromZero / 4.) * vColor, 1.);
   if (vInstancedMetadata.x - uClickedCoord.x == 0 ) {
@@ -408,6 +413,13 @@ const draw = () => {
     0,
     0,
   ]);
+
+  const lightingDir = vec3.create();
+  lightingDir[1] = 2;
+  lightingDir[0] = 0.4;
+  lightingDir[2] = 0.1;
+  vec3.normalize(lightingDir, lightingDir);
+  gl.uniform3fv(gl.getUniformLocation(program, "uLightDir"), lightingDir);
 
   renderer.render();
 

@@ -23,6 +23,18 @@ const generateRegularPolygon = (vertCount, radius) => {
   return verts;
 };
 
+const addTriangle = ([v1, v2, v3], extra, mesh) => {
+  vec3.pushAll(v1, mesh);
+  mesh.push(...extra);
+  mesh.push(...extra);
+  vec3.pushAll(v2, mesh);
+  mesh.push(...extra);
+  mesh.push(...extra);
+  vec3.pushAll(v3, mesh);
+  mesh.push(...extra);
+  mesh.push(...extra);
+};
+
 // [(height, scale, extra)], [vertsInCircle]
 const generateSymmetricMesh = (paramArr, verts) => {
   const mesh = [];
@@ -42,15 +54,7 @@ const generateSymmetricMesh = (paramArr, verts) => {
       temp2[1] = height;
       temp3[1] = height;
 
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
+      addTriangle([temp1, temp2, temp3], extra, mesh);
     }
   }
 
@@ -73,25 +77,8 @@ const generateSymmetricMesh = (paramArr, verts) => {
       temp3[1] = height;
       temp4[1] = height;
 
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp4, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
+      addTriangle([temp1, temp3, temp2], extra, mesh);
+      addTriangle([temp2, temp3, temp4], extra, mesh);
     }
   }
 
@@ -110,15 +97,7 @@ const generateSymmetricMesh = (paramArr, verts) => {
       temp2[1] = height;
       temp3[1] = height;
 
-      vec3.pushAll(temp1, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp2, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
-      vec3.pushAll(temp3, mesh);
-      mesh.push(...extra);
-      mesh.push(...extra);
+      addTriangle([temp1, temp3, temp2], extra, mesh);
     }
   }
 

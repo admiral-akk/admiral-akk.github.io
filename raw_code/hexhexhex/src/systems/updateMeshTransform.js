@@ -8,10 +8,7 @@ class UpdateMeshTransform extends System {
   }
 
   apply({ mesh, transform }) {
-    if (transform.updated) {
-      transform.updated = false;
-      mesh.instancedMesh.updateTransform(mesh.index, transform.getMatrix());
-    }
+    mesh.instancedMesh.updateTransform(mesh.index, transform.getWorldMatrix());
   }
 }
 

@@ -247,8 +247,8 @@ const getHexPosition = (coords) => {
 const spawnTreeOn = (hexEntity) => {
   const e = new Entity();
   e.addComponent(new Mesh(gl, treeMesh));
-  e.addComponent(new Transform());
-  const pos = vec3.clone(hexEntity.components.transform.pos);
+  e.addComponent(new Transform(hexEntity.components.transform));
+  const pos = vec3.create();
   pos[0] += (Math.random() - 0.5) * 0.5;
   pos[1] += 0.25;
   pos[2] += (Math.random() - 0.5) * 0.5;
@@ -350,7 +350,7 @@ const getWorldRayFromCamera = (cameraEntity, viewPos) => {
 
   const near = vec4.clone([viewX, viewY, -1, 1]);
   const far = vec4.clone([viewX, viewY, 1, 1]);
-  const view = transform.getMatrix();
+  const view = transform.getWorldMatrix();
   const projection = mat4.clone(camera.projection);
 
   mat4.multiply(projection, projection, view);
@@ -375,7 +375,7 @@ const getRayCollision = (start, dir) => {
   for (let i = 0; i < entities.length; i++) {
     const { collider, transform } = entities[i].components;
     if (collider && transform) {
-      const r = collider.raycast(start, dir, transform.getMatrix());
+      const r = collider.raycast(start, dir, transform.getWorldMatrix());
       if (r) {
         if (!best) {
           best = [collider, r];

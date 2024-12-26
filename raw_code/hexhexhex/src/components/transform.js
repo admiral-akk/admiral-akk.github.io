@@ -30,10 +30,6 @@ class Transform extends Component {
 
     this.matrix = mat4.create();
     if (this.parent !== null) {
-      // we haven't copied the parent's matrix down.
-      // wait, what if the parent changes, but the child doesn't?
-
-      // have to traverse the full chain?
       this.updated = true;
     }
   }
@@ -58,27 +54,6 @@ class Transform extends Component {
 
     this.updated = false;
     mat4.identity(this.matrix);
-
-    mat4.translate(this.matrix, this.matrix, this.pos);
-    mat4.fromQuat(tempQuat, this.rot);
-    mat4.mul(this.matrix, tempQuat, this.matrix);
-    mat4.scale(this.matrix, this.matrix, this.scale);
-
-    return this.matrix;
-  }
-
-  updateMatrix() {
-    if (!this.updated) {
-      return;
-    }
-
-    this.updated = false;
-
-    if (this.parent !== null) {
-      mat4.copy(this.parent.getMatrix(), this.parent.matrix);
-    } else {
-      mat4.identity(this.matrix);
-    }
 
     mat4.translate(this.matrix, this.matrix, this.pos);
     mat4.fromQuat(tempQuat, this.rot);

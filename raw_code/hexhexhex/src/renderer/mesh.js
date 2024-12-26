@@ -22,23 +22,28 @@ const generateRegularPolygon = (vertCount, radius) => {
 
   return verts;
 };
+const v21 = vec3.create();
+const calculateNormal = ([v1, v2, v3]) => {
+  const norm = vec3.create();
+  vec3.sub(v21, v1, v2);
+  vec3.sub(norm, v1, v3);
+  vec3.cross(norm, norm, v21);
+  vec3.normalize(norm, norm);
+  return norm;
+};
 
-const addTriangle = ([v1, v2, v3], extra, mesh) => {
-  vec3.pushAll(v1, mesh);
-  mesh.push(...extra);
-  mesh.push(...extra);
-  vec3.pushAll(v2, mesh);
-  mesh.push(...extra);
-  mesh.push(...extra);
-  vec3.pushAll(v3, mesh);
-  mesh.push(...extra);
-  mesh.push(...extra);
+const addTriangle = (verts, extra, mesh) => {
+  const norm = calculateNormal(verts);
+  for (let i = 0; i < verts.length; i++) {
+    vec3.pushAll(verts[i], mesh);
+    vec3.pushAll(norm, mesh);
+    mesh.push(...extra);
+  }
 };
 
 // [(height, scale, extra)], [vertsInCircle]
 const generateSymmetricMesh = (paramArr, verts) => {
   const mesh = [];
-
   // create base
   if (paramArr.length > 1) {
     const [height, scale, extra] = paramArr[0];

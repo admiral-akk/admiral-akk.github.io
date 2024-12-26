@@ -71,7 +71,7 @@ class Renderer {
     const view = mat4.create();
     const projection = mat4.create();
 
-    vec3.add(temp, camera.origin, camera.offset);
+    vec3.add(temp, camera.origin, camera.getOffset());
 
     mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
 

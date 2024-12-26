@@ -6,6 +6,10 @@ vec3.abs = function (out, a) {
   out[2] = Math.abs(a[2]);
 };
 
+Math.clamp = function (val, min, max) {
+  return Math.min(max, Math.max(val, min));
+};
+
 Array.prototype.peek = function () {
   return this.length ? this[this.length - 1] : null;
 };

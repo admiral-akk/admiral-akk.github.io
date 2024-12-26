@@ -4,9 +4,10 @@ import { Component } from "../ecs/component";
 class Camera extends Component {
   constructor(gl) {
     super();
-    this.offset = vec3.create();
-    this.offset[0] = 4;
-    this.offset[1] = 4;
+
+    this.distance = 6;
+    this.xAngle = 0;
+    this.yAngle = Math.PI / 4;
 
     this.origin = vec3.create();
     this.target = vec3.create();
@@ -18,6 +19,14 @@ class Camera extends Component {
 
     this.projection = mat4.create();
     mat4.perspective(this.projection, fov, aspect, near, far);
+  }
+
+  getOffset() {
+    return vec3.clone([
+      this.distance * Math.sin(this.xAngle) * Math.cos(this.yAngle),
+      this.distance * Math.sin(this.yAngle),
+      this.distance * Math.cos(this.xAngle) * Math.cos(this.yAngle),
+    ]);
   }
 
   setTarget(pos) {

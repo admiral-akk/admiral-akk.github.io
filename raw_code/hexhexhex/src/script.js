@@ -224,14 +224,6 @@ var clickedIndex = -1;
 
 // FBO
 const catLoc = 1;
-const otherLoc = 2;
-const catTexture = await loadImageToTexture(gl, "./kitten.png", 256, 256);
-const noiseTexture = await loadImageToTexture(
-  gl,
-  "./noiseTexture.png",
-  256,
-  256
-);
 
 const entities = [];
 
@@ -280,7 +272,7 @@ const spawnHexAt = (coord) => {
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
     entities.push(e);
-    for (let i = 0; i < 0; i++) {
+    for (let i = 0; i < 5; i++) {
       spawnTreeOn(e);
     }
     return e;
@@ -303,6 +295,13 @@ const spawnAroundHex = (entity) => {
 //
 
 const start = spawnHexAt([1, 0]);
+cameraEntity.components.camera.origin = vec3.clone(
+  start.components.transform.pos
+);
+cameraEntity.components.camera.target = vec3.clone(
+  start.components.transform.pos
+);
+
 //spawnAroundHex(start);
 
 {
@@ -331,6 +330,15 @@ const systems = [
 
 document.addEventListener("click", handleClick);
 document.addEventListener("mousemove", handleMove);
+document.addEventListener("wheel", (event) => {
+  const { camera } = cameraEntity.components;
+  camera.distance = Math.clamp(camera.distance + event.deltaY / 100, 1, 10);
+});
+document.addEventListener("contextmenu", (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  return false;
+});
 
 const actions = [];
 function handleClick(event) {
@@ -342,12 +350,36 @@ function handleClick(event) {
   }
 }
 
+var lastMousePos = null;
+
 function handleMove(event) {
   const { horizontalOffset, verticalOffset } = windowManager.sizes;
   if (event.target.id === "webgl") {
+    const deltaX = (event.clientX - horizontalOffset) / gl.canvas.width;
+    const deltaY = (event.clientY - verticalOffset) / gl.canvas.width;
+
+    if (event.buttons & 2) {
+      // holding down right, move camera
+      if (lastMousePos) {
+        const [lastX, lastY] = lastMousePos;
+        const { camera } = cameraEntity.components;
+        camera.xAngle += 4 * (deltaX - lastX);
+        camera.yAngle = Math.clamp(
+          camera.yAngle + deltaY - lastY,
+          Math.PI / 10,
+          Math.PI / 2 - 0.1
+        );
+      }
+      lastMousePos = [deltaX, deltaY];
+    } else {
+      lastMousePos = null;
+    }
+    console.log(event);
     const x = (event.clientX - horizontalOffset) / gl.canvas.width;
     const y = (event.clientY - verticalOffset) / gl.canvas.height;
     actions.push({ type: "movedMouse", val: [x, y] });
+  } else {
+    lastMousePos = null;
   }
 }
 
@@ -468,11 +500,11 @@ const step = () => {
 };
 
 const renderer = new Renderer(gl);
-
 const noise = new NoiseTexture(gl);
 
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
+
 const draw = () => {
   requestAnimationFrame(draw);
 
@@ -519,10 +551,10 @@ const draw = () => {
 
   renderer.renderPostProcess(quadProgram);
 
+  return;
   gl.useProgram(renderTexture);
   gl.activeTexture(gl.TEXTURE0 + 3);
   gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
-  gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
   gl.uniform1i(gl.getUniformLocation(renderTexture, "uTexture"), 3);
 
   renderer.renderPostProcess(renderTexture);

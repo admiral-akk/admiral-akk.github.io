@@ -1,17 +1,3 @@
-import { mat4, vec3, vec4 } from "gl-matrix";
-
-const temp = vec4.create();
-const temp2 = vec4.create();
-const temp3 = vec4.create();
-const tempMat = mat4.create();
-
-const posY = vec3.clone([0, 1, 0]);
-const negY = vec3.clone([0, -1, 0]);
-const posX = vec3.clone([1, 0, 0]);
-const negX = vec3.clone([-1, 0, 0]);
-const posZ = vec3.clone([0, 0, 1]);
-const negZ = vec3.clone([0, 0, -1]);
-
 const instancedMeshes = [];
 
 class InstancedMesh {
@@ -33,12 +19,9 @@ class InstancedMesh {
     gl.enableVertexAttribArray(0);
     gl.enableVertexAttribArray(1);
     const transformArray = [];
-    for (let i = 0; i < maxCount; i++) {
-      const model = mat4.create();
-      for (let j = 0; j < model.length; j++) {
-        transformArray.push(model[j]);
-      }
-      transformArray.push(0, 0, 0, 0);
+    const totalSize = 20;
+    for (let i = 0; i < maxCount * 20; i++) {
+      transformArray.push(0);
     }
     const transformBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
@@ -48,7 +31,6 @@ class InstancedMesh {
       gl.STATIC_DRAW
     );
 
-    const totalSize = 20;
     gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
     gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
     gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
@@ -149,85 +131,6 @@ class InstancedMesh {
     );
     gl.bindVertexArray(null);
   }
-}
-
-const eps = 0.0001;
-
-// assumes plane is on the origin
-function planeIntersection(start, dir, planeNorm) {
-  const dot = -vec3.dot(dir, planeNorm);
-
-  // if negative or colinear, doesn't hit
-  if (dot < eps) {
-    return null;
-  }
-
-  const distToPlane = vec3.dot(start, planeNorm);
-
-  const hit = vec3.create();
-
-  vec3.scaleAndAdd(hit, start, dir, distToPlane / dot);
-
-  return hit;
-}
-
-const temp4 = vec3.create();
-
-const dirs = [
-  [negX, negY, negZ],
-  [posX, posY, posZ],
-];
-
-function intersection(start, dir, boundingBox) {
-  var closestIntersection = null;
-  for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < 3; j++) {
-      const normal = dirs[i][j];
-      const normalDist = boundingBox[i][j];
-
-      if (i === 0) {
-        vec3.scaleAndAdd(temp4, start, normal, normalDist);
-      } else {
-        vec3.scaleAndAdd(temp4, start, normal, -normalDist);
-      }
-
-      const intersection = planeIntersection(temp4, dir, normal);
-      if (intersection !== null) {
-        // check if it's in bounds
-
-        var inBox = true;
-        for (let k = 0; k < 3; k++) {
-          if (k === j) {
-            continue;
-          }
-          const min = boundingBox[0][k];
-          const max = boundingBox[1][k];
-          inBox &= min <= intersection[k];
-          inBox &= intersection[k] <= max;
-        }
-        if (inBox) {
-          if (i === 0) {
-            vec3.scaleAndAdd(intersection, intersection, normal, -normalDist);
-          } else {
-            vec3.scaleAndAdd(intersection, intersection, normal, normalDist);
-          }
-          if (closestIntersection === null) {
-            closestIntersection = intersection;
-          } else {
-            const test = vec3.create();
-            const test2 = vec3.create();
-            vec3.subtract(test, start, closestIntersection);
-            vec3.subtract(test2, start, intersection);
-            if (vec3.length(test) > vec3.length(test2)) {
-              closestIntersection = intersection;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return closestIntersection;
 }
 
 export { InstancedMesh, instancedMeshes };

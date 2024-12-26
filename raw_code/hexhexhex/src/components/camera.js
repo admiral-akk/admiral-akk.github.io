@@ -1,8 +1,5 @@
-import { mat4, vec3, vec4, quat } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Component } from "../ecs/component";
-
-const temp = vec3.create();
-const temp2 = vec4.create();
 
 class Camera extends Component {
   constructor(gl) {

@@ -90,7 +90,7 @@ class Renderer {
     this.gl.uniformMatrix4fv(projectionLoc, false, projection);
   }
 
-  render() {
+  render(preProgram = () => {}) {
     const gl = this.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -98,6 +98,13 @@ class Renderer {
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
     for (let i = 0; i < instancedMeshes.length; i++) {
+      gl.useProgram(instancedMeshes[i].program);
+      // this is pretty bad - should break this up so that
+      // instanced meshes are grouped by program and then render them
+      // all at once?
+      //
+      // don't like this "preProgram" indirection, but it'll work for now
+      preProgram(instancedMeshes[i].program);
       instancedMeshes[i].render(gl);
     }
     gl.disable(gl.CULL_FACE);

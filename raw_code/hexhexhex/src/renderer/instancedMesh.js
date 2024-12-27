@@ -1,7 +1,8 @@
 const instancedMeshes = [];
 
 class InstancedMesh {
-  constructor(gl, modelArray, maxCount) {
+  constructor(gl, modelArray, program, maxCount) {
+    this.program = program;
     instancedMeshes.push(this);
     const vao = gl.createVertexArray();
     this.gl = gl;

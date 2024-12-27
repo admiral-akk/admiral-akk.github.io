@@ -226,6 +226,7 @@ const generateTreeVertices = () => {
 const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
+  program,
   1000
 );
 
@@ -239,6 +240,7 @@ const instancedMesh = new InstancedMesh(
     ],
     generateRegularPolygon(6, 1)
   ),
+  program,
   1000
 );
 
@@ -251,6 +253,7 @@ const target = new InstancedMesh(
     ],
     generateRegularPolygon(4, 1)
   ),
+  program,
   1
 );
 
@@ -540,52 +543,48 @@ const draw = () => {
   step();
 
   sunShadowMap.renderShadowDepth();
-  gl.useProgram(program);
 
-  renderer.applyUniforms(cameraEntity.components.camera, program);
+  const setUniforms = (program) => {
+    renderer.applyUniforms(cameraEntity.components.camera, program);
 
-  let textureMatrix = mat4.create();
-  mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
-  mat4.scale(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
-  mat4.multiply(textureMatrix, textureMatrix, sunShadowMap.projection);
+    let textureMatrix = mat4.create();
+    mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+    mat4.scale(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+    mat4.multiply(textureMatrix, textureMatrix, sunShadowMap.projection);
 
-  const viewInv = mat4.clone(sunShadowMap.view);
+    const viewInv = mat4.clone(sunShadowMap.view);
 
-  mat4.multiply(textureMatrix, textureMatrix, viewInv);
+    mat4.multiply(textureMatrix, textureMatrix, viewInv);
 
-  gl.uniformMatrix4fv(
-    gl.getUniformLocation(program, "uShadowVP"),
-    false,
-    textureMatrix
-  );
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(program, "uShadowVP"),
+      false,
+      textureMatrix
+    );
 
-  const shadowLoc = 10;
-  gl.activeTexture(gl.TEXTURE0 + shadowLoc);
-  gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
-  gl.uniform1i(gl.getUniformLocation(program, "uShadowMapSampler"), shadowLoc);
-  // TODO: good abstraction around uniforms
-  //
-  // need to handle ints vs floats vs matrices vs textures cleanly.
-  gl.activeTexture(gl.TEXTURE0 + catLoc);
-  gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
-  gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
-  gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
-  gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
-    clickedIndex,
-    0,
-    0,
-    0,
-  ]);
-
-  const lightingDir = vec3.create();
-  lightingDir[1] = 2;
-  lightingDir[0] = 0.4;
-  lightingDir[2] = 0.1;
-  vec3.normalize(lightingDir, lightingDir);
-  gl.uniform3fv(gl.getUniformLocation(program, "uLightDir"), lightingDir);
-
-  sunShadowMap.setUniform(program);
-  renderer.render();
+    const shadowLoc = 10;
+    gl.activeTexture(gl.TEXTURE0 + shadowLoc);
+    gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
+    gl.uniform1i(
+      gl.getUniformLocation(program, "uShadowMapSampler"),
+      shadowLoc
+    );
+    // TODO: good abstraction around uniforms
+    //
+    // need to handle ints vs floats vs matrices vs textures cleanly.
+    gl.activeTexture(gl.TEXTURE0 + catLoc);
+    gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
+    gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
+    gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
+    gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
+      clickedIndex,
+      0,
+      0,
+      0,
+    ]);
+    sunShadowMap.setUniform(program);
+  };
+  renderer.render(setUniforms);
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);

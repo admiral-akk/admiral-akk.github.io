@@ -124,29 +124,11 @@ class Sun {
 
     mat4.lookAt(view, pos, [0, 0, 0], [0, 1, 0]);
 
+    this.view = view;
     const orthoWidth = 10;
     const orthoHeight = 10;
     const orthoDepth = 10;
-    const projection = mat4.clone([
-      1 / orthoWidth,
-      0,
-      0,
-      0,
-      0,
-      1 / orthoHeight,
-      0,
-      0,
-      0,
-      0,
-      -2 / orthoDepth,
-      -1,
-      0,
-      0,
-      0,
-      1,
-    ]);
-
-    this.view = view;
+    const projection = mat4.create();
 
     mat4.ortho(
       projection,
@@ -159,7 +141,6 @@ class Sun {
     );
     this.projection = projection;
 
-    const viewLoc = this.gl.getUniformLocation(this.program, "uShadowVP");
     this.matrix = mat4.create();
     mat4.multiply(this.matrix, projection, view);
     this.gl.uniformMatrix4fv(
@@ -174,7 +155,7 @@ class Sun {
     );
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     const { width, height } = gl.canvas;
     gl.viewport(0, 0, this.depthTexSize, this.depthTexSize);

@@ -95,9 +95,12 @@ class Renderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
     for (let i = 0; i < instancedMeshes.length; i++) {
       instancedMeshes[i].render(gl);
     }
+    gl.disable(gl.CULL_FACE);
     gl.disable(gl.DEPTH_TEST);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

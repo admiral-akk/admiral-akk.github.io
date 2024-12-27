@@ -180,9 +180,12 @@ class Sun {
     gl.enable(gl.DEPTH_TEST);
     const { width, height } = gl.canvas;
     gl.viewport(0, 0, depthTexSize, depthTexSize);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.FRONT);
     for (let i = 0; i < instancedMeshes.length; i++) {
       instancedMeshes[i].render(gl);
     }
+    gl.disable(gl.CULL_FACE);
     gl.viewport(0, 0, width, height);
     gl.disable(gl.DEPTH_TEST);
 

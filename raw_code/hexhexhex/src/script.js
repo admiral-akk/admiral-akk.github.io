@@ -118,7 +118,7 @@ void main() {
 
   fragColor = vec4(vec3( val), 1.);
 
-  float bias = 0.01;
+  float bias = 0.001;
   float shadowed = float(expectedDepth > shadowDepth + bias);
 
   float normLDot = dot(sunDirection, vNormal);

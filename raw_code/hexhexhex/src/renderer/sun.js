@@ -37,22 +37,20 @@ void main() {
     depth = vPos.z;
 }`;
 
-const depthTexSize = 1024;
-
 class Sun {
   constructor(gl) {
     this.gl = gl;
     this.program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
     // https://webgl2fundamentals.org/webgl/lessons/webgl-shadows.html
     const depthTexture = gl.createTexture();
-    const depthTextureSize = depthTexSize;
+    this.depthTexSize = 1024;
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     gl.texImage2D(
       gl.TEXTURE_2D, // target
       0, // mip level
       gl.DEPTH_COMPONENT32F, // internal format
-      depthTextureSize, // width
-      depthTextureSize, // height
+      this.depthTexSize, // width
+      this.depthTexSize, // height
       0, // border
       gl.DEPTH_COMPONENT, // format
       gl.FLOAT, // type
@@ -179,7 +177,7 @@ class Sun {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     const { width, height } = gl.canvas;
-    gl.viewport(0, 0, depthTexSize, depthTexSize);
+    gl.viewport(0, 0, this.depthTexSize, this.depthTexSize);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.FRONT);
     for (let i = 0; i < instancedMeshes.length; i++) {

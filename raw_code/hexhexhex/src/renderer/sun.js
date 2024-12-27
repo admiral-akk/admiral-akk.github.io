@@ -2,12 +2,6 @@ import { mat4, vec3 } from "gl-matrix";
 import { instancedMeshes } from "./instancedMesh";
 import { createProgram } from "./program";
 
-// shadow maps
-// https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
-
-// cascading
-// https://alextardif.com/shadowmapping.html
-
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
@@ -84,26 +78,56 @@ class Sun {
     this.fbo = depthFramebuffer;
     this.depthTexture = depthTexture;
 
+    const time = Math.PI / 2;
     this.sunState = {
       sunColor: [1, 0.9, 0.9],
       sunStrength: 0.9,
       ambientColor: [0.3, 0.3, 0.9],
       ambientStrength: 1,
-      direction: [Math.sin(0), 1 + Math.sin(1.2 * 0) / 2, Math.cos(0)],
+      direction: [-Math.sin(time), -1 + Math.sin(1.2 * 0) / 2, -Math.cos(time)],
     };
   }
 
-  renderShadowDepth(sunPosition) {
+  setUniform(program) {
+    const { gl, sunState } = this;
+
+    const normDir = vec3.clone(sunState.direction);
+    vec3.normalize(normDir, normDir);
+    const sunData = [];
+    sunData.push(...sunState.sunColor);
+    sunData.push(sunState.sunStrength);
+    sunData.push(...sunState.ambientColor);
+    sunData.push(sunState.ambientStrength);
+    sunData.push(...normDir);
+    // padding
+    sunData.push(0);
+
+    const sunByteData = new Float32Array(sunData);
+    const SUN_BINDING_POINT = 0;
+
+    const sunBuffer = gl.createBuffer();
+    gl.bindBufferBase(gl.UNIFORM_BUFFER, SUN_BINDING_POINT, sunBuffer);
+
+    gl.bufferData(gl.UNIFORM_BUFFER, sunByteData, gl.DYNAMIC_DRAW);
+
+    gl.uniformBlockBinding(
+      program,
+      gl.getUniformBlockIndex(program, "Sun"),
+      SUN_BINDING_POINT
+    );
+  }
+
+  renderShadowDepth() {
     const { gl } = this;
     gl.useProgram(this.program);
-    const pos = vec3.clone([1, 1, 1]);
-    vec3.scale(pos, pos, 1);
+    const pos = vec3.clone(this.sunState.direction);
+    vec3.scale(pos, pos, -1);
     const view = mat4.create();
 
     mat4.lookAt(view, pos, [0, 0, 0], [0, 1, 0]);
 
-    const orthoWidth = 4;
-    const orthoHeight = 4;
+    const orthoWidth = 2;
+    const orthoHeight = 2;
     const orthoDepth = 20;
     const projection = mat4.clone([
       1 / orthoWidth,

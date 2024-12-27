@@ -115,7 +115,7 @@ const generateSymmetricMesh = (paramArr, verts) => {
         temp2[1] = height;
         temp3[1] = height;
 
-        addTriangle([temp1, temp3, temp2], color, mesh);
+        addTriangle([temp1, temp2, temp3], color, mesh);
       }
     }
   }

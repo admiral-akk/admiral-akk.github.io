@@ -121,7 +121,9 @@ void main() {
   float bias = 0.01;
   float shadowed = float(expectedDepth > shadowDepth + bias);
 
-  if (dot(sunDirection, vNormal) <= 0.01) {
+  float normLDot = dot(sunDirection, vNormal);
+
+  if (normLDot < 0.01) {
     shadowed = 1.;
   }
 
@@ -130,6 +132,8 @@ void main() {
   }
 
   fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
+
+  //fragColor = vec4(vec3(normLDot ), 1.);
 
   float far = 10.0; //far plane
   float near =  0.01; //near plane
@@ -326,7 +330,6 @@ const start = spawnHexAt([0, 0]);
 
 for (let x = -1; x <= 1; x++) {
   for (let y = -1; y <= 1; y++) {
-    continue;
     spawnHexAt([x, y]);
   }
 }
@@ -535,16 +538,8 @@ const draw = () => {
   requestAnimationFrame(draw);
 
   step();
-  const time = 2;
-  const sunState = {
-    sunColor: [1, 0.9, 0.9],
-    sunStrength: 0.9,
-    ambientColor: [0.3, 0.3, 0.9],
-    ambientStrength: 1,
-    direction: [Math.sin(time), 1 + Math.sin(1.2 * time) / 2, Math.cos(time)],
-  };
 
-  sunShadowMap.renderShadowDepth(sunState.direction);
+  sunShadowMap.renderShadowDepth();
   gl.useProgram(program);
 
   renderer.applyUniforms(cameraEntity.components.camera, program);
@@ -589,31 +584,7 @@ const draw = () => {
   vec3.normalize(lightingDir, lightingDir);
   gl.uniform3fv(gl.getUniformLocation(program, "uLightDir"), lightingDir);
 
-  const normDir = vec3.clone(sunState.direction);
-  vec3.normalize(normDir, normDir);
-
-  const sunData = [];
-  sunData.push(...sunState.sunColor);
-  sunData.push(sunState.sunStrength);
-  sunData.push(...sunState.ambientColor);
-  sunData.push(sunState.ambientStrength);
-  sunData.push(...normDir);
-  // padding
-  sunData.push(0);
-
-  const sunByteData = new Float32Array(sunData);
-  const SUN_BINDING_POINT = 0;
-
-  const sunBuffer = gl.createBuffer();
-  gl.bindBufferBase(gl.UNIFORM_BUFFER, SUN_BINDING_POINT, sunBuffer);
-
-  gl.bufferData(gl.UNIFORM_BUFFER, sunByteData, gl.DYNAMIC_DRAW);
-
-  gl.uniformBlockBinding(
-    program,
-    gl.getUniformBlockIndex(program, "Sun"),
-    SUN_BINDING_POINT
-  );
+  sunShadowMap.setUniform(program);
   renderer.render();
 
   // Step 2: Draw the quad and pick a texture to render

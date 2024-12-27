@@ -13,15 +13,20 @@ const vertexShaderSource = `#version 300 es
 
 precision mediump float;
 
-uniform mat4 uShadowVP;
+uniform mat4 uView;
+uniform mat4 uProjection;
 
 layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec3 aColor;
 layout(location = 3) in mat4 aModel;
+layout(location = 7) in ivec4 aInstancedMetadata;
+
 
 out vec4 vPos;
 
 void main() {
-    gl_Position = uShadowVP * aModel * vec4(aPosition,1.);
+    gl_Position = uProjection * uView * aModel * vec4(aPosition,1.);
     vPos = gl_Position;
 }`;
 
@@ -35,76 +40,118 @@ in vec4 vPos;
 layout(location=0) out float depth; 
 
 void main() {
-    depth = gl_FragCoord.z * 30.;
+    depth = vPos.z;
 }`;
+
+const depthTexSize = 1024;
 
 class Sun {
   constructor(gl) {
     this.gl = gl;
     this.program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-
+    // https://webgl2fundamentals.org/webgl/lessons/webgl-shadows.html
     const depthTexture = gl.createTexture();
+    const depthTextureSize = depthTexSize;
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R16F, 1024, 1024);
+    gl.texImage2D(
+      gl.TEXTURE_2D, // target
+      0, // mip level
+      gl.DEPTH_COMPONENT32F, // internal format
+      depthTextureSize, // width
+      depthTextureSize, // height
+      0, // border
+      gl.DEPTH_COMPONENT, // format
+      gl.FLOAT, // type
+      null
+    ); // data
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.bindTexture(gl.TEXTURE_2D, null);
 
-    const fbo = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-
+    const depthFramebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
     gl.framebufferTexture2D(
-      gl.FRAMEBUFFER,
-      gl.COLOR_ATTACHMENT0,
-      gl.TEXTURE_2D,
-      depthTexture,
+      gl.FRAMEBUFFER, // target
+      gl.DEPTH_ATTACHMENT, // attachment point
+      gl.TEXTURE_2D, // texture target
+      depthTexture, // texture
       0
-    );
+    ); // mip level
 
-    const renderbuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 1024, 1024);
-    gl.framebufferRenderbuffer(
-      gl.FRAMEBUFFER,
-      gl.DEPTH_ATTACHMENT,
-      gl.RENDERBUFFER,
-      renderbuffer
-    );
-
-    gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-    this.fbo = fbo;
+    this.fbo = depthFramebuffer;
     this.depthTexture = depthTexture;
   }
 
   renderShadowDepth(sunPosition) {
     const { gl } = this;
     gl.useProgram(this.program);
-    const pos = vec3.clone(sunPosition);
-    vec3.scale(pos, pos, 3);
+    const pos = vec3.clone([1, 1, 1]);
+    vec3.scale(pos, pos, 1);
     const view = mat4.create();
 
-    mat4.lookAt(view, [1, 4, 1], [0, 0, 0], [0, 1, 0]);
-    const projection = mat4.create();
+    mat4.lookAt(view, pos, [0, 0, 0], [0, 1, 0]);
 
-    mat4.ortho(projection, -4, 4, -4, 4, 0, 30);
+    const orthoWidth = 4;
+    const orthoHeight = 4;
+    const orthoDepth = 20;
+    const projection = mat4.clone([
+      1 / orthoWidth,
+      0,
+      0,
+      0,
+      0,
+      1 / orthoHeight,
+      0,
+      0,
+      0,
+      0,
+      -2 / orthoDepth,
+      -1,
+      0,
+      0,
+      0,
+      1,
+    ]);
+
+    this.view = view;
+
+    mat4.ortho(
+      projection,
+      -orthoWidth,
+      orthoWidth,
+      -orthoHeight,
+      orthoHeight,
+      0,
+      orthoDepth
+    );
+    this.projection = projection;
+
     const viewLoc = this.gl.getUniformLocation(this.program, "uShadowVP");
     this.matrix = mat4.create();
     mat4.multiply(this.matrix, projection, view);
-    this.gl.uniformMatrix4fv(viewLoc, false, this.matrix);
+    this.gl.uniformMatrix4fv(
+      this.gl.getUniformLocation(this.program, "uView"),
+      false,
+      view
+    );
+    this.gl.uniformMatrix4fv(
+      this.gl.getUniformLocation(this.program, "uProjection"),
+      false,
+      projection
+    );
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     const { width, height } = gl.canvas;
-    gl.canvas.width = 1024;
-    gl.canvas.height = 1024;
+    gl.viewport(0, 0, depthTexSize, depthTexSize);
     for (let i = 0; i < instancedMeshes.length; i++) {
       instancedMeshes[i].render(gl);
     }
-    gl.canvas.width = width;
-    gl.canvas.height = height;
+    gl.viewport(0, 0, width, height);
     gl.disable(gl.DEPTH_TEST);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

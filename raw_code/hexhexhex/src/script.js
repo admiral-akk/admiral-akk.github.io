@@ -110,12 +110,14 @@ void main() {
   vec3 lightColor = ambientStrength * ambientColor + lightNorm * sunStrength * sunColor;
 
   fragColor = vec4(vColor, 1.);
-  vec4 shadowCoord = vShadowCoord;
-  float shadowDepth = texture(uShadowMapSampler,  shadowCoord.xy * 0.5 + 0.42 ).r;
-  float expectedDepth = 30. *  (0.5 * shadowCoord.z + 0.42)   ;
+  vec4 shadowCoord = vShadowCoord / vShadowCoord.w ;
+  float shadowDepth = texture(uShadowMapSampler,  shadowCoord.xy ).r;
+  float expectedDepth = shadowCoord.z  ;
 
-  fragColor = vec4(10.*vec3( expectedDepth - shadowDepth  ), 1.);
-  if (shadowCoord.x < -1. || shadowCoord.x > 1. || shadowCoord.y < -1. || shadowCoord.y > 1.) {
+  float val = 1000.*(expectedDepth - shadowDepth);
+
+  fragColor = vec4(vec3( val), 1.);
+  if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {
   fragColor = vec4(vec3(1.), 1.);
   }
 
@@ -171,7 +173,7 @@ out vec4 fragColor;
 
 void main()
 {
-  fragColor = vec4(texture(uTexture, vTexCoord).rgb / 1., 1.);
+  fragColor = vec4(texture(uTexture, vTexCoord).rgb , 1.);
 }`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -537,10 +539,19 @@ const draw = () => {
 
   renderer.applyUniforms(cameraEntity.components.camera, program);
 
+  let textureMatrix = mat4.create();
+  mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+  mat4.scale(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+  mat4.multiply(textureMatrix, textureMatrix, sunShadowMap.projection);
+
+  const viewInv = mat4.clone(sunShadowMap.view);
+
+  mat4.multiply(textureMatrix, textureMatrix, viewInv);
+
   gl.uniformMatrix4fv(
     gl.getUniformLocation(program, "uShadowVP"),
     false,
-    sunShadowMap.matrix
+    textureMatrix
   );
 
   const shadowLoc = 10;

@@ -168,7 +168,7 @@ void main() {
 
   fragColor = vec4(vec3( val), 1.);
 
-  float bias = 0.001;
+  float bias = -0.001;
   float shadowed = float(expectedDepth > shadowDepth + bias);
 
   float normLDot = dot(sunDirection, vNormal);
@@ -250,7 +250,22 @@ const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
 const brown = "#5D4037";
 const darkGreen = "#2E7D32";
+const grey = "#CCCCCC";
+const darkgrey = "#888888";
+const white = "#EEEEEE";
 
+const generateMountainVertices = () => {
+  const vertices = [
+    [0, 0.6, darkgrey],
+    [0.05, 0.5, darkgrey],
+    [0.15, 0.325, darkgrey],
+    [0.35, 0.225, white],
+    [0.6, 0.1, white],
+    [0.8, 0, white],
+  ];
+
+  return vertices;
+};
 const generateTreeVertices = () => {
   var currHeight = 0.55;
   var currScale = 0.6;
@@ -282,6 +297,33 @@ const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
   treeProgram,
+  1000
+);
+
+const generateRockVertices = () => {
+  const vertices = [
+    [0, 0.1, grey],
+    [0.04, 0.1, grey],
+    [0.08, 0.05, grey],
+  ];
+
+  return vertices;
+};
+
+const mountainMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    generateMountainVertices(),
+    generateRegularPolygon(7, 1)
+  ),
+  program,
+  1000
+);
+
+const rockMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(generateRockVertices(), generateRegularPolygon(5, 1)),
+  program,
   1000
 );
 
@@ -340,6 +382,31 @@ const getHexPosition = (coords) => {
   return [xOffset, 0, yOffset];
 };
 
+const spawnMountainOn = (hexEntity) => {
+  const e = new Entity();
+  e.addComponent(new Mesh(gl, mountainMesh));
+  e.addComponent(new Transform(hexEntity.components.transform));
+  const pos = vec3.create();
+  pos[0] += Math.random() * 0.15;
+  pos[1] += 0.25;
+  pos[2] += Math.random() * 0.15;
+  e.components.transform.setScale([0.75, 0.75, 0.75]);
+  e.components.transform.setPosition(pos);
+  entities.push(e);
+};
+
+const spawnRockOn = (hexEntity) => {
+  const e = new Entity();
+  e.addComponent(new Mesh(gl, rockMesh));
+  e.addComponent(new Transform(hexEntity.components.transform));
+  const pos = vec3.create();
+  pos[0] += Math.random() - 0.5;
+  pos[1] += 0.25;
+  pos[2] += Math.random() - 0.5;
+  e.components.transform.setPosition(pos);
+  entities.push(e);
+};
+
 const spawnTreeOn = (hexEntity) => {
   const e = new Entity();
   e.addComponent(new Mesh(gl, treeMesh));
@@ -362,8 +429,15 @@ const spawnHexAt = (coord) => {
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
     entities.push(e);
-    for (let i = 0; i < 5; i++) {
-      spawnTreeOn(e);
+    if (Math.random() < 0.4) {
+      spawnMountainOn(e);
+    } else {
+      for (let i = 0; i < 5; i++) {
+        spawnTreeOn(e);
+      }
+      for (let i = 0; i < 3; i++) {
+        spawnRockOn(e);
+      }
     }
     return e;
   }

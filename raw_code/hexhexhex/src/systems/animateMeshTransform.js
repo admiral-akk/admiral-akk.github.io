@@ -12,8 +12,8 @@ class AnimateMeshTransform extends System {
     const time = Date.now();
     const [x, y] = hex.coords;
 
-    const xOffset = 1.5 * (x + 1 / 2);
-    const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0));
+    const xOffset = 1.5 * (x + 1 / 2) - 1.5 / 2;
+    const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0) - 1);
 
     transform.setPosition([
       xOffset,

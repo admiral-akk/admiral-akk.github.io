@@ -35,11 +35,7 @@ in vec4 vPos;
 layout(location=0) out float depth; 
 
 void main() {
-float nearZ = -10.;
-float farZ = 20.;
-float z_ndc = vPos.z / vPos.w;
-depth =  (((farZ-nearZ) * z_ndc) + nearZ + farZ) / 2.0 ;
-depth = gl_FragCoord.x - (1.+(vPos.x / vPos.w));
+    depth = gl_FragCoord.z * 30.;
 }`;
 
 class Sun {
@@ -48,7 +44,6 @@ class Sun {
     this.program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
     const depthTexture = gl.createTexture();
-
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R16F, 1024, 1024);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -90,10 +85,10 @@ class Sun {
     vec3.scale(pos, pos, 3);
     const view = mat4.create();
 
-    mat4.lookAt(view, [-1, 1, 1], [0, 0, 0], [0, 1, 0]);
+    mat4.lookAt(view, [1, 4, 1], [0, 0, 0], [0, 1, 0]);
     const projection = mat4.create();
 
-    mat4.ortho(projection, -10, 10, -10, 10, -10, 20);
+    mat4.ortho(projection, -4, 4, -4, 4, 0, 30);
     const viewLoc = this.gl.getUniformLocation(this.program, "uShadowVP");
     this.matrix = mat4.create();
     mat4.multiply(this.matrix, projection, view);
@@ -102,9 +97,14 @@ class Sun {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
+    const { width, height } = gl.canvas;
+    gl.canvas.width = 1024;
+    gl.canvas.height = 1024;
     for (let i = 0; i < instancedMeshes.length; i++) {
       instancedMeshes[i].render(gl);
     }
+    gl.canvas.width = width;
+    gl.canvas.height = height;
     gl.disable(gl.DEPTH_TEST);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

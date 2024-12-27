@@ -29,7 +29,7 @@ const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
 );
-const windowManager = new WindowManager(16 / 9);
+const windowManager = new WindowManager(16 / 16);
 const gl = windowManager.canvas.getContext("webgl2");
 gl.getExtension("EXT_color_buffer_float");
 gl.getExtension("OES_texture_float_linear");
@@ -61,7 +61,7 @@ void main() {
     vPos = aModel * vec4(aPosition,1.);
 
     gl_Position = uProjection * uView * vPos;
-    vShadowCoord = (uShadowVP * vec4(vPos.xyz, 1.));
+    vShadowCoord = (uShadowVP * vPos);
     vUv = aPosition.xz;
     vColor = aColor;
     vNormal = aNormal;
@@ -101,7 +101,7 @@ layout(location=1) out float depth;
 void main() {
   
   float noiseVal = texture(uSampler1, 0.9 * vPos.xz).r;
-  float dist = smoothstep(0.3,0.35,length(vUv)-  0.4 * noiseVal);
+  float dist = smoothstep(0.3,0.35,length(vUv) -  0.4 * noiseVal);
 
   float distFromZero = 0.;
 
@@ -109,22 +109,20 @@ void main() {
 
   vec3 lightColor = ambientStrength * ambientColor + lightNorm * sunStrength * sunColor;
 
-  float visibility = 1.0;
-  if ( texture( uShadowMapSampler, vShadowCoord.xy ).z  <  vShadowCoord.z){
-      visibility = 0.5;
+  fragColor = vec4(vColor, 1.);
+  vec4 shadowCoord = vShadowCoord;
+  float shadowDepth = texture(uShadowMapSampler,  shadowCoord.xy * 0.5 + 0.42 ).r;
+  float expectedDepth = 30. *  (0.5 * shadowCoord.z + 0.42)   ;
+
+  fragColor = vec4(10.*vec3( expectedDepth - shadowDepth  ), 1.);
+  if (shadowCoord.x < -1. || shadowCoord.x > 1. || shadowCoord.y < -1. || shadowCoord.y > 1.) {
+  fragColor = vec4(vec3(1.), 1.);
   }
-  fragColor = vec4(visibility * vColor, 1.);
-  float shadowDepth = texture(uShadowMapSampler,(1. + vShadowCoord.xy) / 2.).r;
+
   float far = 10.0; //far plane
   float near =  0.01; //near plane
   depth = 1. - vTransPos.z / (far  - near);
 
-  float nearZ = -10.;
-  float farZ = 20.;
-  float z_ndc = vShadowCoord.z / vShadowCoord.w;
-  float shadowDepth2 = (((farZ-nearZ) * z_ndc) + nearZ + farZ) / 2.0 ;
-
-  fragColor = vec4(vec3(   shadowDepth), 1.);
 }`;
 
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
@@ -173,7 +171,7 @@ out vec4 fragColor;
 
 void main()
 {
-  fragColor = vec4(1000.*texture(uTexture, vTexCoord).rgb, 1.);
+  fragColor = vec4(texture(uTexture, vTexCoord).rgb / 1., 1.);
 }`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -262,8 +260,8 @@ const sqrt32 = Math.sqrt(3) / 2;
 const getHexPosition = (coords) => {
   const [x, y] = coords;
 
-  const xOffset = 1.5 * (x + 1 / 2);
-  const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0));
+  const xOffset = 1.5 * (x + 1 / 2) - 1.5 / 2;
+  const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0) - 1);
 
   return [xOffset, 0, yOffset];
 };
@@ -312,10 +310,11 @@ const spawnAroundHex = (entity) => {
 // to spawn around 0,0, we need
 //
 
-const start = spawnHexAt([1, 0]);
+const start = spawnHexAt([0, 0]);
 
-for (let x = -5; x <= 5; x++) {
-  for (let y = -5; y <= 5; y++) {
+for (let x = -1; x <= 1; x++) {
+  for (let y = -1; y <= 1; y++) {
+    continue;
     spawnHexAt([x, y]);
   }
 }
@@ -609,7 +608,7 @@ const draw = () => {
   );
 
   renderer.renderPostProcess(quadProgram);
-
+  return;
   gl.useProgram(renderTexture);
   gl.activeTexture(gl.TEXTURE0 + 3);
   gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);

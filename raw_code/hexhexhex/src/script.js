@@ -10,7 +10,6 @@ import {
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
 import { Camera } from "./components/camera.js";
-import { loadImageToTexture } from "./renderer/image.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
@@ -24,6 +23,7 @@ import { MoveCamera } from "./systems/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
 import { vec3, vec4, mat4 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
+import { Sun } from "./renderer/sun.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -31,7 +31,9 @@ const dataManager = new DataManager(
 );
 const windowManager = new WindowManager(16 / 9);
 const gl = windowManager.canvas.getContext("webgl2");
-
+gl.getExtension("EXT_color_buffer_float");
+gl.getExtension("OES_texture_float_linear");
+gl.getExtension("WEBGL_depth_texture");
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
@@ -39,6 +41,7 @@ precision mediump float;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
+uniform mat4 uShadowVP;
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
@@ -52,11 +55,13 @@ out vec4 vPos;
 out vec4 vTransPos;
 flat out ivec4 vInstancedMetadata;
 out vec3 vNormal;
+out vec4 vShadowCoord;
 
 void main() {
     vPos = aModel * vec4(aPosition,1.);
 
     gl_Position = uProjection * uView * vPos;
+    vShadowCoord = (uShadowVP * vec4(vPos.xyz, 1.));
     vUv = aPosition.xz;
     vColor = aColor;
     vNormal = aNormal;
@@ -83,8 +88,10 @@ in vec4 vPos;
 in vec4 vTransPos;
 flat in ivec4 vInstancedMetadata;
 in vec3 vNormal;
+in vec4 vShadowCoord;
 
 uniform sampler2D uSampler1;
+uniform sampler2D uShadowMapSampler;
 uniform ivec4 uClickedCoord;
 uniform vec3 uLightDir;
 
@@ -102,12 +109,22 @@ void main() {
 
   vec3 lightColor = ambientStrength * ambientColor + lightNorm * sunStrength * sunColor;
 
-  fragColor = vec4(vColor * lightColor, 1.);
-  
-  
-float far = 10.0; //far plane
-float near =  0.01; //near plane
+  float visibility = 1.0;
+  if ( texture( uShadowMapSampler, vShadowCoord.xy ).z  <  vShadowCoord.z){
+      visibility = 0.5;
+  }
+  fragColor = vec4(visibility * vColor, 1.);
+  float shadowDepth = texture(uShadowMapSampler,(1. + vShadowCoord.xy) / 2.).r;
+  float far = 10.0; //far plane
+  float near =  0.01; //near plane
   depth = 1. - vTransPos.z / (far  - near);
+
+  float nearZ = -10.;
+  float farZ = 20.;
+  float z_ndc = vShadowCoord.z / vShadowCoord.w;
+  float shadowDepth2 = (((farZ-nearZ) * z_ndc) + nearZ + farZ) / 2.0 ;
+
+  fragColor = vec4(vec3(   shadowDepth), 1.);
 }`;
 
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
@@ -156,7 +173,7 @@ out vec4 fragColor;
 
 void main()
 {
-  fragColor = vec4(texture(uTexture, vTexCoord).rgb, 1.);
+  fragColor = vec4(1000.*texture(uTexture, vTexCoord).rgb, 1.);
 }`;
 
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -265,8 +282,6 @@ const spawnTreeOn = (hexEntity) => {
 };
 
 const spawnHexAt = (coord) => {
-  console.log(Hex.get(coord));
-  console.log(Hex.get(coord) === undefined);
   if (Hex.get(coord) === undefined) {
     const e = new Entity();
     e.addComponent(new Mesh(gl, instancedMesh));
@@ -298,6 +313,12 @@ const spawnAroundHex = (entity) => {
 //
 
 const start = spawnHexAt([1, 0]);
+
+for (let x = -5; x <= 5; x++) {
+  for (let y = -5; y <= 5; y++) {
+    spawnHexAt([x, y]);
+  }
+}
 cameraEntity.components.camera.origin = vec3.clone(
   start.components.transform.pos
 );
@@ -368,7 +389,6 @@ function handleMove(event) {
     } else {
       lastMousePos = null;
     }
-    console.log(event);
     const x = (event.clientX - horizontalOffset) / gl.canvas.width;
     const y = (event.clientY - verticalOffset) / gl.canvas.height;
     actions.push({ type: "movedMouse", val: [x, y] });
@@ -495,6 +515,7 @@ const step = () => {
 
 const renderer = new Renderer(gl);
 const noise = new NoiseTexture(gl);
+const sunShadowMap = new Sun(gl);
 
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
@@ -503,11 +524,30 @@ const draw = () => {
   requestAnimationFrame(draw);
 
   step();
+  const time = 2;
+  const sunState = {
+    sunColor: [1, 0.9, 0.9],
+    sunStrength: 0.9,
+    ambientColor: [0.3, 0.3, 0.9],
+    ambientStrength: 1,
+    direction: [Math.sin(time), 1 + Math.sin(1.2 * time) / 2, Math.cos(time)],
+  };
 
+  sunShadowMap.renderShadowDepth(sunState.direction);
   gl.useProgram(program);
 
   renderer.applyUniforms(cameraEntity.components.camera, program);
 
+  gl.uniformMatrix4fv(
+    gl.getUniformLocation(program, "uShadowVP"),
+    false,
+    sunShadowMap.matrix
+  );
+
+  const shadowLoc = 10;
+  gl.activeTexture(gl.TEXTURE0 + shadowLoc);
+  gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
+  gl.uniform1i(gl.getUniformLocation(program, "uShadowMapSampler"), shadowLoc);
   // TODO: good abstraction around uniforms
   //
   // need to handle ints vs floats vs matrices vs textures cleanly.
@@ -528,15 +568,6 @@ const draw = () => {
   lightingDir[2] = 0.1;
   vec3.normalize(lightingDir, lightingDir);
   gl.uniform3fv(gl.getUniformLocation(program, "uLightDir"), lightingDir);
-
-  const time = Date.now() / 1000;
-  const sunState = {
-    sunColor: [1, 0.9, 0.9],
-    sunStrength: 0.9,
-    ambientColor: [0.3, 0.3, 0.9],
-    ambientStrength: 1,
-    direction: [Math.sin(time), 1 + Math.sin(1.2 * time) / 2, Math.cos(time)],
-  };
 
   const normDir = vec3.clone(sunState.direction);
   vec3.normalize(normDir, normDir);
@@ -579,10 +610,9 @@ const draw = () => {
 
   renderer.renderPostProcess(quadProgram);
 
-  return;
   gl.useProgram(renderTexture);
   gl.activeTexture(gl.TEXTURE0 + 3);
-  gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
+  gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
   gl.uniform1i(gl.getUniformLocation(renderTexture, "uTexture"), 3);
 
   renderer.renderPostProcess(renderTexture);

@@ -69,6 +69,56 @@ void main() {
     vInstancedMetadata = aInstancedMetadata;
 }`;
 
+const treeVertexShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: vert
+
+precision mediump float;
+
+uniform mat4 uView;
+uniform mat4 uProjection;
+uniform mat4 uShadowVP;
+uniform float uTime;
+uniform sampler2D uSmoothNoiseSampler;
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec3 aColor;
+layout(location = 3) in mat4 aModel;
+layout(location = 7) in ivec4 aInstancedMetadata;
+
+out vec3 vColor;
+out vec2 vUv;
+out vec4 vPos;
+out vec4 vTransPos;
+flat out ivec4 vInstancedMetadata;
+out vec3 vNormal;
+out vec4 vShadowCoord;
+
+void main() {
+    vPos = aModel * vec4(aPosition,1.);
+    
+
+    // move the sample over time
+    vec2 noiseSampleUV = vPos.xz / 5. + uTime / 100.;
+
+    // offset the higher up values according to the noise texture
+    float xNoise = 2. * (texture(uSmoothNoiseSampler,  noiseSampleUV ).r - 0.5);
+    float zNoise = 2. * (texture(uSmoothNoiseSampler,  noiseSampleUV + 0.5).r - 0.5);
+
+    vPos.x += xNoise * smoothstep(0.3,0.6, vPos.y) / 7. ;
+    vPos.z += zNoise * smoothstep(0.2,0.4, vPos.y) / 7.;
+
+
+
+    gl_Position = uProjection * uView * vPos;
+    vShadowCoord = (uShadowVP * vPos);
+    vUv = aPosition.xz;
+    vColor = aColor;
+    vNormal = aNormal;
+    vTransPos = gl_Position;
+    vInstancedMetadata = aInstancedMetadata;
+}`;
+
 const fragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -142,6 +192,11 @@ void main() {
 }`;
 
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
+const treeProgram = createProgram(
+  gl,
+  treeVertexShaderSource,
+  fragmentShaderSource
+);
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -226,7 +281,7 @@ const generateTreeVertices = () => {
 const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
-  program,
+  treeProgram,
   1000
 );
 
@@ -537,12 +592,15 @@ const sunShadowMap = new Sun(gl);
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
 
+const startTime = Date.now();
+
 const draw = () => {
   requestAnimationFrame(draw);
 
   step();
 
   sunShadowMap.renderShadowDepth();
+  const time = (Date.now() - startTime) / 1000;
 
   const setUniforms = (program) => {
     renderer.applyUniforms(cameraEntity.components.camera, program);
@@ -561,14 +619,21 @@ const draw = () => {
       false,
       textureMatrix
     );
-
     const shadowLoc = 10;
+    const smoothNoiseLoc = 11;
+    gl.activeTexture(gl.TEXTURE0 + smoothNoiseLoc);
+    gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
+    gl.uniform1i(
+      gl.getUniformLocation(program, "uSmoothNoiseSampler"),
+      smoothNoiseLoc
+    );
     gl.activeTexture(gl.TEXTURE0 + shadowLoc);
     gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
     gl.uniform1i(
       gl.getUniformLocation(program, "uShadowMapSampler"),
       shadowLoc
     );
+    gl.uniform1f(gl.getUniformLocation(program, "uTime"), time);
     // TODO: good abstraction around uniforms
     //
     // need to handle ints vs floats vs matrices vs textures cleanly.

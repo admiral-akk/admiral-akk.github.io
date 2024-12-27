@@ -117,9 +117,19 @@ void main() {
   float val = 1000.*(expectedDepth - shadowDepth);
 
   fragColor = vec4(vec3( val), 1.);
-  if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {
-  fragColor = vec4(vec3(1.), 1.);
+
+  float bias = 0.01;
+  float shadowed = float(expectedDepth > shadowDepth + bias);
+
+  if (dot(sunDirection, vNormal) <= 0.01) {
+    shadowed = 1.;
   }
+
+  if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {
+    shadowed = 0.;
+  }
+
+  fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
 
   float far = 10.0; //far plane
   float near =  0.01; //near plane

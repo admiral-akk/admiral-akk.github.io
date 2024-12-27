@@ -83,6 +83,14 @@ class Sun {
 
     this.fbo = depthFramebuffer;
     this.depthTexture = depthTexture;
+
+    this.sunState = {
+      sunColor: [1, 0.9, 0.9],
+      sunStrength: 0.9,
+      ambientColor: [0.3, 0.3, 0.9],
+      ambientStrength: 1,
+      direction: [Math.sin(0), 1 + Math.sin(1.2 * 0) / 2, Math.cos(0)],
+    };
   }
 
   renderShadowDepth(sunPosition) {

@@ -31,3 +31,9 @@ Learning Resources
 - Jaume Sanchez (cross-hatching): https://spite.github.io/sketch/
 - Radiance Cascades: https://jason.today/gi.html
 - Synth Secrets: https://www.soundonsound.com/synthesizers/synth-secrets
+- WebGL2: https://www.youtube.com/@osakaandrew
+- WebGL2: https://webgl2fundamentals.org/
+- Shadow Mapping: https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
+- Cascading Shadow Mapping: https://alextardif.com/shadowmapping.html
+- Compression in JS: https://evanhahn.com/javascript-compression-streams-api-with-strings/
+- Generating Noise via Shaders: https://thebookofshaders.com/10/

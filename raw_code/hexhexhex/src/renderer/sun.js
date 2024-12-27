@@ -126,9 +126,9 @@ class Sun {
 
     mat4.lookAt(view, pos, [0, 0, 0], [0, 1, 0]);
 
-    const orthoWidth = 2;
-    const orthoHeight = 2;
-    const orthoDepth = 20;
+    const orthoWidth = 10;
+    const orthoHeight = 10;
+    const orthoDepth = 10;
     const projection = mat4.clone([
       1 / orthoWidth,
       0,

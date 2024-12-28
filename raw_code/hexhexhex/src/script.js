@@ -21,7 +21,7 @@ import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
 import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
 import { MoveCamera } from "./systems/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
-import { vec3, vec4, mat4 } from "gl-matrix";
+import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
 
@@ -512,9 +512,104 @@ const systems = [
 
 const updateHexFrustumBounds = () => {
   const frustum = calculateFrustumPlanes(cameraEntity);
-  // first, delete any hexes that are no longer visible.
+  // add in any hexes that could be visible
 
-  console.log(frustum);
+  // 1. Slice frustum with the hex plane
+
+  const planeToLine = ([planePoint, planeNormal]) => {
+    // get the line vector
+    const lineV = vec3.create();
+    const lineP = vec3.create();
+    vec3.cross(lineV, planeNormal, [0, 1, 0]);
+    vec3.normalize(lineV, lineV);
+
+    if (planePoint[1] === 0) {
+      vec3.copy(lineP, planePoint);
+    } else {
+      // get the "down" vector parallel to the plane
+
+      const downV = vec3.create();
+      vec3.cross(downV, lineV, planeNormal);
+      vec3.normalize(downV, downV);
+
+      // if the down vector moves the point away from y = 0, then invert it
+      if (downV[1] * planePoint[1] > 0) {
+        vec3.scale(downV, downV, -1);
+      }
+
+      // finally move the point to the y = 0 plane
+
+      vec3.scaleAndAdd(
+        lineP,
+        planePoint,
+        downV,
+        Math.abs(planePoint[1] / downV[1])
+      );
+    }
+    return [lineP, lineV];
+  };
+
+  const front = frustum[2];
+  const back = frustum[3];
+  const left = frustum[4];
+  const right = frustum[5];
+
+  // get corners by finding the closest points of lines
+  const closestPoint = ([p1, v1], [p2, v2]) => {
+    const p12 = vec2.clone([p1[0] - p2[0], p1[2] - p2[2]]);
+    const v12 = vec2.clone([v1[0] - v2[0], v1[2] - v2[2]]);
+
+    const t = -vec2.dot(v12, p12) / vec2.dot(v12, v12);
+    const v = vec3.create();
+    vec3.scaleAndAdd(v, p1, v1, t);
+    return v;
+  };
+
+  const frontLine = planeToLine(front);
+  const backLine = planeToLine(back);
+  const leftLine = planeToLine(left);
+  const rightLine = planeToLine(right);
+
+  const cornerPoints = [
+    closestPoint(frontLine, leftLine),
+    closestPoint(frontLine, rightLine),
+    closestPoint(backLine, leftLine),
+    closestPoint(backLine, rightLine),
+  ];
+
+  // get max and min
+
+  var minX = 10000000;
+  var minZ = 10000000;
+  var maxX = -10000000;
+  var maxZ = -10000000;
+
+  for (let i = 0; i < cornerPoints.length; i++) {
+    const p = cornerPoints[i];
+    console.log(p);
+    minX = Math.min(p[0], minX);
+    minZ = Math.min(p[2], minZ);
+    maxX = Math.max(p[0], maxX);
+    maxZ = Math.max(p[2], maxZ);
+  }
+
+  //
+  // 2. map the corners of the hex plane to hex values
+
+  minX = Math.floor(minX / 1.5);
+  maxX = Math.ceil(maxX / 1.5);
+
+  minZ = Math.floor(minZ / (2 * sqrt32) - 1);
+  maxZ = Math.ceil(maxZ / (2 * sqrt32) + 1);
+
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minZ; y <= maxZ; y++) {
+      spawnHexAt([x, y]);
+    }
+  }
+
+  // now, delete any hexes that are no longer visible.
+
   instancedMeshes.forEach((meshes) => {
     meshes.updateFrustum(gl, frustum);
     meshes.cullInvisible(gl);

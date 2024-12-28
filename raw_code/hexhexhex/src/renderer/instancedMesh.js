@@ -1,3 +1,5 @@
+import { vec3 } from "gl-matrix";
+
 const instancedMeshes = [];
 
 class InstancedMesh {
@@ -116,12 +118,76 @@ class InstancedMesh {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
     const offset = 20 * index + 16;
-    this.transformArray.set([index, 0, 0, 0], offset);
+    const existingSlice = this.transformArray.slice(offset + 16, offset + 20);
+    this.transformArray.set(
+      [index, existingSlice[1], existingSlice[2], existingSlice[3]],
+      offset
+    );
     gl.bufferSubData(
       gl.ARRAY_BUFFER,
       4 * offset,
-      new Int32Array([index, 0, 0, 0])
+      new Int32Array([
+        index,
+        existingSlice[1],
+        existingSlice[2],
+        existingSlice[3],
+      ])
     );
+  }
+
+  updateVisibility(gl, index, invisible) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+
+    const offset = 20 * index + 16;
+    const existingSlice = this.transformArray.slice(offset + 16, offset + 20);
+    this.transformArray.set(
+      [existingSlice[0], invisible ? 1 : 0, existingSlice[2], existingSlice[3]],
+      offset
+    );
+    gl.bufferSubData(
+      gl.ARRAY_BUFFER,
+      4 * offset,
+      new Int32Array([
+        existingSlice[0],
+        invisible ? 1 : 0,
+        existingSlice[2],
+        existingSlice[3],
+      ])
+    );
+  }
+
+  updateFrustum(gl, frustumPlanes) {
+    for (let index = 0; index < this.meshes.length; index++) {
+      // apply the transform to the bounding box
+
+      const offset = 20 * index;
+      const transformMat = this.transformArray.slice(offset, offset + 16);
+
+      const min = vec3.clone(this.boundingBox[0]);
+      vec3.transformMat4(min, min, transformMat);
+
+      const max = vec3.clone(this.boundingBox[1]);
+      vec3.transformMat4(max, max, transformMat);
+
+      var doubleReject = false;
+      // check if there's a plane that rejects all of them.
+      for (let i = 0; i < frustumPlanes.length; i++) {
+        const offset = vec3.create();
+        vec3.sub(offset, frustumPlanes[i][0], min);
+        const offset2 = vec3.create();
+        vec3.sub(offset2, frustumPlanes[i][0], max);
+
+        const outside = vec3.dot(frustumPlanes[i][1], offset) <= 0;
+        const outside2 = vec3.dot(frustumPlanes[i][1], offset2) <= 0;
+
+        doubleReject |= outside && outside2;
+        if (doubleReject) {
+          break;
+        }
+      }
+
+      this.updateVisibility(gl, index, doubleReject);
+    }
   }
 
   render(gl) {

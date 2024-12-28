@@ -11,7 +11,7 @@ import {
 } from "./renderer/mesh.js";
 import { Camera } from "./components/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
-import { InstancedMesh } from "./renderer/instancedMesh.js";
+import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
@@ -183,6 +183,10 @@ void main() {
 
   fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
 
+  if (vInstancedMetadata.y == 1) {
+    fragColor.r = 1.;
+  }
+
   //fragColor = vec4(vec3(normLDot ), 1.);
 
   float far = 10.0; //far plane
@@ -191,6 +195,31 @@ void main() {
 
 }`;
 
+const wireFrameVertex = `#version 300 es
+#pragma vscode_glsllint_stage: vert
+
+precision mediump float;
+
+uniform mat4 uView;
+uniform mat4 uProjection;
+
+layout(location = 0) in vec3 aPosition;
+
+void main() {
+    gl_Position = uProjection * uView * vec4(aPosition,1.);
+}`;
+
+const wireFrameFrag = `#version 300 es
+#pragma vscode_glsllint_stage: frag
+
+precision mediump float;
+
+layout(location=0) out vec4 fragColor; 
+void main() {
+  fragColor = vec4(1.,0.,1., 1.);
+}`;
+
+const wireFrameProgram = createProgram(gl, wireFrameVertex, wireFrameFrag);
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 const treeProgram = createProgram(
   gl,
@@ -498,6 +527,13 @@ document.addEventListener("wheel", (event) => {
 document.addEventListener("contextmenu", (ev) => {
   ev.preventDefault();
   ev.stopPropagation();
+  if (ev.buttons === 1) {
+    const frustumPlanes = calculateFrustumPlanes(cameraEntity);
+
+    instancedMeshes.forEach((meshes) => {
+      meshes.updateFrustum(gl, frustumPlanes);
+    });
+  }
   return false;
 });
 
@@ -542,6 +578,98 @@ function handleMove(event) {
     lastMousePos = null;
   }
 }
+
+const calculateNormal = ([v1, v2, v3]) => {
+  const v12 = vec3.create();
+  const v13 = vec3.create();
+
+  vec3.sub(v12, v2, v1);
+  vec3.sub(v13, v3, v1);
+  vec3.cross(v12, v12, v13);
+  vec3.normalize(v12, v12);
+  return v12;
+};
+
+const calculatePlane = (tri) => {
+  return [vec3.clone(tri[0]), calculateNormal(tri)];
+};
+
+var debugVertices = [];
+
+const calculateFrustumPlanes = (cameraEntity) => {
+  const { camera, transform } = cameraEntity.components;
+
+  var projection = mat4.create();
+  var view = mat4.create();
+  var temp = vec3.create();
+  vec3.add(temp, camera.origin, camera.getOffset());
+
+  mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
+
+  const near = 0.1;
+  const far = 2;
+  mat4.perspective(
+    projection,
+    Math.PI / 3,
+    gl.canvas.width / gl.canvas.height,
+    near,
+    far
+  );
+
+  mat4.invert(view, view);
+  mat4.invert(projection, projection);
+  var corners = [];
+  for (let x = 0; x < 2; x++) {
+    corners.push([]);
+
+    for (let y = 0; y < 2; y++) {
+      corners[x].push([]);
+
+      for (let z = 0; z < 2; z++) {
+        const w = z == 0 ? near : far;
+        const clip = vec4.clone([
+          (x === 0 ? -1 : 1) * w,
+          (y === 0 ? -1 : 1) * w,
+          (z === 0 ? -1 : 1) * w,
+          w,
+        ]);
+        vec4.transformMat4(clip, clip, projection);
+        vec4.transformMat4(clip, clip, view);
+        corners[x][y].push(vec3.clone(clip));
+      }
+    }
+  }
+
+  // planes are a point + a normal
+  const planes = [
+    // top
+    calculatePlane([corners[0][1][0], corners[1][1][0], corners[0][1][1]]),
+    // bottom
+    calculatePlane([corners[0][0][0], corners[0][0][1], corners[1][0][0]]),
+    // back
+    calculatePlane([corners[1][0][0], corners[1][1][0], corners[0][0][0]]),
+    // front
+    calculatePlane([corners[0][0][1], corners[1][0][1], corners[0][1][1]]),
+    // left
+    calculatePlane([corners[0][0][0], corners[0][1][0], corners[0][0][1]]),
+    // right
+    calculatePlane([corners[1][0][1], corners[1][1][1], corners[1][0][0]]),
+  ];
+  debugVertices = [];
+
+  for (let x = 0; x < 2; x++) {
+    for (let y = 0; y < 2; y++) {
+      vec3.pushAll(corners[x][y][0], debugVertices);
+      vec3.pushAll(corners[x][y][1], debugVertices);
+      vec3.pushAll(corners[0][y][x], debugVertices);
+      vec3.pushAll(corners[1][y][x], debugVertices);
+      vec3.pushAll(corners[x][0][y], debugVertices);
+      vec3.pushAll(corners[x][1][y], debugVertices);
+    }
+  }
+
+  return planes;
+};
 
 // https://stackoverflow.com/a/56348846
 const getWorldRayFromCamera = (cameraEntity, viewPos) => {
@@ -659,6 +787,7 @@ const step = () => {
   applySystems();
 };
 
+var vertex_buffer = gl.createBuffer();
 const renderer = new Renderer(gl);
 const noise = new NoiseTexture(gl);
 const sunShadowMap = new Sun(gl);
@@ -738,6 +867,24 @@ const draw = () => {
   );
 
   renderer.renderPostProcess(quadProgram);
+
+  if (debugVertices.length > 0) {
+    gl.useProgram(wireFrameProgram);
+    // Enable the depth test
+
+    // Clear the color and depth buffer
+    renderer.applyUniforms(cameraEntity.components.camera, wireFrameProgram);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(debugVertices),
+      gl.STATIC_DRAW
+    );
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0);
+    gl.enableVertexAttribArray(0);
+    gl.drawArrays(gl.LINES, 0, debugVertices.length / 3);
+    gl.flush();
+  }
   return;
   gl.useProgram(renderTexture);
   gl.activeTexture(gl.TEXTURE0 + 3);

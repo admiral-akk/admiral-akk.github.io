@@ -78,7 +78,7 @@ class Renderer {
 
     mat4.perspective(
       projection,
-      Math.PI / 2,
+      Math.PI / 3,
       this.gl.canvas.width / this.gl.canvas.height,
       0.01,
       20

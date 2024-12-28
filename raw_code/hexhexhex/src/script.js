@@ -13,7 +13,7 @@ import { Camera } from "./components/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
-import { Entity } from "./ecs/entity.js";
+import { entities, Entity } from "./ecs/entity.js";
 import { Mesh } from "./components/mesh.js";
 import { Hex } from "./components/hex.js";
 import { Transform } from "./components/transform.js";
@@ -388,8 +388,6 @@ var clickedIndex = -1;
 // FBO
 const catLoc = 1;
 
-const entities = [];
-
 const cameraEntity = new Entity();
 
 {
@@ -397,7 +395,6 @@ const cameraEntity = new Entity();
   const t = new Transform();
   t.setPosition([0, -4, 0]);
   cameraEntity.addComponent(t);
-  entities.push(cameraEntity);
 }
 
 const sqrt32 = Math.sqrt(3) / 2;
@@ -421,7 +418,6 @@ const spawnMountainOn = (hexEntity) => {
   pos[2] += Math.random() * 0.15;
   e.components.transform.setScale([0.75, 0.75, 0.75]);
   e.components.transform.setPosition(pos);
-  entities.push(e);
 };
 
 const spawnRockOn = (hexEntity) => {
@@ -433,7 +429,6 @@ const spawnRockOn = (hexEntity) => {
   pos[1] += 0.25;
   pos[2] += Math.random() - 0.5;
   e.components.transform.setPosition(pos);
-  entities.push(e);
 };
 
 const spawnTreeOn = (hexEntity) => {
@@ -446,7 +441,6 @@ const spawnTreeOn = (hexEntity) => {
   pos[2] += (Math.random() - 0.5) * 0.5;
   e.components.transform.setPosition(pos);
   e.components.transform.setScale([0.25, 0.25, 0.25]);
-  entities.push(e);
 };
 
 const spawnHexAt = (coord) => {
@@ -457,7 +451,6 @@ const spawnHexAt = (coord) => {
     e.components.transform.setPosition(getHexPosition(coord));
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
-    entities.push(e);
     if (Math.random() < 0.4) {
       spawnMountainOn(e);
     } else {
@@ -509,7 +502,6 @@ const targetTransform = new Transform();
   targetEntity.addComponent(new Mesh(gl, target));
   targetTransform.setPosition([0, -50, 0]);
   targetEntity.addComponent(targetTransform);
-  entities.push(targetEntity);
 }
 
 const systems = [
@@ -518,6 +510,16 @@ const systems = [
   new UpdateMeshTransform(),
 ];
 
+const updateHexFrustumBounds = () => {
+  const frustum = calculateFrustumPlanes(cameraEntity);
+  // first, delete any hexes that are no longer visible.
+
+  console.log(frustum);
+  instancedMeshes.forEach((meshes) => {
+    meshes.updateFrustum(gl, frustum);
+    meshes.cullInvisible(gl);
+  });
+};
 document.addEventListener("click", handleClick);
 document.addEventListener("mousemove", handleMove);
 document.addEventListener("wheel", (event) => {
@@ -528,11 +530,7 @@ document.addEventListener("contextmenu", (ev) => {
   ev.preventDefault();
   ev.stopPropagation();
   if (ev.buttons === 1) {
-    const frustumPlanes = calculateFrustumPlanes(cameraEntity);
-
-    instancedMeshes.forEach((meshes) => {
-      meshes.updateFrustum(gl, frustumPlanes);
-    });
+    updateHexFrustumBounds();
   }
   return false;
 });

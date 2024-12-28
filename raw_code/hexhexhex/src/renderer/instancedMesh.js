@@ -156,6 +156,17 @@ class InstancedMesh {
     );
   }
 
+  cullInvisible(gl) {
+    for (let index = this.meshes.length - 1; index >= 0; index--) {
+      if (this.transformArray[20 * index + 17] > 0) {
+        const m = this.meshes[index];
+        // component should be source of truth on this.
+        this.removeMesh(gl, index);
+        m.getEntity().deleteEntity();
+      }
+    }
+  }
+
   updateFrustum(gl, frustumPlanes) {
     for (let index = 0; index < this.meshes.length; index++) {
       // apply the transform to the bounding box

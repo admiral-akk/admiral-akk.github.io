@@ -684,48 +684,6 @@ const updateHexFrustumBounds = () => {
   });
 };
 
-const actions = [];
-function handleClick(event) {
-  const { horizontalOffset, verticalOffset } = windowManager.sizes;
-  if (event.target.id === "webgl") {
-    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
-    const y = (event.clientY - verticalOffset) / gl.canvas.height;
-    actions.push({ type: "clicked", val: [x, y] });
-  }
-}
-
-var lastMousePos = null;
-
-function handleMove(event) {
-  const { horizontalOffset, verticalOffset } = windowManager.sizes;
-  if (event.target.id === "webgl") {
-    const deltaX = (event.clientX - horizontalOffset) / gl.canvas.width;
-    const deltaY = (event.clientY - verticalOffset) / gl.canvas.width;
-
-    if (event.buttons & 2) {
-      // holding down right, move camera
-      if (lastMousePos) {
-        const [lastX, lastY] = lastMousePos;
-        const { camera } = cameraEntity.components;
-        camera.xAngle += 4 * (deltaX - lastX);
-        camera.yAngle = Math.clamp(
-          camera.yAngle + deltaY - lastY,
-          Math.PI / 10,
-          Math.PI / 2 - 0.1
-        );
-      }
-      lastMousePos = [deltaX, deltaY];
-    } else {
-      lastMousePos = null;
-    }
-    const x = (event.clientX - horizontalOffset) / gl.canvas.width;
-    const y = (event.clientY - verticalOffset) / gl.canvas.height;
-    actions.push({ type: "movedMouse", val: [x, y] });
-  } else {
-    lastMousePos = null;
-  }
-}
-
 const calculateNormal = ([v1, v2, v3]) => {
   const v12 = vec3.create();
   const v13 = vec3.create();
@@ -893,7 +851,33 @@ const moveTo = (hexEntity) => {
 class InputManager extends StateMachine {
   constructor() {
     super();
+    this.pushState(new OpenState());
     this.commands = [];
+  }
+
+  update() {
+    const { state } = input;
+    // left click
+    if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
+      this.commands.push({ type: "clicked", val: state.mpos.val });
+    }
+
+    if (
+      state.rmb?.val === 1 &&
+      state.mpos?.prev?.val &&
+      state.mpos?.frame === time.frame
+    ) {
+      this.commands.push({
+        type: "movedMouse",
+        val: { prev: state.mpos.prev.val, pos: state.mpos.val },
+      });
+    }
+
+    if (state.wheel?.frame === time.frame) {
+      const deltaY = state.wheel.val - state.wheel.prev.val;
+      const { camera } = cameraEntity.components;
+      camera.distance = Math.clamp(camera.distance + deltaY / 100, 1, 10);
+    }
   }
 }
 
@@ -907,6 +891,8 @@ class UnitSelectedState extends State {
 
   parseInputs(manager, inputs) {}
 }
+
+const inputManager = new InputManager();
 
 // defines some functionality that changes the state of the game / rendering?
 // do commands carry with them the parsing info?
@@ -929,6 +915,7 @@ class MoveCommand extends Command {
 }
 
 const applyActions = () => {
+  const actions = inputManager.commands;
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
     switch (action.type) {
@@ -1013,33 +1000,8 @@ const sunShadowMap = new Sun(gl);
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
 
-const checkInput = () => {
-  const { state } = input;
-  // left click
-  if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
-    actions.push({ type: "clicked", val: state.mpos.val });
-  }
-
-  if (
-    state.rmb?.val === 1 &&
-    state.mpos?.prev?.val &&
-    state.mpos?.frame === time.frame
-  ) {
-    actions.push({
-      type: "movedMouse",
-      val: { prev: state.mpos.prev.val, pos: state.mpos.val },
-    });
-  }
-
-  if (state.wheel?.frame === time.frame) {
-    const deltaY = state.wheel.val - state.wheel.prev.val;
-    const { camera } = cameraEntity.components;
-    camera.distance = Math.clamp(camera.distance + deltaY / 100, 1, 10);
-  }
-};
-
 const draw = () => {
-  checkInput();
+  inputManager.update();
   time.tick();
   requestAnimationFrame(draw);
 

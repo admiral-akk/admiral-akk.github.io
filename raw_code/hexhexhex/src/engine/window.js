@@ -72,4 +72,6 @@ class WindowManager {
   }
 }
 
-export { WindowManager };
+const windowManager = new WindowManager(16 / 9);
+
+export { windowManager as window };

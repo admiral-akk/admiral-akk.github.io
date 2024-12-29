@@ -4,7 +4,6 @@ import {
   DefaultCompressor,
   DefaultPreprocessor,
 } from "./util/compression.js";
-import { WindowManager } from "./util/window.js";
 import {
   generateRegularPolygon,
   generateSymmetricMesh,
@@ -29,12 +28,16 @@ import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
 import { Unit } from "./components/game/unit.js";
 import { AnimateUnits } from "./systems/render/animateUnits.js";
+import { State, StateMachine } from "./util/stateMachine.js";
+import { time } from "./engine/time.js";
+import { window } from "./engine/window.js";
+import { input } from "./engine/input.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
 );
-const windowManager = new WindowManager(16 / 16);
+const windowManager = window;
 const gl = windowManager.canvas.getContext("webgl2");
 gl.getExtension("EXT_color_buffer_float");
 gl.getExtension("OES_texture_float_linear");
@@ -459,6 +462,8 @@ const spawnTreeOn = (hexEntity) => {
   e.components.transform.setScale([0.25, 0.25, 0.25]);
 };
 
+// add ability to select / de-select
+
 const spawnHexAt = (coord) => {
   if (Hex.get(coord) === undefined) {
     const e = new Entity();
@@ -682,20 +687,6 @@ const updateHexFrustumBounds = () => {
     meshes.cullInvisible(gl);
   });
 };
-document.addEventListener("click", handleClick);
-document.addEventListener("mousemove", handleMove);
-document.addEventListener("wheel", (event) => {
-  const { camera } = cameraEntity.components;
-  camera.distance = Math.clamp(camera.distance + event.deltaY / 100, 1, 10);
-});
-document.addEventListener("contextmenu", (ev) => {
-  ev.preventDefault();
-  ev.stopPropagation();
-  if (ev.buttons === 1) {
-    updateHexFrustumBounds();
-  }
-  return false;
-});
 
 const actions = [];
 function handleClick(event) {
@@ -891,6 +882,56 @@ const moveTo = (hexEntity) => {
   }
 };
 
+// input manager - client, determines commands
+// commands figure out how to apply themselves
+// then the state game actions happen
+// then we apply a render
+
+// TODO: Add a notion of "time" that systems have access to
+// TODO: add input manager
+// TODO: add a notion of "commands"
+
+// decides what commands a user will issue, if any
+//
+// commands might be illegal in the game state.
+class InputManager extends StateMachine {
+  constructor() {
+    super();
+    this.commands = [];
+  }
+}
+
+class OpenState extends State {}
+
+class UnitSelectedState extends State {
+  constructor(unit) {
+    super();
+    this.unit = unit;
+  }
+
+  parseInputs(manager, inputs) {}
+}
+
+// defines some functionality that changes the state of the game / rendering?
+// do commands carry with them the parsing info?
+//
+// nah - make 'em just data payloads.
+//
+// then it's just type + data, right?
+class Command {
+  constructor() {
+    const type = this.constructor.name;
+  }
+}
+
+class MoveCommand extends Command {
+  constructor(unit, target) {
+    super();
+    this.unit = unit;
+    this.target = target;
+  }
+}
+
 const applyActions = () => {
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
@@ -966,15 +1007,34 @@ const sunShadowMap = new Sun(gl);
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
 
-const startTime = Date.now();
+const checkInput = () => {
+  const { state } = input;
+  if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
+    actions.push({ type: "clicked", val: state.mpos.val });
+  }
+};
 
+document.addEventListener("mousemove", handleMove);
+document.addEventListener("wheel", (event) => {
+  const { camera } = cameraEntity.components;
+  camera.distance = Math.clamp(camera.distance + event.deltaY / 100, 1, 10);
+});
+document.addEventListener("contextmenu", (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  if (ev.buttons === 1) {
+    updateHexFrustumBounds();
+  }
+  return false;
+});
 const draw = () => {
+  checkInput();
+  time.tick();
   requestAnimationFrame(draw);
 
   step();
 
   sunShadowMap.renderShadowDepth();
-  const time = (Date.now() - startTime) / 1000;
 
   const setUniforms = (program) => {
     renderer.applyUniforms(cameraEntity.components.camera, program);
@@ -1007,7 +1067,7 @@ const draw = () => {
       gl.getUniformLocation(program, "uShadowMapSampler"),
       shadowLoc
     );
-    gl.uniform1f(gl.getUniformLocation(program, "uTime"), time);
+    gl.uniform1f(gl.getUniformLocation(program, "uTime"), time.time);
     // TODO: good abstraction around uniforms
     //
     // need to handle ints vs floats vs matrices vs textures cleanly.

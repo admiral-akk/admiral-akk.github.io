@@ -4,16 +4,18 @@ class Unit extends Component {
   constructor(startPos) {
     super();
     this.pos = startPos;
-    this.movingTo = null;
-    this.moveStart = null;
+    this.animationStack = [];
   }
 
   moveTo(target) {
-    if (this.moveStart === null) {
-      return;
-    }
-    this.movingTo = target;
-    this.moveStart = Date.now();
+    const start = this.animationStack.peek() ?? [
+      null,
+      Date.now(),
+      null,
+      this.pos,
+    ];
+    this.pos = target;
+    this.animationStack.push([start[1], start[1] + 1000, start[3], target]);
   }
 }
 

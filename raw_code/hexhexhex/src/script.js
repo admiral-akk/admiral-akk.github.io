@@ -885,8 +885,7 @@ const moveTo = (hexEntity) => {
   for (let i = 0; i < entities.length; i++) {
     let e = entities[i];
     if (e.components.transform && e.components.unit) {
-      e.components.unit.movingTo = hexEntity.components.hex.coords;
-      e.components.unit.moveStart = Date.now();
+      e.components.unit.moveTo(hexEntity.components.hex.coords);
     }
   }
 };

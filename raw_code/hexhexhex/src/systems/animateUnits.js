@@ -10,31 +10,28 @@ class AnimateUnits extends System {
   }
 
   apply({ transform, unit }) {
-    if (unit.moveStart !== null) {
-      // check if done
-      const time = Date.now();
-      const t = (time - unit.moveStart) / 1000;
-      if (t > 1) {
-        unit.pos = unit.movingTo;
-        unit.movingTo = null;
-        unit.moveStart = null;
-      } else {
-        const start = toHexPosition(unit.pos);
-
-        const target = toHexPosition(unit.movingTo);
-        const interpolate = vec3.create();
-        vec3.scale(start, start, 1 - t);
-        vec3.scale(target, target, t);
-        vec3.add(interpolate, start, target);
-        interpolate[1] = 0.25 + Math.abs(Math.sin(t * Math.PI * 2 * 3)) * 0.1;
-        transform.setPosition(interpolate);
-      }
+    const time = Date.now();
+    while (
+      unit.animationStack.length > 0 &&
+      unit.animationStack[0][1] <= time
+    ) {
+      unit.animationStack.shift();
     }
-    if (unit.movingTo === null) {
+    if (unit.animationStack.length === 0) {
       const target = toHexPosition([unit.pos[0], unit.pos[1]]);
       target[1] = 0.25;
       transform.setPosition(target);
-      return;
+    } else {
+      const [startTime, endTime, startPos, endPos] = unit.animationStack[0];
+      const t = (time - startTime) / (endTime - startTime);
+      const start = toHexPosition(startPos);
+      const target = toHexPosition(endPos);
+      const interpolate = vec3.create();
+      vec3.scale(start, start, 1 - t);
+      vec3.scale(target, target, t);
+      vec3.add(interpolate, start, target);
+      interpolate[1] = 0.25 + Math.abs(Math.sin(t * Math.PI * 2 * 3)) * 0.1;
+      transform.setPosition(interpolate);
     }
   }
 }

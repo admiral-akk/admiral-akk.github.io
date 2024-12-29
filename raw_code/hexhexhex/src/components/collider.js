@@ -1,12 +1,7 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Component } from "../ecs/component";
 
-const temp = vec4.create();
-const temp2 = vec4.create();
-const temp3 = vec4.create();
-const tempMat = mat4.create();
-
-class Collider extends Component {
+export class Collider extends Component {
   constructor() {
     super();
   }
@@ -54,7 +49,7 @@ const checkPlaneCollision = (start, dir, planePoint, planeNormal) => {
 
 const tempTranslation = vec3.create();
 
-class BoxCollider extends Collider {
+export class BoxCollider extends Collider {
   constructor() {
     super();
     // assume every collider is a standard size and symmetric about origin
@@ -107,5 +102,3 @@ class BoxCollider extends Collider {
     return bestResult;
   }
 }
-
-export { Collider, BoxCollider };

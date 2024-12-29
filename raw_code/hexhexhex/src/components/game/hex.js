@@ -2,7 +2,7 @@ import { Component } from "../../ecs/component";
 
 const hexMap = new Map();
 
-class Hex extends Component {
+export class Hex extends Component {
   static get(coords) {
     return hexMap.get(`${coords[0]},${coords[1]}`);
   }
@@ -18,5 +18,3 @@ class Hex extends Component {
     hexMap.delete(`${this.coords[0]},${this.coords[1]}`);
   }
 }
-
-export { Hex };

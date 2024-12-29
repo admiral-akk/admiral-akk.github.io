@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Component } from "../../ecs/component";
 
-class Camera extends Component {
+export class Camera extends Component {
   constructor(gl) {
     super();
 
@@ -37,5 +37,3 @@ class Camera extends Component {
     vec3.copy(this.origin, pos);
   }
 }
-
-export { Camera };

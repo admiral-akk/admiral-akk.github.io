@@ -1,7 +1,7 @@
 import { Component } from "../../ecs/component";
 import { Queue } from "../../util/queue";
 
-class Unit extends Component {
+export class Unit extends Component {
   constructor(startPos) {
     super();
     this.pos = startPos;
@@ -18,5 +18,3 @@ class Unit extends Component {
     this.animationStack.queue([endTime, endTime + 1000, endPos, target]);
   }
 }
-
-export { Unit };

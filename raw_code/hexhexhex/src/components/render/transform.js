@@ -12,7 +12,7 @@ const recursiveWorld = (transform, acc) => {
   }
 };
 
-class Transform extends Component {
+export class Transform extends Component {
   constructor(parent = null) {
     super();
     this.updated = true;
@@ -83,5 +83,3 @@ class Transform extends Component {
     this.updated = true;
   }
 }
-
-export { Transform };

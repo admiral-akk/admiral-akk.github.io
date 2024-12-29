@@ -1,7 +1,6 @@
-import { mat4 } from "gl-matrix";
 import { Component } from "../../ecs/component";
 
-class Mesh extends Component {
+export class Mesh extends Component {
   constructor(instancedMesh) {
     super();
     this.instancedMesh = instancedMesh;
@@ -14,5 +13,3 @@ class Mesh extends Component {
     this.updated = true;
   }
 }
-
-export { Mesh };

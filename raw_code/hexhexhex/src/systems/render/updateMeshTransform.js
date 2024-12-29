@@ -1,6 +1,6 @@
-import { Mesh } from "../components/mesh";
-import { Transform } from "../components/transform";
-import { System } from "../ecs/system";
+import { Mesh } from "../../components/render/mesh";
+import { Transform } from "../../components/render/transform";
+import { System } from "../../ecs/system";
 
 class UpdateMeshTransform extends System {
   constructor() {

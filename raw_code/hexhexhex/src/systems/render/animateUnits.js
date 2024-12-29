@@ -1,7 +1,7 @@
 import { vec3 } from "gl-matrix";
-import { Transform } from "../components/transform.js";
-import { Unit } from "../components/unit.js";
-import { System } from "../ecs/system.js";
+import { Transform } from "../../components/render/transform.js";
+import { Unit } from "../../components/game/unit.js";
+import { System } from "../../ecs/system.js";
 import { toHexPosition } from "./animateMeshTransform.js";
 
 class AnimateUnits extends System {

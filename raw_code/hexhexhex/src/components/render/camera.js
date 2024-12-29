@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { Component } from "../ecs/component";
+import { Component } from "../../ecs/component";
 
 class Camera extends Component {
   constructor(gl) {

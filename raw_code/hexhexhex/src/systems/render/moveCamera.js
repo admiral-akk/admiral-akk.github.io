@@ -1,6 +1,6 @@
-import { Camera } from "../components/camera.js";
-import { Transform } from "../components/transform.js";
-import { System } from "../ecs/system";
+import { Camera } from "../../components/render/camera.js";
+import { Transform } from "../../components/render/transform.js";
+import { System } from "../../ecs/system.js";
 import { vec3, mat4, quat } from "gl-matrix";
 
 const temp = vec3.create();

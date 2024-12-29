@@ -1,5 +1,5 @@
 import { vec3, mat4, quat } from "gl-matrix";
-import { Component } from "../ecs/component";
+import { Component } from "../../ecs/component";
 
 const tempQuat = mat4.create();
 

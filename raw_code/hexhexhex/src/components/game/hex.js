@@ -1,4 +1,4 @@
-import { Component } from "../ecs/component";
+import { Component } from "../../ecs/component";
 
 const hexMap = new Map();
 

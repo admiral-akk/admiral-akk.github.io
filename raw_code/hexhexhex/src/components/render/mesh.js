@@ -1,5 +1,5 @@
 import { mat4 } from "gl-matrix";
-import { Component } from "../ecs/component";
+import { Component } from "../../ecs/component";
 
 class Mesh extends Component {
   constructor(gl, instancedMesh) {

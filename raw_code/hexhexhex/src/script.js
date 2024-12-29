@@ -9,26 +9,26 @@ import {
   generateRegularPolygon,
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
-import { Camera } from "./components/camera.js";
+import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { entities, Entity } from "./ecs/entity.js";
-import { Mesh } from "./components/mesh.js";
-import { Hex } from "./components/hex.js";
-import { Transform } from "./components/transform.js";
-import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
+import { Mesh } from "./components/render/mesh.js";
+import { Hex } from "./components/game/hex.js";
+import { Transform } from "./components/render/transform.js";
+import { UpdateMeshTransform } from "./systems/render/updateMeshTransform.js";
 import {
   AnimateMeshTransform,
   toHexPosition,
-} from "./systems/animateMeshTransform.js";
-import { MoveCamera } from "./systems/moveCamera.js";
+} from "./systems/render/animateMeshTransform.js";
+import { MoveCamera } from "./systems/render/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
 import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
-import { Unit } from "./components/unit.js";
-import { AnimateUnits } from "./systems/animateUnits.js";
+import { Unit } from "./components/game/unit.js";
+import { AnimateUnits } from "./systems/render/animateUnits.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),

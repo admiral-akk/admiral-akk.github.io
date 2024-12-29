@@ -33,6 +33,7 @@ import { time } from "./engine/time.js";
 import { window } from "./engine/window.js";
 import { input } from "./engine/input.js";
 import { Selected } from "./components/client/selected.js";
+import { MarkSelected } from "./systems/render/markSelected.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -411,7 +412,7 @@ const target = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  1
+  4
 );
 
 var clickedIndex = -1;
@@ -531,8 +532,11 @@ const targetTransform = new Transform();
   new Entity(new Mesh(gl, units), new Transform(), new Unit([0, 0]));
 }
 
+const markerEntity = new Entity(new Mesh(gl, target), new Transform());
+
 const systems = [
   new MoveCamera(),
+  new MarkSelected(markerEntity),
   new AnimateMeshTransform(),
   new AnimateUnits(),
   new UpdateMeshTransform(),

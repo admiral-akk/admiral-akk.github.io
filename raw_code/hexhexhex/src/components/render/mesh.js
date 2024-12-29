@@ -6,6 +6,8 @@ class Mesh extends Component {
     super();
     this.instancedMesh = instancedMesh;
     this.index = instancedMesh.addMesh(gl, this);
+    this.visible = true;
+    this.updated = true;
   }
 
   updateIndex(index) {
@@ -16,6 +18,11 @@ class Mesh extends Component {
     const newMat = mat4.create();
     mat4.translate(newMat, newMat, newPos);
     this.instancedMesh.updateTransform(this.index, newMat);
+  }
+
+  updateVisible(visible) {
+    this.visible = visible;
+    this.updated = true;
   }
 }
 

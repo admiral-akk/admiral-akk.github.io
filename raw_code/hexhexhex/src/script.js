@@ -18,12 +18,17 @@ import { Mesh } from "./components/mesh.js";
 import { Hex } from "./components/hex.js";
 import { Transform } from "./components/transform.js";
 import { UpdateMeshTransform } from "./systems/UpdateMeshTransform.js";
-import { AnimateMeshTransform } from "./systems/animateMeshTransform.js";
+import {
+  AnimateMeshTransform,
+  toHexPosition,
+} from "./systems/animateMeshTransform.js";
 import { MoveCamera } from "./systems/moveCamera.js";
 import { BoxCollider } from "./components/collider.js";
 import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
+import { Unit } from "./components/unit.js";
+import { AnimateUnits } from "./systems/animateUnits.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -370,6 +375,28 @@ const instancedMesh = new InstancedMesh(
   10000
 );
 
+const generateUnitVertices = () => {
+  const vertices = [];
+
+  for (let i = 1; i < 10; i++) {
+    const angle = ((Math.PI / 2) * i) / 10;
+    vertices.push([i * 0.01, Math.sin(angle) * 0.1, darkgrey]);
+  }
+  for (let i = 1; i < 10; i++) {
+    const angle = ((Math.PI / 2) * i) / 10;
+    vertices.push([i * 0.01 + 0.4, Math.cos(angle) * 0.1, white]);
+  }
+
+  return vertices;
+};
+
+const units = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(generateUnitVertices(), generateRegularPolygon(12, 1)),
+  program,
+  100
+);
+
 const target = new InstancedMesh(
   gl,
   generateSymmetricMesh(
@@ -396,17 +423,6 @@ const cameraEntity = new Entity();
   t.setPosition([0, -4, 0]);
   cameraEntity.addComponent(t);
 }
-
-const sqrt32 = Math.sqrt(3) / 2;
-
-const getHexPosition = (coords) => {
-  const [x, y] = coords;
-
-  const xOffset = 1.5 * (x + 1 / 2) - 1.5 / 2;
-  const yOffset = 2 * sqrt32 * (y + 1 / 2 + (x % 2 === 0 ? 0.5 : 0) - 1);
-
-  return [xOffset, 0, yOffset];
-};
 
 const spawnMountainOn = (hexEntity) => {
   const e = new Entity();
@@ -448,7 +464,7 @@ const spawnHexAt = (coord) => {
     const e = new Entity();
     e.addComponent(new Mesh(gl, instancedMesh));
     e.addComponent(new Transform());
-    e.components.transform.setPosition(getHexPosition(coord));
+    e.components.transform.setPosition(toHexPosition(coord));
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
     if (Math.random() < 0.4) {
@@ -504,9 +520,14 @@ const targetTransform = new Transform();
   targetEntity.addComponent(targetTransform);
 }
 
+{
+  new Entity(new Mesh(gl, units), new Transform(), new Unit([0, 0]));
+}
+
 const systems = [
   new MoveCamera(),
   new AnimateMeshTransform(),
+  new AnimateUnits(),
   new UpdateMeshTransform(),
 ];
 
@@ -638,11 +659,11 @@ const updateHexFrustumBounds = () => {
   //
   // 2. map the corners of the hex plane to hex values
 
-  minX = Math.floor(minX / 1.5);
-  maxX = Math.ceil(maxX / 1.5);
+  minX = Math.floor(minX);
+  maxX = Math.ceil(maxX);
 
-  minZ = Math.floor(minZ / (2 * sqrt32) - 1);
-  maxZ = Math.ceil(maxZ / (2 * sqrt32) + 1);
+  minZ = Math.floor(minZ - 1);
+  maxZ = Math.ceil(maxZ + 1);
 
   console.log("x", minX, maxX);
   console.log("z", minZ, maxZ);
@@ -860,6 +881,16 @@ const getRayCollision = (start, dir) => {
   return best;
 };
 
+const moveTo = (hexEntity) => {
+  for (let i = 0; i < entities.length; i++) {
+    let e = entities[i];
+    if (e.components.transform && e.components.unit) {
+      e.components.unit.movingTo = hexEntity.components.hex.coords;
+      e.components.unit.moveStart = Date.now();
+    }
+  }
+};
+
 const applyActions = () => {
   for (let i = 0; i < actions.length; i++) {
     const action = actions[i];
@@ -878,6 +909,7 @@ const applyActions = () => {
               e.components.transform.pos
             );
             spawnAroundHex(e);
+            moveTo(e);
           }
         }
         break;
@@ -923,7 +955,7 @@ const step = () => {
 
   // step through system
   applySystems();
-  updateHexFrustumBounds();
+  //updateHexFrustumBounds();
 };
 
 var vertex_buffer = gl.createBuffer();

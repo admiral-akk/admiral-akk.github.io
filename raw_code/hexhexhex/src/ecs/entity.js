@@ -3,15 +3,19 @@ var entityId = 0;
 const entities = [];
 
 class Entity {
-  constructor() {
+  constructor(...components) {
     this.id = entityId++;
     this.components = {};
     entities.push(this);
+    this.addComponent(...components);
   }
 
-  addComponent(component) {
-    this.components[component.getName()] = component;
-    component.addComponent(this);
+  addComponent(...components) {
+    for (let i = 0; i < components.length; i++) {
+      const component = components[i];
+      this.components[component.getName()] = component;
+      component.addComponent(this);
+    }
   }
 
   removeComponent(component) {

@@ -6,6 +6,23 @@ class StateMachine {
     this.states = [];
   }
 
+  // public
+  replaceState(state) {
+    this.cleanupState(this.states.pop());
+    this.addState(state);
+  }
+
+  pushState(state) {
+    this.currentState()?.pause();
+    this.addState(state);
+  }
+
+  popState() {
+    this.cleanupState(this.states.pop());
+    this.currentState()?.resume();
+  }
+
+  // private
   stateParams() {
     return {};
   }
@@ -29,21 +46,6 @@ class StateMachine {
     if (state) {
       state.cleanup(this);
     }
-  }
-
-  replaceState(state) {
-    this.cleanupState(this.states.pop());
-    this.addState(state);
-  }
-
-  pushState(state) {
-    this.currentState()?.pause();
-    this.addState(state);
-  }
-
-  popState() {
-    this.cleanupState(this.states.pop());
-    this.currentState()?.resume();
   }
 }
 

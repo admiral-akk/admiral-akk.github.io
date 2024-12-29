@@ -1030,12 +1030,14 @@ const checkInput = () => {
       val: { prev: state.mpos.prev.val, pos: state.mpos.val },
     });
   }
+
+  if (state.wheel?.frame === time.frame) {
+    const deltaY = state.wheel.val - state.wheel.prev.val;
+    const { camera } = cameraEntity.components;
+    camera.distance = Math.clamp(camera.distance + deltaY / 100, 1, 10);
+  }
 };
 
-document.addEventListener("wheel", (event) => {
-  const { camera } = cameraEntity.components;
-  camera.distance = Math.clamp(camera.distance + event.deltaY / 100, 1, 10);
-});
 const draw = () => {
   checkInput();
   time.tick();

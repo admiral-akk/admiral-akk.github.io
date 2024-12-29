@@ -562,7 +562,6 @@ const updateHexFrustumBounds = () => {
     const diff = vec3.create();
     vec3.sub(diff, start, end);
     vec3.scaleAndAdd(diff, start, diff, -start[1] / diff[1]);
-    console.log(diff);
     return diff;
   };
 
@@ -670,9 +669,6 @@ const updateHexFrustumBounds = () => {
 
   minZ = Math.floor(minZ - 1);
   maxZ = Math.ceil(maxZ + 1);
-
-  console.log("x", minX, maxX);
-  console.log("z", minZ, maxZ);
 
   for (let x = minX; x <= maxX; x++) {
     for (let y = minZ; y <= maxZ; y++) {
@@ -956,9 +952,19 @@ const applyActions = () => {
         break;
       case "movedMouse":
         {
-          const val = action.val;
+          const { camera } = cameraEntity.components;
+          const { pos, prev } = action.val;
+          const delta = vec2.clone(pos);
+          vec2.sub(delta, prev, delta);
 
-          const [worldPos, worldDir] = getWorldRayFromCamera(cameraEntity, val);
+          camera.xAngle += 32 * delta[0];
+          camera.yAngle = Math.clamp(
+            camera.yAngle - 8 * delta[1],
+            Math.PI / 10,
+            Math.PI / 2 - 0.1
+          );
+
+          const [worldPos, worldDir] = getWorldRayFromCamera(cameraEntity, pos);
 
           const collision = getRayCollision(worldPos, worldDir);
           if (collision) {
@@ -1009,23 +1015,26 @@ noise.generateValueNoise(renderer, [256, 256]);
 
 const checkInput = () => {
   const { state } = input;
+  // left click
   if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
     actions.push({ type: "clicked", val: state.mpos.val });
   }
+
+  if (
+    state.rmb?.val === 1 &&
+    state.mpos?.prev?.val &&
+    state.mpos?.frame === time.frame
+  ) {
+    actions.push({
+      type: "movedMouse",
+      val: { prev: state.mpos.prev.val, pos: state.mpos.val },
+    });
+  }
 };
 
-document.addEventListener("mousemove", handleMove);
 document.addEventListener("wheel", (event) => {
   const { camera } = cameraEntity.components;
   camera.distance = Math.clamp(camera.distance + event.deltaY / 100, 1, 10);
-});
-document.addEventListener("contextmenu", (ev) => {
-  ev.preventDefault();
-  ev.stopPropagation();
-  if (ev.buttons === 1) {
-    updateHexFrustumBounds();
-  }
-  return false;
 });
 const draw = () => {
   checkInput();

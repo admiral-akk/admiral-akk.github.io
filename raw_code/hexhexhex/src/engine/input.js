@@ -13,14 +13,13 @@ import { equals } from "../util/equals";
 // 2. what buttons are currently pressed, and how long they've been pressed for
 class InputListener {
   updateValue(key, val) {
-    console.log(key, val);
     if (!(key in this.state)) {
-      this.state[key] = { previous: {}, frame: time.frame, val };
+      this.state[key] = { prev: {}, frame: time.frame, val };
     }
 
     if (!equals(this.state[key].val, val)) {
-      this.state[key].previous.frame = this.state[key].frame;
-      this.state[key].previous.val = this.state[key].val;
+      this.state[key].prev.frame = this.state[key].frame;
+      this.state[key].prev.val = this.state[key].val;
       this.state[key].frame = time.frame;
       this.state[key].val = val;
     }

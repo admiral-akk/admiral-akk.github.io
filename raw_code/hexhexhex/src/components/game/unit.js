@@ -10,7 +10,6 @@ class Unit extends Component {
 
   moveTo(target) {
     const finalAnimation = this.animationStack.back();
-    console.log(finalAnimation);
     const [_, endTime, __, endPos] =
       finalAnimation !== undefined
         ? finalAnimation

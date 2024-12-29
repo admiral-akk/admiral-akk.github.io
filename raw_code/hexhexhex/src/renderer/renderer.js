@@ -124,6 +124,7 @@ class Renderer {
     gl.bindVertexArray(getPostProcessVao(gl));
 
     gl.enable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.disable(gl.BLEND);
     gl.bindVertexArray(null);

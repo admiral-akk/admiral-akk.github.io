@@ -32,6 +32,7 @@ import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { window } from "./engine/window.js";
 import { input } from "./engine/input.js";
+import { Selected } from "./components/client/selected.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -915,8 +916,6 @@ class OpenState extends State {
           const ent = entities[i];
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
-              console.log("clicked unit");
-              console.log(ent.components.unit.pos, e.components.hex.coords);
               manager.replaceState(new UnitSelectedState(ent.components.unit));
               return;
             }
@@ -931,6 +930,14 @@ class UnitSelectedState extends State {
   constructor(unit) {
     super();
     this.unit = unit;
+  }
+
+  init() {
+    this.unit.getEntity().addComponent(new Selected());
+  }
+
+  cleanup() {
+    this.unit.getEntity().removeComponent(Selected);
   }
 
   handleInput(manager) {
@@ -1059,6 +1066,8 @@ const sunShadowMap = new Sun(gl);
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
 
+const renderInputState = () => {};
+
 const draw = () => {
   inputManager.update();
   time.tick();
@@ -1131,6 +1140,7 @@ const draw = () => {
 
   renderer.renderPostProcess(quadProgram);
 
+  renderInputState();
   if (debugVertices.length > 0) {
     gl.useProgram(wireFrameProgram);
     // Enable the depth test

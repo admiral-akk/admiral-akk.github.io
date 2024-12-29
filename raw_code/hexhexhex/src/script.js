@@ -12,7 +12,7 @@ import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
-import { entities, Entity } from "./ecs/entity.js";
+import { entities, Entity, getEntitiesWith } from "./ecs/entity.js";
 import { Mesh } from "./components/render/mesh.js";
 import { Hex } from "./components/game/hex.js";
 import { Transform } from "./components/render/transform.js";
@@ -22,7 +22,7 @@ import {
   toHexPosition,
 } from "./systems/render/animateMeshTransform.js";
 import { MoveCamera } from "./systems/render/moveCamera.js";
-import { BoxCollider } from "./components/collider.js";
+import { BoxCollider, Collider } from "./components/collider.js";
 import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
@@ -810,8 +810,8 @@ const getWorldRayFromCamera = (cameraEntity, viewPos) => {
 
 const getRayCollision = (start, dir) => {
   var best = null;
-  for (let i = 0; i < entities.length; i++) {
-    const { collider, transform } = entities[i].components;
+  getEntitiesWith(Collider, Transform).forEach((entity) => {
+    const { collider, transform } = entity.components;
     if (collider && transform) {
       const r = collider.raycast(start, dir, transform.getWorldMatrix());
       if (r) {
@@ -824,7 +824,7 @@ const getRayCollision = (start, dir) => {
         }
       }
     }
-  }
+  });
   return best;
 };
 
@@ -937,7 +937,8 @@ class UnitSelectedState extends State {
   }
 
   cleanup() {
-    this.unit.getEntity().removeComponent(Selected);
+    const entity = this.unit.getEntity();
+    entity.removeComponent(entity.components.selected);
   }
 
   handleInput(manager) {
@@ -956,8 +957,7 @@ class UnitSelectedState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        for (let i = 0; i < entities.length; i++) {
-          const ent = entities[i];
+        getEntitiesWith(Unit).forEach((ent) => {
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
               console.log("open state");
@@ -965,7 +965,7 @@ class UnitSelectedState extends State {
               return;
             }
           }
-        }
+        });
         manager.commands.push({ type: "clicked", val: state.mpos.val });
       }
     }
@@ -1039,13 +1039,7 @@ const applyActions = () => {
 
 const applySystems = () => {
   for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
-    const system = systems[systemIndex];
-    for (let i = 0; i < entities.length; i++) {
-      const entity = entities[i];
-      if (system.canApply(entity)) {
-        systems[systemIndex].apply(entity.components);
-      }
-    }
+    systems[systemIndex].run();
   }
 };
 

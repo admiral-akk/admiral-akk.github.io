@@ -1,16 +1,14 @@
+import { getEntitiesWith } from "./entity";
+
 class System {
   constructor(componentConstructors) {
-    this.targetComponents = Array.from(
-      componentConstructors.map((c) => c.name.toLowerCase())
-    );
+    this.targetComponents = componentConstructors;
   }
 
-  canApply(entity) {
-    var hasAll = true;
-    for (let i = 0; i < this.targetComponents.length; i++) {
-      hasAll &= entity.components[this.targetComponents[i]] !== undefined;
-    }
-    return hasAll;
+  run() {
+    getEntitiesWith(...this.targetComponents).forEach((e) => {
+      this.apply(e.components);
+    });
   }
 
   // has to be implemented;

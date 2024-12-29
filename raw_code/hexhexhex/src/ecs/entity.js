@@ -32,4 +32,13 @@ class Entity {
   }
 }
 
-export { Entity, entities };
+// eventually we'll improve this into a proper system, but for now this'll do
+function getEntitiesWith(...components) {
+  return entities.filter((e) => {
+    return !components.some((c) => {
+      return !e.components[c.name.toLowerCase()];
+    });
+  });
+}
+
+export { Entity, entities, getEntitiesWith };

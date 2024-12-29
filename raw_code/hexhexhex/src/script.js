@@ -431,7 +431,7 @@ const cameraEntity = new Entity();
 
 const spawnMountainOn = (hexEntity) => {
   const e = new Entity();
-  e.addComponent(new Mesh(gl, mountainMesh));
+  e.addComponent(new Mesh(mountainMesh));
   e.addComponent(new Transform(hexEntity.components.transform));
   const pos = vec3.create();
   pos[0] += Math.random() * 0.15;
@@ -443,7 +443,7 @@ const spawnMountainOn = (hexEntity) => {
 
 const spawnRockOn = (hexEntity) => {
   const e = new Entity();
-  e.addComponent(new Mesh(gl, rockMesh));
+  e.addComponent(new Mesh(rockMesh));
   e.addComponent(new Transform(hexEntity.components.transform));
   const pos = vec3.create();
   pos[0] += Math.random() - 0.5;
@@ -454,7 +454,7 @@ const spawnRockOn = (hexEntity) => {
 
 const spawnTreeOn = (hexEntity) => {
   const e = new Entity();
-  e.addComponent(new Mesh(gl, treeMesh));
+  e.addComponent(new Mesh(treeMesh));
   e.addComponent(new Transform(hexEntity.components.transform));
   const pos = vec3.create();
   pos[0] += (Math.random() - 0.5) * 0.5;
@@ -469,7 +469,7 @@ const spawnTreeOn = (hexEntity) => {
 const spawnHexAt = (coord) => {
   if (Hex.get(coord) === undefined) {
     const e = new Entity();
-    e.addComponent(new Mesh(gl, instancedMesh));
+    e.addComponent(new Mesh(instancedMesh));
     e.addComponent(new Transform());
     e.components.transform.setPosition(toHexPosition(coord));
     e.addComponent(new Hex(coord));
@@ -518,21 +518,24 @@ cameraEntity.components.camera.target = vec3.clone(
   start.components.transform.pos
 );
 
-//spawnAroundHex(start);
-
 const targetTransform = new Transform();
 {
   const targetEntity = new Entity();
-  targetEntity.addComponent(new Mesh(gl, target));
+  targetEntity.addComponent(new Mesh(target));
   targetTransform.setPosition([0, -50, 0]);
   targetEntity.addComponent(targetTransform);
 }
 
 {
-  new Entity(new Mesh(gl, units), new Transform(), new Unit([0, 0]));
+  new Entity(new Mesh(units), new Transform(), new Unit([0, 0]));
 }
 
-const markerEntity = new Entity(new Mesh(gl, target), new Transform());
+const markerEntity = new Entity(new Mesh(target), new Transform());
+{
+  markerEntity.components.transform.setPosition([0, 1, 0]);
+  markerEntity.components.transform.setScale([0.2, 0.2, 0.2]);
+  markerEntity.components.mesh.setVisible(false);
+}
 
 const systems = [
   new MoveCamera(),
@@ -935,11 +938,13 @@ class UnitSelectedState extends State {
 
   init() {
     this.unit.getEntity().addComponent(new Selected());
+    markerEntity.components.mesh.setVisible(true);
   }
 
   cleanup() {
     const entity = this.unit.getEntity();
     entity.removeComponent(entity.components.selected);
+    markerEntity.components.mesh.setVisible(false);
   }
 
   handleInput(manager) {

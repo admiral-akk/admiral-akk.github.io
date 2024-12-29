@@ -1,10 +1,12 @@
 import { vec3 } from "gl-matrix";
+import { Bimap } from "../util/bimap";
 
 const instancedMeshes = [];
 
 class InstancedMesh {
   constructor(gl, modelArray, program, maxCount) {
     this.program = program;
+    this.meshToIndex = new Bimap();
     instancedMeshes.push(this);
     const vao = gl.createVertexArray();
     this.gl = gl;
@@ -16,7 +18,6 @@ class InstancedMesh {
       new Float32Array(modelArray),
       gl.STATIC_DRAW
     );
-    this.meshes = [];
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
     gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
     gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
@@ -87,34 +88,41 @@ class InstancedMesh {
     this.maxCount = maxCount;
   }
 
-  addMesh(gl, mesh) {
-    this.meshes.push(mesh);
-    this.updateIndex(gl, this.meshes.length - 1);
-    return this.meshes.length - 1;
-  }
-
-  removeMesh(gl, index) {
-    if (index < this.meshes.length - 1) {
-      this.meshes[index] = this.meshes[this.meshes.length - 1];
-      this.meshes[index].updateIndex(index);
-
-      const offset = 20 * (this.meshes.length - 1);
-      const transformMat = this.transformArray.slice(offset, offset + 16);
-      this.updateTransform(index, transformMat);
-      this.updateIndex(gl, index);
+  addMesh(mesh) {
+    if (this.meshToIndex.getKey(mesh) !== undefined) {
+      return;
     }
-    this.meshes.pop();
+    this.meshToIndex.set(mesh, this.meshToIndex.size());
+    this.updateIndex(this.gl, this.meshToIndex.size() - 1);
   }
 
-  updateTransform(index, newMatrix) {
+  copy(srcIndex, dstIndex) {
+    this.transformArray.set(
+      this.transformArray.slice(20 * srcIndex, 20 * (srcIndex + 1)),
+      20 * dstIndex
+    );
+  }
+
+  removeMesh(mesh) {
+    const index = this.meshToIndex.getKey(mesh);
+
+    if (index < this.meshToIndex.size() - 1) {
+      this.copy(this.meshToIndex.size() - 1, index);
+    }
+    this.meshToIndex.removeKey(mesh);
+  }
+
+  updateTransform(mesh, newMatrix) {
+    const index = this.meshToIndex.getKey(mesh);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
 
-    const offset = 4 * 20 * index;
-    this.transformArray.set(newMatrix, offset / 4);
-    this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offset, newMatrix);
+    const offset = 20 * index;
+    this.transformArray.set(newMatrix, offset);
+    this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 4 * offset, newMatrix);
   }
 
-  updateIndex(gl, index) {
+  updateIndex(index) {
+    const { gl } = this;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
     const offset = 20 * index + 16;
@@ -135,7 +143,8 @@ class InstancedMesh {
     );
   }
 
-  updateVisibility(gl, index, invisible) {
+  updateVisibility(index, invisible) {
+    const { gl } = this;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
     const offset = 20 * index + 16;
@@ -154,17 +163,6 @@ class InstancedMesh {
         existingSlice[3],
       ])
     );
-  }
-
-  cullInvisible(gl) {
-    for (let index = this.meshes.length - 1; index >= 0; index--) {
-      if (this.transformArray[20 * index + 17] > 0) {
-        const m = this.meshes[index];
-        // component should be source of truth on this.
-        this.removeMesh(gl, index);
-        m.getEntity().deleteEntity();
-      }
-    }
   }
 
   updateFrustum(gl, frustumPlanes) {
@@ -207,7 +205,7 @@ class InstancedMesh {
       gl.TRIANGLES,
       0,
       this.modelArray.length / 6,
-      this.meshes.length
+      this.meshToIndex.size()
     );
     gl.bindVertexArray(null);
   }

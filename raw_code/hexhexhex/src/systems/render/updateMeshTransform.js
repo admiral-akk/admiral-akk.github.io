@@ -8,7 +8,20 @@ class UpdateMeshTransform extends System {
   }
 
   apply({ mesh, transform }) {
-    mesh.instancedMesh.updateTransform(mesh.index, transform.getWorldMatrix());
+    if (mesh.updated) {
+      // update visibility
+      if (mesh.visible) {
+        mesh.instancedMesh.addMesh(mesh);
+      } else {
+        mesh.instancedMesh.removeMesh(mesh);
+      }
+      mesh.updated = false;
+    }
+
+    if (mesh.visible) {
+      // update transform
+      mesh.instancedMesh.updateTransform(mesh, transform.getWorldMatrix());
+    }
   }
 }
 

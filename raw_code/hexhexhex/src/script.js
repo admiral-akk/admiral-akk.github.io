@@ -326,7 +326,7 @@ const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
   treeProgram,
-  1000
+  10000
 );
 
 const generateRockVertices = () => {
@@ -346,14 +346,14 @@ const mountainMesh = new InstancedMesh(
     generateRegularPolygon(7, 1)
   ),
   program,
-  1000
+  10000
 );
 
 const rockMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateRockVertices(), generateRegularPolygon(5, 1)),
   program,
-  1000
+  10000
 );
 
 const instancedMesh = new InstancedMesh(
@@ -367,7 +367,7 @@ const instancedMesh = new InstancedMesh(
     generateRegularPolygon(6, 1)
   ),
   program,
-  1000
+  10000
 );
 
 const target = new InstancedMesh(
@@ -511,10 +511,33 @@ const systems = [
 ];
 
 const updateHexFrustumBounds = () => {
-  const frustum = calculateFrustumPlanes(cameraEntity);
+  const [frustum, corners] = calculateFrustumPlanes(cameraEntity);
   // add in any hexes that could be visible
 
   // 1. Slice frustum with the hex plane
+  // project the corners into the y = 0 plane
+
+  // take all of the line segments, and see which intersect the y = 0 plane
+
+  const intersectionPoint = ([start, end]) => {
+    if (start[1] === 0) {
+      return vec3.clone(start);
+    }
+
+    if (end[1] === 0) {
+      return vec3.clone(end);
+    }
+
+    if (Math.sign(start[1]) === Math.sign(end[1])) {
+      return null;
+    }
+
+    const diff = vec3.create();
+    vec3.sub(diff, start, end);
+    vec3.scaleAndAdd(diff, start, diff, -start[1] / diff[1]);
+    console.log(diff);
+    return diff;
+  };
 
   const planeToLine = ([planePoint, planeNormal]) => {
     // get the line vector
@@ -584,12 +607,31 @@ const updateHexFrustumBounds = () => {
   var maxX = -10000000;
   var maxZ = -10000000;
 
-  for (let i = 0; i < cornerPoints.length; i++) {
-    const p = cornerPoints[i];
-    console.log(p);
+  const points = [];
+  for (let x = 0; x < 2; x++) {
+    for (let y = 0; y < 2; y++) {
+      const i1 = intersectionPoint([corners[x][y][0], corners[x][y][1]]);
+      const i2 = intersectionPoint([corners[x][0][y], corners[x][1][y]]);
+      const i3 = intersectionPoint([corners[0][y][x], corners[1][y][x]]);
+      if (i1) {
+        points.push(i1);
+      }
+      if (i2) {
+        points.push(i2);
+      }
+      if (i3) {
+        points.push(i3);
+      }
+    }
+  }
+
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+
     minX = Math.min(p[0], minX);
-    minZ = Math.min(p[2], minZ);
     maxX = Math.max(p[0], maxX);
+
+    minZ = Math.min(p[2], minZ);
     maxZ = Math.max(p[2], maxZ);
   }
 
@@ -601,6 +643,9 @@ const updateHexFrustumBounds = () => {
 
   minZ = Math.floor(minZ / (2 * sqrt32) - 1);
   maxZ = Math.ceil(maxZ / (2 * sqrt32) + 1);
+
+  console.log("x", minX, maxX);
+  console.log("z", minZ, maxZ);
 
   for (let x = minX; x <= maxX; x++) {
     for (let y = minZ; y <= maxZ; y++) {
@@ -690,7 +735,7 @@ const calculatePlane = (tri) => {
 var debugVertices = [];
 
 const calculateFrustumPlanes = (cameraEntity) => {
-  const { camera, transform } = cameraEntity.components;
+  const { camera } = cameraEntity.components;
 
   var projection = mat4.create();
   var view = mat4.create();
@@ -700,7 +745,7 @@ const calculateFrustumPlanes = (cameraEntity) => {
   mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
 
   const near = 0.1;
-  const far = 2;
+  const far = 20;
   mat4.perspective(
     projection,
     Math.PI / 3,
@@ -742,7 +787,7 @@ const calculateFrustumPlanes = (cameraEntity) => {
     // back
     calculatePlane([corners[1][0][0], corners[1][1][0], corners[0][0][0]]),
     // front
-    calculatePlane([corners[0][0][1], corners[1][0][1], corners[0][1][1]]),
+    calculatePlane([corners[0][0][1], corners[0][1][1], corners[1][0][1]]),
     // left
     calculatePlane([corners[0][0][0], corners[0][1][0], corners[0][0][1]]),
     // right
@@ -761,7 +806,7 @@ const calculateFrustumPlanes = (cameraEntity) => {
     }
   }
 
-  return planes;
+  return [planes, corners];
 };
 
 // https://stackoverflow.com/a/56348846
@@ -878,6 +923,7 @@ const step = () => {
 
   // step through system
   applySystems();
+  updateHexFrustumBounds();
 };
 
 var vertex_buffer = gl.createBuffer();

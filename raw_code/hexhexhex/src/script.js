@@ -12,7 +12,7 @@ import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
-import { entities, Entity, getEntitiesWith } from "./ecs/entity.js";
+import { Entity, getEntitiesWith } from "./ecs/entity.js";
 import { Mesh } from "./components/render/mesh.js";
 import { Hex } from "./components/game/hex.js";
 import { Transform } from "./components/render/transform.js";
@@ -829,12 +829,9 @@ const getRayCollision = (start, dir) => {
 };
 
 const moveTo = (hexEntity) => {
-  for (let i = 0; i < entities.length; i++) {
-    let e = entities[i];
-    if (e.components.transform && e.components.unit) {
-      e.components.unit.moveTo(hexEntity.components.hex.coords);
-    }
-  }
+  getEntitiesWith(Unit, Transform).forEach((e) => {
+    e.components.unit.moveTo(hexEntity.components.hex.coords);
+  });
 };
 
 // input manager - client, determines commands
@@ -912,15 +909,15 @@ class OpenState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        for (let i = 0; i < entities.length; i++) {
-          const ent = entities[i];
+
+        getEntitiesWith(Unit).forEach((ent) => {
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
               manager.replaceState(new UnitSelectedState(ent.components.unit));
               return;
             }
           }
-        }
+        });
       }
     }
   }

@@ -41,4 +41,4 @@ function getEntitiesWith(...components) {
   });
 }
 
-export { Entity, entities, getEntitiesWith };
+export { Entity, getEntitiesWith };

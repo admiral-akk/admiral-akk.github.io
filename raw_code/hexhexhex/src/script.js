@@ -467,6 +467,7 @@ const spawnHexAt = (coord) => {
     e.components.transform.setPosition(toHexPosition(coord));
     e.addComponent(new Hex(coord));
     e.addComponent(new BoxCollider());
+    return e;
     if (Math.random() < 0.4) {
       spawnMountainOn(e);
     } else {

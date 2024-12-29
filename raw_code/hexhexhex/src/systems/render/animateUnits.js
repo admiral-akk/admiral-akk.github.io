@@ -11,18 +11,17 @@ class AnimateUnits extends System {
 
   apply({ transform, unit }) {
     const time = Date.now();
-    while (
-      unit.animationStack.length > 0 &&
-      unit.animationStack[0][1] <= time
-    ) {
-      unit.animationStack.shift();
+    var activeAnimation = unit.animationStack.front();
+    while (activeAnimation !== undefined && activeAnimation[1] <= time) {
+      unit.animationStack.dequeue();
+      activeAnimation = unit.animationStack.front();
     }
-    if (unit.animationStack.length === 0) {
+    if (activeAnimation === undefined) {
       const target = toHexPosition([unit.pos[0], unit.pos[1]]);
       target[1] = 0.25;
       transform.setPosition(target);
     } else {
-      const [startTime, endTime, startPos, endPos] = unit.animationStack[0];
+      const [startTime, endTime, startPos, endPos] = activeAnimation;
       const t = (time - startTime) / (endTime - startTime);
       const start = toHexPosition(startPos);
       const target = toHexPosition(endPos);

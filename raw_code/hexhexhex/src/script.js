@@ -857,11 +857,8 @@ class InputManager extends StateMachine {
 
   update() {
     const { state } = input;
-    // left click
-    if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
-      this.commands.push({ type: "clicked", val: state.mpos.val });
-    }
 
+    // camera controls
     if (
       state.rmb?.val === 1 &&
       state.mpos?.prev?.val &&
@@ -872,16 +869,63 @@ class InputManager extends StateMachine {
         val: { prev: state.mpos.prev.val, pos: state.mpos.val },
       });
     }
-
     if (state.wheel?.frame === time.frame) {
       const deltaY = state.wheel.val - state.wheel.prev.val;
       const { camera } = cameraEntity.components;
       camera.distance = Math.clamp(camera.distance + deltaY / 100, 1, 10);
     }
+    if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
+      // move camera to hex
+      const [worldPos, worldDir] = getWorldRayFromCamera(
+        cameraEntity,
+        state.mpos.val
+      );
+
+      const collision = getRayCollision(worldPos, worldDir);
+      if (collision) {
+        const [collider, _] = collision;
+        const e = collider.getEntity();
+        cameraEntity.components.camera.setTarget(e.components.transform.pos);
+        spawnAroundHex(e);
+      }
+    }
+
+    this.currentState().handleInput(this);
   }
 }
 
-class OpenState extends State {}
+class OpenState extends State {
+  handleInput(manager) {
+    const { state } = input;
+
+    // left click
+    if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
+      // check if there's a unit in the hex
+
+      const [worldPos, worldDir] = getWorldRayFromCamera(
+        cameraEntity,
+        state.mpos.val
+      );
+
+      const collision = getRayCollision(worldPos, worldDir);
+      if (collision) {
+        const [collider, _] = collision;
+        const e = collider.getEntity();
+        for (let i = 0; i < entities.length; i++) {
+          const ent = entities[i];
+          if (ent.components.unit) {
+            if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
+              console.log("clicked unit");
+              console.log(ent.components.unit.pos, e.components.hex.coords);
+              manager.replaceState(new UnitSelectedState(ent.components.unit));
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 class UnitSelectedState extends State {
   constructor(unit) {
@@ -889,7 +933,36 @@ class UnitSelectedState extends State {
     this.unit = unit;
   }
 
-  parseInputs(manager, inputs) {}
+  handleInput(manager) {
+    const { state } = input;
+
+    // left click
+    if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
+      // check if there's a unit in the hex
+
+      const [worldPos, worldDir] = getWorldRayFromCamera(
+        cameraEntity,
+        state.mpos.val
+      );
+
+      const collision = getRayCollision(worldPos, worldDir);
+      if (collision) {
+        const [collider, _] = collision;
+        const e = collider.getEntity();
+        for (let i = 0; i < entities.length; i++) {
+          const ent = entities[i];
+          if (ent.components.unit) {
+            if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
+              console.log("open state");
+              manager.replaceState(new OpenState());
+              return;
+            }
+          }
+        }
+        manager.commands.push({ type: "clicked", val: state.mpos.val });
+      }
+    }
+  }
 }
 
 const inputManager = new InputManager();
@@ -900,20 +973,6 @@ const inputManager = new InputManager();
 // nah - make 'em just data payloads.
 //
 // then it's just type + data, right?
-class Command {
-  constructor() {
-    const type = this.constructor.name;
-  }
-}
-
-class MoveCommand extends Command {
-  constructor(unit, target) {
-    super();
-    this.unit = unit;
-    this.target = target;
-  }
-}
-
 const applyActions = () => {
   const actions = inputManager.commands;
   for (let i = 0; i < actions.length; i++) {

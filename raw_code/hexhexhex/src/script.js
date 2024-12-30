@@ -34,6 +34,7 @@ import { window } from "./engine/window.js";
 import { input } from "./engine/input.js";
 import { Selected } from "./components/client/selected.js";
 import { MarkSelected } from "./systems/render/markSelected.js";
+import { AnimateUnitPath } from "./systems/render/animateUnitPath.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -542,6 +543,7 @@ const systems = [
   new MarkSelected(markerEntity),
   new AnimateMeshTransform(),
   new AnimateUnits(),
+  new AnimateUnitPath(),
   new UpdateMeshTransform(),
 ];
 
@@ -963,16 +965,20 @@ class UnitSelectedState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
+        var unselected = false;
         getEntitiesWith(Unit).forEach((ent) => {
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
-              console.log("open state");
+              unselected = true;
               manager.replaceState(new OpenState());
+
               return;
             }
           }
         });
-        manager.commands.push({ type: "clicked", val: state.mpos.val });
+        if (!unselected) {
+          manager.commands.push({ type: "clicked", val: state.mpos.val });
+        }
       }
     }
   }

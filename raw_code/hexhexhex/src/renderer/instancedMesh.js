@@ -101,15 +101,25 @@ class InstancedMesh {
       this.transformArray.slice(20 * srcIndex, 20 * (srcIndex + 1)),
       20 * dstIndex
     );
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
+    this.gl.bufferSubData(
+      this.gl.ARRAY_BUFFER,
+      4 * 20 * dstIndex,
+      this.transformArray.slice(20 * dstIndex, 20 * (dstIndex + 1))
+    );
   }
 
   removeMesh(mesh) {
     const index = this.meshToIndex.getKey(mesh);
-
+    console.log("size", this.meshToIndex.size());
     if (index < this.meshToIndex.size() - 1) {
       this.copy(this.meshToIndex.size() - 1, index);
+      const movedMesh = this.meshToIndex.getValue(this.meshToIndex.size() - 1);
+      this.meshToIndex.set(movedMesh, index);
+    } else {
+      this.meshToIndex.removeKey(mesh);
     }
-    this.meshToIndex.removeKey(mesh);
   }
 
   updateTransform(mesh, newMatrix) {

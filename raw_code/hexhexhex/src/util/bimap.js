@@ -5,6 +5,9 @@ export class Bimap {
   }
 
   set(k, v) {
+    this.removeKey(k);
+    this.removeValue(v);
+
     this.kv.set(k, v);
     this.vk.set(v, k);
   }

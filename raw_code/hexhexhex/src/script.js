@@ -421,6 +421,19 @@ const target = new InstancedMesh(
   4
 );
 
+const pathMarker = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-0.1, 0.1, white],
+      [0.1, 0.1, white],
+    ],
+    generateRegularPolygon(4, 1)
+  ),
+  program,
+  40
+);
+
 var clickedIndex = -1;
 
 // FBO
@@ -849,7 +862,14 @@ const moveTo = (hexEntity) => {
     //
     // maybe in the command?
     for (let i = 0; i < path.length - 1; i++) {
+      const e = new Entity(new Transform(), new Mesh(pathMarker));
+      const p = toHexPosition(path[i + 1]);
+      p[1] = 0.5;
+      e.components.transform.setPosition(p);
       const animation = (t) => {
+        if (t === 1) {
+          e.deleteEntity();
+        }
         const start = toHexPosition(path[i]);
         const target = toHexPosition(path[i + 1]);
         const interpolate = vec3.create();

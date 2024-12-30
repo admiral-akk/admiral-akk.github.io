@@ -53,13 +53,14 @@ class InputListener {
         this.updateValue("mpointer", [0.5, 0.5]);
       }
 
-      const [x, y] = this.state["mpos"].val;
-      this.updateValue("mpos", [
+      const [x, y] = this.state["mpointer"].val;
+      this.updateValue("mpointer", [
         x + ev.movementX / width,
         y + ev.movementY / height,
       ]);
-      const [newX, newY] = this.state["mpos"].val;
-      this.updateValue("mpointer", [
+      const [newX, newY] = this.state["mpointer"].val;
+      console.log([newX, newY]);
+      this.updateValue("mpos", [
         Math.clamp(newX, 0, 1),
         Math.clamp(newY, 0, 1),
       ]);

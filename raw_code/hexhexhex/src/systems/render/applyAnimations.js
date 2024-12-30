@@ -7,11 +7,13 @@ export class ApplyAnimations extends System {
     super([Animated]);
   }
 
+  // representing animations like this kinda defeats the point
+  // of ECS, but it works for now?
+  //
+  // alt: could dynamically create systems as animations need them
   apply({ animated }) {
     animated.animations.forEach((a) => {
-      const finished = a.apply(time.time);
-      console.log(a);
-      if (finished) {
+      if (a.apply(time.time)) {
         animated.animations.remove(a);
       }
     });

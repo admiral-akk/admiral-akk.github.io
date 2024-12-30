@@ -842,10 +842,12 @@ const moveTo = (hexEntity) => {
   getEntitiesWith(Unit, Transform, Animated).forEach((e) => {
     const { transform, animated, unit } = e.components;
     const path = Position.path(unit.pos, hexEntity.components.hex.coords);
-    console.log(animated.animations.max((a) => a.end));
     var endTime = animated.animations.max((a) => a.end)?.end ?? time.time;
 
     animated.animations.push();
+    // where does the logic for "how to animate a unit moving" go?
+    //
+    // maybe in the command?
     for (let i = 0; i < path.length - 1; i++) {
       const animation = (t) => {
         const start = toHexPosition(path[i]);

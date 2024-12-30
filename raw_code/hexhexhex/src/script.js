@@ -946,6 +946,7 @@ class UnitSelectedState extends State {
     const { state } = input;
 
     // left click
+    var unselected = false;
     if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
       // check if there's a unit in the hex
 
@@ -958,7 +959,6 @@ class UnitSelectedState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        var unselected = false;
         getEntitiesWith(Unit).forEach((ent) => {
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
@@ -969,6 +969,18 @@ class UnitSelectedState extends State {
             }
           }
         });
+      }
+    }
+    if (state.rmb?.val === 1 && state.rmb?.frame === time.frame) {
+      // check if there's a unit in the hex
+
+      const [worldPos, worldDir] = getWorldRayFromCamera(
+        cameraEntity,
+        state.mpos.val
+      );
+
+      const collision = getRayCollision(worldPos, worldDir);
+      if (collision) {
         if (!unselected) {
           manager.commands.push({ type: "clicked", val: state.mpos.val });
         }

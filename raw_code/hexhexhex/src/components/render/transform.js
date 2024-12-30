@@ -13,25 +13,19 @@ const recursiveWorld = (transform, acc) => {
 };
 
 export class Transform extends Component {
-  constructor(parent = null) {
+  constructor({ parent = null, pos = null, rot = null, scale = null } = {}) {
     super();
     this.updated = true;
-    this.pos = vec3.create();
+    this.pos = pos ?? vec3.create();
 
     // identity quaternion
-    this.rot = quat.create();
+    this.rot = rot ?? quat.create();
 
-    this.scale = vec3.create();
-    this.scale[0] = 1;
-    this.scale[1] = 1;
-    this.scale[2] = 1;
+    this.scale = scale ?? vec3.clone([1, 1, 1]);
 
     this.parent = parent;
 
     this.matrix = mat4.create();
-    if (this.parent !== null) {
-      this.updated = true;
-    }
   }
 
   getWorldMatrix() {

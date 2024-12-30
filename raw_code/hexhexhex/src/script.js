@@ -451,7 +451,7 @@ const cameraEntity = new Entity();
 const spawnMountainOn = (hexEntity) => {
   const e = new Entity();
   e.addComponent(new Mesh(mountainMesh));
-  e.addComponent(new Transform(hexEntity.components.transform));
+  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
   const pos = vec3.create();
   pos[0] += Math.random() * 0.15;
   pos[1] += 0.25;
@@ -463,7 +463,7 @@ const spawnMountainOn = (hexEntity) => {
 const spawnRockOn = (hexEntity) => {
   const e = new Entity();
   e.addComponent(new Mesh(rockMesh));
-  e.addComponent(new Transform(hexEntity.components.transform));
+  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
   const pos = vec3.create();
   pos[0] += Math.random() - 0.5;
   pos[1] += 0.25;
@@ -474,7 +474,7 @@ const spawnRockOn = (hexEntity) => {
 const spawnTreeOn = (hexEntity) => {
   const e = new Entity();
   e.addComponent(new Mesh(treeMesh));
-  e.addComponent(new Transform(hexEntity.components.transform));
+  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
   const pos = vec3.create();
   pos[0] += (Math.random() - 0.5) * 0.5;
   pos[1] += 0.25;
@@ -861,15 +861,27 @@ const moveTo = (hexEntity) => {
     // where does the logic for "how to animate a unit moving" go?
     //
     // maybe in the command?
+    const subPath = 5;
     for (let i = 0; i < path.length - 1; i++) {
-      const e = new Entity(new Transform(), new Mesh(pathMarker));
-      const p = toHexPosition(path[i + 1]);
-      p[1] = 0.5;
-      e.components.transform.setPosition(p);
+      const start = toHexPosition(path[i]);
+      const end = toHexPosition(path[i + 1]);
+      const markers = [];
+      for (let i = 1; i <= subPath; i++) {
+        const p = vec3.create();
+        vec3.scale(p, start, 1 - i / subPath);
+        vec3.scaleAndAdd(p, p, end, i / subPath);
+        const e = new Entity(new Transform(), new Mesh(pathMarker));
+        p[1] = 0.5;
+        e.components.transform.setPosition(p);
+        markers.push([i / subPath, e]);
+      }
       const animation = (t) => {
-        if (t === 1) {
-          e.deleteEntity();
-        }
+        markers.forEach((val) => {
+          if (t >= val[0]) {
+            val[1].deleteEntity();
+            markers.remove(val);
+          }
+        });
         const start = toHexPosition(path[i]);
         const target = toHexPosition(path[i + 1]);
         const interpolate = vec3.create();

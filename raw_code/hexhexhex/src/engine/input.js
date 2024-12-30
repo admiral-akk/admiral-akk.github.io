@@ -44,7 +44,6 @@ class InputListener {
     });
 
     const updateMouseEv = (ev) => {
-      console.log(ev);
       if (ev.target.id !== "webgl") {
         return;
       }

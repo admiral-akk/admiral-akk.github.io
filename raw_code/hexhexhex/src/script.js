@@ -270,7 +270,7 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
   fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
-  if (distance(vTexCoord, uPointerPos) < 0.01) {
+  if (length(vTexCoord - uPointerPos) < 0.01) {
     fragColor = vec4(1.,0.,0.,1.);
   }
   }`;

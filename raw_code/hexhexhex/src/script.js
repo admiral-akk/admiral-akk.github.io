@@ -995,7 +995,7 @@ class OpenState extends State {
         getEntitiesWith(Unit).forEach((ent) => {
           if (ent.components.unit) {
             if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
-              manager.replaceState(new UnitSelectedState(ent.components.unit));
+              manager.replaceState(new HexSelectedState(e.components.hex));
               return;
             }
           }
@@ -1005,19 +1005,19 @@ class OpenState extends State {
   }
 }
 
-class UnitSelectedState extends State {
-  constructor(unit) {
+class HexSelectedState extends State {
+  constructor(hex) {
     super();
-    this.unit = unit;
+    this.hex = hex;
   }
 
   init() {
-    this.unit.getEntity().addComponent(new Selected());
+    this.hex.getEntity().addComponent(new Selected());
     markerEntity.components.mesh.setVisible(true);
   }
 
   cleanup() {
-    const entity = this.unit.getEntity();
+    const entity = this.hex.getEntity();
     entity.removeComponent(entity.components.selected);
     markerEntity.components.mesh.setVisible(false);
   }
@@ -1063,7 +1063,7 @@ class UnitSelectedState extends State {
       if (collision && !unselected) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        manager.replaceState(new UnitSelectedState(e.components.hex));
+        manager.replaceState(new HexSelectedState(e.components.hex));
         manager.commands.push({ type: "clicked", val: state.mpos.val });
       }
     }

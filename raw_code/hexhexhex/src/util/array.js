@@ -10,6 +10,13 @@ Math.clamp = function (val, min, max) {
   return Math.min(max, Math.max(val, min));
 };
 
+Array.prototype.remove = function (v) {
+  const index = this.indexOf(v);
+  if (index > -1) {
+    this.splice(index, 1);
+  }
+};
+
 Array.prototype.min = function (toNum = (x) => x) {
   var currMin = this.length === 0 ? undefined : this[0];
 

@@ -7,7 +7,7 @@ class System {
 
   run() {
     getEntitiesWith(...this.targetComponents).forEach((e) => {
-      this.apply(e.components);
+      this.apply(e.components, e);
     });
   }
 

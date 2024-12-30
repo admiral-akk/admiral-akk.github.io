@@ -27,15 +27,15 @@ import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
 import { Unit } from "./components/game/unit.js";
-import { AnimateUnits } from "./systems/render/animateUnits.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { window } from "./engine/window.js";
 import { input } from "./engine/input.js";
 import { Selected } from "./components/client/selected.js";
 import { MarkSelected } from "./systems/render/markSelected.js";
-import { AnimateUnitPath } from "./systems/render/animateUnitPath.js";
 import { Position } from "./systems/util/position.js";
+import { Animated, Animation } from "./components/render/animations.js";
+import { ApplyAnimations } from "./systems/render/applyAnimations.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -525,7 +525,12 @@ const targetTransform = new Transform();
 }
 
 {
-  new Entity(new Mesh(units), new Transform(), new Unit([0, 0]));
+  new Entity(
+    new Mesh(units),
+    new Transform(),
+    new Unit([0, 0]),
+    new Animated()
+  );
 }
 
 const markerEntity = new Entity(new Mesh(target), new Transform());
@@ -539,8 +544,7 @@ const systems = [
   new MoveCamera(),
   new MarkSelected(markerEntity),
   new AnimateMeshTransform(),
-  new AnimateUnits(),
-  new AnimateUnitPath(),
+  new ApplyAnimations(),
   new UpdateMeshTransform(),
 ];
 
@@ -835,7 +839,28 @@ const getRayCollision = (start, dir) => {
 };
 
 const moveTo = (hexEntity) => {
-  getEntitiesWith(Unit, Transform).forEach((e) => {
+  getEntitiesWith(Unit, Transform, Animated).forEach((e) => {
+    const { transform, animated, unit } = e.components;
+    const path = Position.path(unit.pos, hexEntity.components.hex.coords);
+    console.log(animated.animations.max((a) => a.end));
+    var endTime = animated.animations.max((a) => a.end)?.end ?? time.time;
+
+    animated.animations.push();
+    for (let i = 0; i < path.length - 1; i++) {
+      const animation = (t) => {
+        const start = toHexPosition(path[i]);
+        const target = toHexPosition(path[i + 1]);
+        const interpolate = vec3.create();
+        vec3.scale(start, start, 1 - t);
+        vec3.scale(target, target, t);
+        vec3.add(interpolate, start, target);
+        interpolate[1] = 0.25 + Math.abs(Math.sin(t * Math.PI * 2 * 3)) * 0.1;
+        transform.setPosition(interpolate);
+      };
+      animated.animations.push(new Animation(endTime, endTime + 1, animation));
+      endTime += 1;
+    }
+
     e.components.unit.moveTo(hexEntity.components.hex.coords);
   });
 };
@@ -1020,6 +1045,7 @@ const applyActions = () => {
               e.components.transform.pos
             );
             spawnAroundHex(e);
+
             moveTo(e);
           }
         }

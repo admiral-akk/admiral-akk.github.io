@@ -62,6 +62,20 @@ class InputListener {
       this.updateValue("lmb", ev.buttons & 1 ? 1 : 0);
       this.updateValue("rmb", ev.buttons & 2 ? 1 : 0);
     };
+    const canvas = document.getElementById("webgl");
+    canvas.addEventListener("click", async (ev) => {
+      if (document.pointerLockElement === null) {
+        await canvas.requestPointerLock({
+          unadjustedMovement: true,
+        });
+        const { width, height, verticalOffset, horizontalOffset } =
+          window.sizes;
+        this.updateValue("mpos", [
+          (ev.clientX - horizontalOffset) / width,
+          (ev.clientY - verticalOffset) / height,
+        ]);
+      }
+    });
     // click
     document.addEventListener("mousedown", updateMouseEv);
     document.addEventListener("mouseup", updateMouseEv);

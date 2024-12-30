@@ -872,8 +872,6 @@ const moveTo = (hexEntity) => {
 // then the state game actions happen
 // then we apply a render
 
-// TODO: Add a notion of "time" that systems have access to
-// TODO: add input manager
 // TODO: add a notion of "commands"
 
 // decides what commands a user will issue, if any

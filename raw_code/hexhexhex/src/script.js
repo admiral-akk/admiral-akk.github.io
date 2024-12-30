@@ -415,6 +415,7 @@ const target = new InstancedMesh(
     [
       [-0.25, 0.25, [1, 0, 0]],
       [0.25, 0.25, [1, 0, 0]],
+      [0.25, 0, [1, 0, 0]],
     ],
     generateRegularPolygon(4, 1)
   ),
@@ -440,6 +441,7 @@ const pathMarker = new InstancedMesh(
     [
       [-0.1, 0.1, white],
       [0.1, 0.1, white],
+      [0.1, 0, white],
     ],
     generateRegularPolygon(4, 1)
   ),
@@ -1053,13 +1055,11 @@ class UnitSelectedState extends State {
       );
 
       const collision = getRayCollision(worldPos, worldDir);
-      if (collision) {
-        if (!unselected) {
-          const [collider, _] = collision;
-          const e = collider.getEntity();
-          manager.replaceState(new UnitSelectedState(e.components.hex));
-          manager.commands.push({ type: "clicked", val: state.mpos.val });
-        }
+      if (collision && !unselected) {
+        const [collider, _] = collision;
+        const e = collider.getEntity();
+        manager.replaceState(new UnitSelectedState(e.components.hex));
+        manager.commands.push({ type: "clicked", val: state.mpos.val });
       }
     }
   }

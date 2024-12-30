@@ -23,6 +23,7 @@ export function equals(a, b) {
       }
       switch (constNameA) {
         case "Float32Array":
+        case "Array":
           if (a.length !== b.length) {
             return false;
           }

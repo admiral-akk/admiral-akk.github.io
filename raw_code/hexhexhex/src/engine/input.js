@@ -44,15 +44,27 @@ class InputListener {
     });
 
     const updateMouseEv = (ev) => {
+      console.log(ev);
       if (ev.target.id !== "webgl") {
         return;
       }
+      const { width, height } = window.sizes;
+      if (!("mpos" in this.state)) {
+        this.updateValue("mpos", [0.5, 0.5]);
+        this.updateValue("mpointer", [0.5, 0.5]);
+      }
 
-      const { horizontalOffset, verticalOffset, width, height } = window.sizes;
-      const x = (ev.clientX - horizontalOffset) / width;
-      const y = (ev.clientY - verticalOffset) / height;
+      const [x, y] = this.state["mpos"].val;
+      this.updateValue("mpos", [
+        x + ev.movementX / width,
+        y + ev.movementY / height,
+      ]);
+      const [newX, newY] = this.state["mpos"].val;
+      this.updateValue("mpointer", [
+        Math.clamp(newX, 0, 1),
+        Math.clamp(newY, 0, 1),
+      ]);
 
-      this.updateValue("mpos", vec2.clone([x, y]));
       this.updateValue("lmb", ev.buttons & 1 ? 1 : 0);
       this.updateValue("rmb", ev.buttons & 2 ? 1 : 0);
     };

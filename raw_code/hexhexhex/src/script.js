@@ -246,6 +246,7 @@ precision mediump float;
 uniform sampler2D uDepth;
 uniform sampler2D uColor;
 uniform vec3 uBackgroundColor;
+uniform vec2 uPointerPos;
 
 in vec2 vTexCoord;
 
@@ -269,6 +270,9 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
   fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
+  if (distance(vTexCoord, uPointerPos) < 0.01) {
+    fragColor = vec4(1.,0.,0.,1.);
+  }
   }`;
 const renderTextureSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
@@ -1147,6 +1151,13 @@ const draw = () => {
     gl.getUniformLocation(quadProgram, "uBackgroundColor"),
 
     new Float32Array([123 / 255, 217 / 255, 246 / 255])
+  );
+
+  const pointerPos = input.state?.mpointer?.val ?? [0.5, 0.5];
+  gl.uniform2fv(
+    gl.getUniformLocation(quadProgram, "uPointerPos"),
+
+    new Float32Array([pointerPos[0], 1 - pointerPos[1]])
   );
 
   renderer.renderPostProcess(quadProgram);

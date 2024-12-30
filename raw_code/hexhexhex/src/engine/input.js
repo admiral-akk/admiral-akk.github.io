@@ -50,18 +50,13 @@ class InputListener {
       const { width, height } = window.sizes;
       if (!("mpos" in this.state)) {
         this.updateValue("mpos", [0.5, 0.5]);
-        this.updateValue("mpointer", [0.5, 0.5]);
       }
 
-      const [x, y] = this.state["mpointer"].val;
-      this.updateValue("mpointer", [
-        x + ev.movementX / width,
-        y + ev.movementY / height,
-      ]);
-      const [newX, newY] = this.state["mpointer"].val;
+      var [x, y] = this.state["mpos"].val;
+      // we can fake motion at the edge
       this.updateValue("mpos", [
-        Math.clamp(newX, 0, 1),
-        Math.clamp(newY, 0, 1),
+        Math.clamp(x + ev.movementX / width, 0, 1),
+        Math.clamp(y + ev.movementY / height, 0, 1),
       ]);
 
       this.updateValue("lmb", ev.buttons & 1 ? 1 : 0);

@@ -335,6 +335,10 @@ const generateTreeVertices = () => {
     }
     vertices.push([currHeight, currScale, darkGreen]);
   }
+  const [finalHeight, scale, color] = vertices[vertices.length - 1];
+  if (scale > 0) {
+    vertices.push([finalHeight, 0, color]);
+  }
   return vertices;
 };
 
@@ -350,6 +354,7 @@ const generateRockVertices = () => {
     [0, 0.1, grey],
     [0.04, 0.1, grey],
     [0.08, 0.05, grey],
+    [0.08, 0.0, grey],
   ];
 
   return vertices;

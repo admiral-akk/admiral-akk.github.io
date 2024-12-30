@@ -57,23 +57,6 @@ const addTriangle = (verts, color, mesh) => {
 const generateSymmetricMesh = (paramArr, verts) => {
   const mesh = [];
   // create base
-  if (paramArr.length > 1) {
-    const [height, scale, color] = paramArr[0];
-    for (let j = 1; j < verts.length; j++) {
-      vec3.copy(temp1, verts[0]);
-      vec3.copy(temp2, verts[(j + 1) % verts.length]);
-      vec3.copy(temp3, verts[j]);
-
-      vec3.scale(temp1, temp1, scale);
-      vec3.scale(temp2, temp2, scale);
-      vec3.scale(temp3, temp3, scale);
-      temp1[1] = height;
-      temp2[1] = height;
-      temp3[1] = height;
-
-      addTriangle([temp1, temp2, temp3], color, mesh);
-    }
-  }
 
   for (let i = 1; i < paramArr.length; i++) {
     const [prevHeight, prevScale, color] = paramArr[i - 1];
@@ -96,27 +79,6 @@ const generateSymmetricMesh = (paramArr, verts) => {
 
       addTriangle([temp1, temp3, temp2], color, mesh);
       addTriangle([temp2, temp3, temp4], color, mesh);
-    }
-  }
-
-  // create top
-  {
-    const [height, scale, color] = paramArr[paramArr.length - 1];
-    if (scale > 0) {
-      for (let j = 1; j < verts.length; j++) {
-        vec3.copy(temp1, verts[0]);
-        vec3.copy(temp2, verts[(j + 1) % verts.length]);
-        vec3.copy(temp3, verts[j]);
-
-        vec3.scale(temp1, temp1, scale);
-        vec3.scale(temp2, temp2, scale);
-        vec3.scale(temp3, temp3, scale);
-        temp1[1] = height;
-        temp2[1] = height;
-        temp3[1] = height;
-
-        addTriangle([temp1, temp2, temp3], color, mesh);
-      }
     }
   }
 

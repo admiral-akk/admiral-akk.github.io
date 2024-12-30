@@ -1,11 +1,11 @@
 import { System } from "../../ecs/system.js";
 import { Selected } from "../../components/client/selected.js";
-import { Unit } from "../../components/game/unit.js";
 import { Transform } from "../../components/render/transform.js";
+import { Hex } from "../../components/game/hex.js";
 
 class MarkSelected extends System {
   constructor(markerEntity) {
-    super([Unit, Selected, Transform]);
+    super([Hex, Selected, Transform]);
     this.markerEntity = markerEntity;
   }
 

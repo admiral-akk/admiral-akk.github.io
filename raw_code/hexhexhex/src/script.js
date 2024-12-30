@@ -379,6 +379,7 @@ const instancedMesh = new InstancedMesh(
       [-0.25, 1, "#444444"],
       [0, 1, "#888800"],
       [0.25, 0.8, "#008800"],
+      [0.25, 0, "#008800"],
     ],
     generateRegularPolygon(6, 1)
   ),
@@ -416,6 +417,18 @@ const target = new InstancedMesh(
       [0.25, 0.25, [1, 0, 0]],
     ],
     generateRegularPolygon(4, 1)
+  ),
+  program,
+  4
+);
+const selectedMarker = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [0, 0.8, [1, 1, 1]],
+      [0, 0.7, [1, 1, 1]],
+    ],
+    generateRegularPolygon(6, 1)
   ),
   program,
   4
@@ -546,10 +559,9 @@ const targetTransform = new Transform();
   );
 }
 
-const markerEntity = new Entity(new Mesh(target), new Transform());
+const markerEntity = new Entity(new Mesh(selectedMarker), new Transform());
 {
-  markerEntity.components.transform.setPosition([0, 1, 0]);
-  markerEntity.components.transform.setScale([0.2, 0.2, 0.2]);
+  markerEntity.components.transform.setPosition([0, 0.4, 0]);
   markerEntity.components.mesh.setVisible(false);
 }
 
@@ -1043,6 +1055,9 @@ class UnitSelectedState extends State {
       const collision = getRayCollision(worldPos, worldDir);
       if (collision) {
         if (!unselected) {
+          const [collider, _] = collision;
+          const e = collider.getEntity();
+          manager.replaceState(new UnitSelectedState(e.components.hex));
           manager.commands.push({ type: "clicked", val: state.mpos.val });
         }
       }

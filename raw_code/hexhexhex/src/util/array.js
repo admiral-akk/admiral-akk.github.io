@@ -10,6 +10,21 @@ Math.clamp = function (val, min, max) {
   return Math.min(max, Math.max(val, min));
 };
 
+Array.prototype.min = function (toNum = (x) => x) {
+  var currMin = this.length === 0 ? undefined : this[0];
+
+  for (let i = 0; i < this.length; i++) {
+    if (toNum(this[i]) < toNum(currMin)) {
+      currMin = this[i];
+    }
+  }
+  return currMin;
+};
+
+Array.prototype.max = function (toNum = (x) => x) {
+  return this.min((x) => -toNum(x));
+};
+
 Array.prototype.peek = function () {
   return this.length ? this[this.length - 1] : null;
 };

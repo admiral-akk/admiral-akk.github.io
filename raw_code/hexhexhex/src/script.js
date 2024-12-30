@@ -35,6 +35,7 @@ import { input } from "./engine/input.js";
 import { Selected } from "./components/client/selected.js";
 import { MarkSelected } from "./systems/render/markSelected.js";
 import { AnimateUnitPath } from "./systems/render/animateUnitPath.js";
+import { Position } from "./systems/util/position.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -492,16 +493,8 @@ const spawnHexAt = (coord) => {
 };
 
 const spawnAroundHex = (entity) => {
-  const center = entity.components.hex.coords;
-  const offset = center[0] % 2 === 0 ? 0 : -1;
-  spawnHexAt([center[0], center[1] + 1]);
-  spawnHexAt([center[0], center[1] - 1]);
-  spawnHexAt([center[0] + 1, center[1] + offset]);
-  spawnHexAt([center[0] + 1, center[1] + offset + 1]);
-  spawnHexAt([center[0] - 1, center[1] + offset]);
-  spawnHexAt([center[0] - 1, center[1] + offset + 1]);
+  Position.adjacent(entity.components.hex.coords).forEach((p) => spawnHexAt(p));
 };
-
 // to spawn around 0,0, we need
 //
 

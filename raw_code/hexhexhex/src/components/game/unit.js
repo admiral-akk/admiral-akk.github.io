@@ -1,4 +1,5 @@
 import { Component } from "../../ecs/component";
+import { Position } from "../../systems/util/position";
 import { Queue } from "../../util/queue";
 
 export class Unit extends Component {
@@ -10,11 +11,20 @@ export class Unit extends Component {
 
   moveTo(target) {
     const finalAnimation = this.animationStack.back();
-    const [_, endTime, __, endPos] =
+    var [_, endTime, __, ___] =
       finalAnimation !== undefined
         ? finalAnimation
         : [null, Date.now(), null, this.pos];
+    const path = Position.path(this.pos, target);
+    for (let i = 0; i < path.length - 1; i++) {
+      this.animationStack.queue([
+        endTime,
+        endTime + 1000,
+        path[i],
+        path[i + 1],
+      ]);
+      endTime += 1000;
+    }
     this.pos = target;
-    this.animationStack.queue([endTime, endTime + 1000, endPos, target]);
   }
 }

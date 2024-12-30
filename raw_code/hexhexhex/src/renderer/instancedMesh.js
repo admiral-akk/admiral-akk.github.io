@@ -112,7 +112,6 @@ class InstancedMesh {
 
   removeMesh(mesh) {
     const index = this.meshToIndex.getKey(mesh);
-    console.log("size", this.meshToIndex.size());
     if (index < this.meshToIndex.size() - 1) {
       this.copy(this.meshToIndex.size() - 1, index);
       const movedMesh = this.meshToIndex.getValue(this.meshToIndex.size() - 1);

@@ -59,7 +59,6 @@ class InputListener {
         y + ev.movementY / height,
       ]);
       const [newX, newY] = this.state["mpointer"].val;
-      console.log([newX, newY]);
       this.updateValue("mpos", [
         Math.clamp(newX, 0, 1),
         Math.clamp(newY, 0, 1),

@@ -10,7 +10,6 @@ export class Mesh extends Component {
   removeComponent() {
     super.removeComponent();
     this.instancedMesh.removeMesh(this);
-    console.log("self remove");
   }
 
   setVisible(visible) {

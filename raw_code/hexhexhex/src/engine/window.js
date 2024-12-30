@@ -18,7 +18,9 @@ class WindowManager {
     canvas.className = "webgl";
     canvas.id = "webgl";
     canvas.addEventListener("click", async () => {
-      await canvas.requestPointerLock();
+      await canvas.requestPointerLock({
+        unadjustedMovement: true,
+      });
     });
     document.body.appendChild(container);
     container.appendChild(canvasContainer);

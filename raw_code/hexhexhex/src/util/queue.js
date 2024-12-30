@@ -51,20 +51,4 @@ export class Queue extends Array {
     this.start = (this.start + 1) % this.length;
     return v;
   }
-
-  [Symbol.iterator]() {
-    var index = this.start;
-    var count = this.count;
-    var data = this._data;
-
-    const getIndex = () => {
-      index = (index + 1) % data.length;
-      return index;
-    };
-    return {
-      next: () => {
-        return { value: data[getIndex()], done: --count };
-      },
-    };
-  }
 }

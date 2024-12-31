@@ -12,15 +12,12 @@ export class PositionResources extends System {
     const inputIndex = resource.producer.inputs.indexOf(resource);
     const outputIndex = resource.producer.outputs.indexOf(resource);
 
-    const outputOffset = resource.producer.inputs.length;
-
     const elements =
       resource.producer.inputs.length + resource.producer.outputs.length;
-    const spacing = 0.1;
-    const index = Math.max(inputIndex, outputIndex);
-    const isInput = inputIndex >= 0;
 
-    const order = index + (!isInput ? resource.producer.inputs.length + 1 : 0);
+    const order =
+      Math.max(inputIndex, outputIndex) +
+      (inputIndex === -1 ? resource.producer.inputs.length + 1 : 0);
 
     const x = order / elements - 0.5;
 

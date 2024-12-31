@@ -36,7 +36,11 @@ import { MarkSelected } from "./systems/render/markSelected.js";
 import { Position } from "./systems/util/position.js";
 import { Animated, Animation } from "./components/render/animations.js";
 import { ApplyAnimations } from "./systems/render/applyAnimations.js";
-import { Village } from "./components/game/village.js";
+import { Structure } from "./components/game/structure.js";
+import { Producer } from "./components/game/producer.js";
+import { Resource } from "./components/game/resource.js";
+import { PositionResources } from "./systems/render/positionResources.js";
+import { Component } from "./ecs/component.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -431,6 +435,35 @@ const units = new InstancedMesh(
   100
 );
 
+const resourceSize = 0.05;
+
+const foodMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-resourceSize, resourceSize, [0.1, 0.7, 0]],
+      [resourceSize, resourceSize, [0.1, 0.7, 0]],
+      [resourceSize, 0, [0.1, 0.7, 0]],
+    ],
+    generateRegularPolygon(4, 1)
+  ),
+  program,
+  1000
+);
+
+const personMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-resourceSize, resourceSize, [1, 0.5, 0]],
+      [resourceSize, resourceSize, [1, 0.5, 0]],
+      [resourceSize, 0, [1, 0.5, 0]],
+    ],
+    generateRegularPolygon(4, 1)
+  ),
+  program,
+  1000
+);
 const target = new InstancedMesh(
   gl,
   generateSymmetricMesh(
@@ -546,12 +579,56 @@ const spawnHexAt = (coord) => {
   return null;
 };
 
+const addResource = (type, producer) => {
+  var mesh = null;
+  switch (type) {
+    case "food":
+      mesh = foodMesh;
+      break;
+    case "people":
+      mesh = personMesh;
+      break;
+    default:
+      throw new Error(`Unknown resource: ${type}`);
+  }
+  const r = new Resource(type, producer);
+  new Entity(
+    new Mesh(mesh),
+    r,
+    new Transform({ parent: producer.getEntity().components.transform })
+  );
+  return r;
+};
+
+const addProducer = (entity, inputs, outputs) => {
+  const producer = new Producer(inputs, outputs);
+  entity.addComponent(producer);
+  for (let [type, count] of Object.entries(inputs)) {
+    for (let i = 0; i < count; i++) {
+      producer.inputs.push(addResource(type, producer));
+    }
+  }
+  for (let [type, count] of Object.entries(outputs)) {
+    for (let i = 0; i < count; i++) {
+      producer.outputs.push(addResource(type, producer));
+    }
+  }
+};
+
 const spawnVillage = (hexEntity) => {
   const { hex, transform } = hexEntity.components;
   const e = new Entity(
     new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Village(hex.coords)
+    new Structure(hex.coords)
   );
+  addProducer(
+    e,
+    {
+      food: 1,
+    },
+    { people: 3 }
+  );
+
   const m = new Entity(
     new Transform({
       parent: e.components.transform,
@@ -609,6 +686,7 @@ const markerEntity = new Entity(new Mesh(selectedMarker), new Transform());
 
 const systems = [
   new MoveCamera(),
+  new PositionResources(),
   new MarkSelected(markerEntity),
   new AnimateMeshTransform(),
   new ApplyAnimations(),
@@ -1282,6 +1360,7 @@ const draw = () => {
     gl.drawArrays(gl.LINES, 0, debugVertices.length / 3);
     gl.flush();
   }
+  Component.checkUnallocatedComponents();
   return;
   gl.useProgram(renderTexture);
   gl.activeTexture(gl.TEXTURE0 + 3);

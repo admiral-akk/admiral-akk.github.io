@@ -36,6 +36,7 @@ import { MarkSelected } from "./systems/render/markSelected.js";
 import { Position } from "./systems/util/position.js";
 import { Animated, Animation } from "./components/render/animations.js";
 import { ApplyAnimations } from "./systems/render/applyAnimations.js";
+import { Village } from "./components/game/village.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -311,6 +312,16 @@ const generateMountainVertices = () => {
 
   return vertices;
 };
+
+const generateHutVertices = () => {
+  return [
+    [0, 0.3, brown],
+    [0.2, 0.3, brown],
+    [0.2, 0.4, brown],
+    [0.4, 0, brown],
+  ];
+};
+
 const generateTreeVertices = () => {
   var currHeight = 0.55;
   var currScale = 0.6;
@@ -342,6 +353,12 @@ const generateTreeVertices = () => {
   return vertices;
 };
 
+const hutMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(generateHutVertices(), generateRegularPolygon(12, 1)),
+  program,
+  100
+);
 const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
@@ -529,6 +546,22 @@ const spawnHexAt = (coord) => {
   return null;
 };
 
+const spawnVillage = (hexEntity) => {
+  const { hex, transform } = hexEntity.components;
+  const e = new Entity(
+    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
+    new Village(hex.coords)
+  );
+  const m = new Entity(
+    new Transform({
+      parent: e.components.transform,
+      pos: vec3.clone([0.2, 0, 0]),
+    }),
+    new Mesh(hutMesh)
+  );
+  return e;
+};
+
 const spawnAroundHex = (entity) => {
   Position.adjacent(entity.components.hex.coords).forEach((p) => spawnHexAt(p));
 };
@@ -557,14 +590,16 @@ const targetTransform = new Transform();
   targetEntity.addComponent(targetTransform);
 }
 
-{
+const spawnUnitAt = (coords) => {
   new Entity(
     new Mesh(units),
     new Transform(),
-    new Unit([0, 0]),
+    new Unit(coords),
     new Animated()
   );
-}
+};
+
+spawnVillage(start);
 
 const markerEntity = new Entity(new Mesh(selectedMarker), new Transform());
 {
@@ -991,15 +1026,7 @@ class OpenState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-
-        getEntitiesWith(Unit).forEach((ent) => {
-          if (ent.components.unit) {
-            if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
-              manager.replaceState(new HexSelectedState(e.components.hex));
-              return;
-            }
-          }
-        });
+        manager.replaceState(new HexSelectedState(e.components.hex));
       }
     }
   }
@@ -1012,6 +1039,7 @@ class HexSelectedState extends State {
   }
 
   init() {
+    console.log(this);
     this.hex.getEntity().addComponent(new Selected());
     markerEntity.components.mesh.setVisible(true);
   }
@@ -1039,16 +1067,12 @@ class HexSelectedState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        getEntitiesWith(Unit).forEach((ent) => {
-          if (ent.components.unit) {
-            if (vec2.equals(ent.components.unit.pos, e.components.hex.coords)) {
-              unselected = true;
-              manager.replaceState(new OpenState());
-
-              return;
-            }
-          }
-        });
+        if (vec2.equals(this.hex.coords, e.components.hex.coords)) {
+          unselected = true;
+          manager.replaceState(new OpenState());
+        } else {
+          manager.replaceState(new HexSelectedState(e.components.hex));
+        }
       }
     }
     if (state.rmb?.val === 1 && state.rmb?.frame === time.frame) {

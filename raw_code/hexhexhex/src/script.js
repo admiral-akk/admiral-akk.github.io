@@ -598,7 +598,7 @@ const addResource = (type, producer) => {
     new Mesh(mesh),
     r,
     new Transform({ parent: producer.getEntity().components.transform }),
-    new BoxCollider(),
+    new BoxCollider([0.1, 0.1, 0.1]),
     new Clickable()
   );
   return r;

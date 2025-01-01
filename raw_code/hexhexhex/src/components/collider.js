@@ -50,11 +50,11 @@ const checkPlaneCollision = (start, dir, planePoint, planeNormal) => {
 const tempTranslation = vec3.create();
 
 export class BoxCollider extends Collider {
-  constructor() {
+  constructor(size = [Math.sqrt(3) / 2, 0.25, Math.sqrt(3) / 2]) {
     super();
     // assume every collider is a standard size and symmetric about origin
     // TODO: allow for custom size.
-    this.dims = vec3.clone([Math.sqrt(3) / 2, 0.25, Math.sqrt(3) / 2]);
+    this.dims = vec3.clone(size);
   }
 
   // returns the hit location and normal, if one exists.

@@ -43,6 +43,7 @@ import { PositionResources } from "./systems/render/positionResources.js";
 import { Component } from "./ecs/component.js";
 import { Clickable } from "./components/client/clickable.js";
 import { Coordinate } from "./components/game/coordinate.js";
+import { Option } from "./components/game/option.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -438,6 +439,21 @@ const units = new InstancedMesh(
 );
 
 const resourceSize = 0.05;
+const optionSize = 0.1;
+
+const farmMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    [
+      [-optionSize, optionSize, [0.5, 0.7, 0]],
+      [optionSize, optionSize, [0.5, 0.7, 0]],
+      [optionSize, 0, [0.5, 0.7, 0]],
+    ],
+    generateRegularPolygon(4, 1)
+  ),
+  program,
+  1000
+);
 
 const foodMesh = new InstancedMesh(
   gl,
@@ -565,11 +581,24 @@ const spawnHexAt = (coord) => {
     const e = new Entity(
       new Mesh(instancedMesh),
       new Transform({ pos: toHexPosition(coord) }),
-      new Hex(coord),
+      new Hex(),
       new BoxCollider(),
       new Clickable(),
       new Coordinate(coord)
     );
+    for (let i = 0; i < 3; i++) {
+      new Entity(
+        new Mesh(farmMesh),
+        new Transform({
+          parent: e.components.transform,
+          pos: [0.4 * i - 0.4, 1, 0],
+        }),
+        new Structure(),
+        new BoxCollider([2 * optionSize, 2 * optionSize, 2 * optionSize]),
+        new Clickable(),
+        new Option(e)
+      );
+    }
     return e;
     if (Math.random() < 0.4) {
       spawnMountainOn(e);
@@ -629,7 +658,9 @@ const spawnVillage = (hexEntity) => {
   const e = new Entity(
     new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
     new Structure(),
-    new Coordinate(coordinate.pos)
+    new Coordinate(coordinate.pos),
+    new BoxCollider([2 * resourceSize, 2 * resourceSize, 2 * resourceSize]),
+    new Clickable()
   );
   addProducer(
     e,
@@ -638,6 +669,15 @@ const spawnVillage = (hexEntity) => {
     },
     { people: 3 }
   );
+
+  const options = getEntitiesWith(Option, Structure);
+  console.log(options);
+  // remove all of the options for the hex
+  getEntitiesWith(Option, Structure)
+    .filter((ent) => {
+      return ent.components.option.target === hexEntity;
+    })
+    .forEach((ent) => ent.deleteEntity());
 
   const m = new Entity(
     new Transform({

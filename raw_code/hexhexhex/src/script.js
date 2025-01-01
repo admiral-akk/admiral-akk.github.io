@@ -670,8 +670,6 @@ const spawnVillage = (hexEntity) => {
     { people: 3 }
   );
 
-  const options = getEntitiesWith(Option, Structure);
-  console.log(options);
   // remove all of the options for the hex
   getEntitiesWith(Option, Structure)
     .filter((ent) => {
@@ -1087,6 +1085,14 @@ const moveTo = (hexEntity) => {
   });
 };
 
+const getCollision = (state) => {
+  const [worldPos, worldDir] = getWorldRayFromCamera(
+    cameraEntity,
+    state.mpos.val
+  );
+
+  return getRayCollision(worldPos, worldDir);
+};
 // input manager - client, determines commands
 // commands figure out how to apply themselves
 // then the state game actions happen
@@ -1125,12 +1131,7 @@ class InputManager extends StateMachine {
     }
     if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
       // move camera to hex
-      const [worldPos, worldDir] = getWorldRayFromCamera(
-        cameraEntity,
-        state.mpos.val
-      );
-
-      const collision = getRayCollision(worldPos, worldDir);
+      const collision = getCollision(state);
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
@@ -1152,13 +1153,7 @@ class OpenState extends State {
     // left click
     if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
       // check if there's a unit in the hex
-
-      const [worldPos, worldDir] = getWorldRayFromCamera(
-        cameraEntity,
-        state.mpos.val
-      );
-
-      const collision = getRayCollision(worldPos, worldDir);
+      const collision = getCollision(state);
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
@@ -1167,6 +1162,13 @@ class OpenState extends State {
     }
   }
 }
+
+// if you select an option, then its hex, it should build that option?
+// initial choice should be a "buildsite" that upgrades into something that
+// produces stuff.
+// but can directly build for now.
+
+// TODO: Implement "upgrade" component
 
 class SelectedState extends State {
   constructor(entity) {
@@ -1192,13 +1194,7 @@ class SelectedState extends State {
     var unselected = false;
     if (state.lmb?.val === 1 && state.lmb?.frame === time.frame) {
       // check if there's a unit in the hex
-
-      const [worldPos, worldDir] = getWorldRayFromCamera(
-        cameraEntity,
-        state.mpos.val
-      );
-
-      const collision = getRayCollision(worldPos, worldDir);
+      const collision = getCollision(state);
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
@@ -1212,13 +1208,7 @@ class SelectedState extends State {
     }
     if (state.rmb?.val === 1 && state.rmb?.frame === time.frame) {
       // check if there's a unit in the hex
-
-      const [worldPos, worldDir] = getWorldRayFromCamera(
-        cameraEntity,
-        state.mpos.val
-      );
-
-      const collision = getRayCollision(worldPos, worldDir);
+      const collision = getCollision(state);
       if (collision && !unselected) {
         const [collider, _] = collision;
         const e = collider.getEntity();

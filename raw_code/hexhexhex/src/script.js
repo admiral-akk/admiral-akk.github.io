@@ -625,11 +625,11 @@ const addProducer = (entity, inputs, outputs) => {
 };
 
 const spawnVillage = (hexEntity) => {
-  const { hex, transform } = hexEntity.components;
+  const { coordinate, transform } = hexEntity.components;
   const e = new Entity(
     new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Structure(hex.coords),
-    new Coordinate(hex.coords)
+    new Structure(),
+    new Coordinate(coordinate.pos)
   );
   addProducer(
     e,
@@ -650,7 +650,9 @@ const spawnVillage = (hexEntity) => {
 };
 
 const spawnAroundHex = (entity) => {
-  Position.adjacent(entity.components.hex.coords).forEach((p) => spawnHexAt(p));
+  Position.adjacent(entity.components.coordinate.pos).forEach((p) =>
+    spawnHexAt(p)
+  );
 };
 // to spawn around 0,0, we need
 //
@@ -997,7 +999,7 @@ const getRayCollision = (start, dir) => {
 const moveTo = (hexEntity) => {
   getEntitiesWith(Unit, Transform, Animated).forEach((e) => {
     const { transform, animated, unit } = e.components;
-    const path = Position.path(unit.pos, hexEntity.components.hex.coords);
+    const path = Position.path(unit.pos, hexEntity.components.coordinate.pos);
     var endTime = animated.animations.max((a) => a.end)?.end ?? time.time;
 
     animated.animations.push();
@@ -1038,7 +1040,7 @@ const moveTo = (hexEntity) => {
       endTime += 1;
     }
 
-    e.components.unit.moveTo(hexEntity.components.hex.coords);
+    e.components.unit.moveTo(hexEntity.components.coordinate.pos);
   });
 };
 

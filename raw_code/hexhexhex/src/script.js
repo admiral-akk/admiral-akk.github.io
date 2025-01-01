@@ -42,6 +42,7 @@ import { Resource } from "./components/game/resource.js";
 import { PositionResources } from "./systems/render/positionResources.js";
 import { Component } from "./ecs/component.js";
 import { Clickable } from "./components/client/clickable.js";
+import { Coordinate } from "./components/game/coordinate.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -563,7 +564,8 @@ const spawnHexAt = (coord) => {
       new Transform({ pos: toHexPosition(coord) }),
       new Hex(coord),
       new BoxCollider(),
-      new Clickable()
+      new Clickable(),
+      new Coordinate(coord)
     );
     return e;
     if (Math.random() < 0.4) {
@@ -623,7 +625,8 @@ const spawnVillage = (hexEntity) => {
   const { hex, transform } = hexEntity.components;
   const e = new Entity(
     new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Structure(hex.coords)
+    new Structure(hex.coords),
+    new Coordinate(hex.coords)
   );
   addProducer(
     e,
@@ -676,7 +679,8 @@ const spawnUnitAt = (coords) => {
     new Mesh(units),
     new Transform(),
     new Unit(coords),
-    new Animated()
+    new Animated(),
+    new Coordinate(coords)
   );
 };
 

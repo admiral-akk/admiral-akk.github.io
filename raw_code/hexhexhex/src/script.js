@@ -1207,13 +1207,19 @@ class SelectedState extends State {
       }
     }
     if (state.rmb?.val === 1 && state.rmb?.frame === time.frame) {
-      // check if there's a unit in the hex
       const collision = getCollision(state);
+
+      // check if there's a unit in the hex
       if (collision && !unselected) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        manager.replaceState(new SelectedState(e));
-        manager.commands.push({ type: "clicked", val: state.mpos.val });
+
+        // check if the currently selected thing is a option
+        // check if the right clicked thing is the target
+        if (this.entity.components.option?.target === e) {
+          manager.replaceState(new OpenState());
+          spawnVillage(e);
+        }
       }
     }
   }

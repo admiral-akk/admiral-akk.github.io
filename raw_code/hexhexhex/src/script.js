@@ -1135,7 +1135,9 @@ class InputManager extends StateMachine {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        cameraEntity.components.camera.setTarget(e.components.transform.pos);
+        cameraEntity.components.camera.setTarget(
+          e.components.transform.getWorldPosition()
+        );
         if (e.components.hex) {
           spawnAroundHex(e);
         }
@@ -1249,7 +1251,7 @@ const applyActions = () => {
             const [collider, _] = collision;
             const e = collider.getEntity();
             cameraEntity.components.camera.setTarget(
-              e.components.transform.pos
+              e.components.transform.getWorldPosition()
             );
             if (e.components.hex) {
               spawnAroundHex(e);

@@ -28,6 +28,12 @@ export class Transform extends Component {
     this.matrix = mat4.create();
   }
 
+  getWorldPosition() {
+    const pos = vec3.create();
+    vec3.transformMat4(pos, pos, this.getWorldMatrix());
+    return pos;
+  }
+
   getWorldMatrix() {
     if (this.parent === null) {
       return this.getLocalMatrix();

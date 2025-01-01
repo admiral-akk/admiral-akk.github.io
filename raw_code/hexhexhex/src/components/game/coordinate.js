@@ -12,6 +12,10 @@ export class Coordinate extends Component {
     return coordToEntities.get(`${coords[0]},${coords[1]}`) ?? [];
   }
 
+  setPos(newPos) {
+    this.pos = newPos;
+  }
+
   addComponent(entity) {
     super.addComponent(entity);
     const key = `${this.pos[0]},${this.pos[1]}`;

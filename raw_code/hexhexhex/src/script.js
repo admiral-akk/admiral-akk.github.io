@@ -1040,7 +1040,7 @@ const moveTo = (hexEntity) => {
       endTime += 1;
     }
 
-    e.components.unit.moveTo(hexEntity.components.coordinate.pos);
+    e.components.coordinate.setPos(hexEntity.components.coordinate.pos);
   });
 };
 

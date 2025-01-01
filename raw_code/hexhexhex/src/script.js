@@ -683,7 +683,7 @@ const spawnUnitAt = (coords) => {
   new Entity(
     new Mesh(units),
     new Transform(),
-    new Unit(coords),
+    new Unit(),
     new Animated(),
     new Coordinate(coords)
   );
@@ -997,9 +997,12 @@ const getRayCollision = (start, dir) => {
 };
 
 const moveTo = (hexEntity) => {
-  getEntitiesWith(Unit, Transform, Animated).forEach((e) => {
-    const { transform, animated, unit } = e.components;
-    const path = Position.path(unit.pos, hexEntity.components.coordinate.pos);
+  getEntitiesWith(Unit, Transform, Animated, Coordinate).forEach((e) => {
+    const { transform, animated, coordinate } = e.components;
+    const path = Position.path(
+      coordinate.pos,
+      hexEntity.components.coordinate.pos
+    );
     var endTime = animated.animations.max((a) => a.end)?.end ?? time.time;
 
     animated.animations.push();

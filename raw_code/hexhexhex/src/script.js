@@ -558,7 +558,10 @@ const spawnTreeOn = (hexEntity) => {
 // add ability to select / de-select
 
 const spawnHexAt = (coord) => {
-  if (Hex.get(coord) === undefined) {
+  const hexExists = Coordinate.getEntities(coord).some(
+    (e) => e.components.hex !== undefined
+  );
+  if (!hexExists) {
     const e = new Entity(
       new Mesh(instancedMesh),
       new Transform({ pos: toHexPosition(coord) }),

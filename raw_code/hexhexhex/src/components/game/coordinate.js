@@ -6,16 +6,20 @@ export class Coordinate extends Component {
   constructor(pos) {
     super();
     this.pos = pos;
-    const key = `${pos[0]},${pos[1]}`;
+  }
+
+  static getEntities(coords) {
+    return coordToEntities.get(`${coords[0]},${coords[1]}`) ?? [];
+  }
+
+  addComponent(entity) {
+    super.addComponent(entity);
+    const key = `${this.pos[0]},${this.pos[1]}`;
     if (!coordToEntities.has(key)) {
       coordToEntities.set(key, []);
     }
     const arr = coordToEntities.get(key);
     arr.push(this.getEntity());
-  }
-
-  static getEntities(coords) {
-    return coordToEntities.get(`${coords[0]},${coords[1]}`);
   }
 
   removeComponent() {

@@ -41,6 +41,7 @@ import { Producer } from "./components/game/producer.js";
 import { Resource } from "./components/game/resource.js";
 import { PositionResources } from "./systems/render/positionResources.js";
 import { Component } from "./ecs/component.js";
+import { Clickable } from "./components/client/clickable.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -557,12 +558,13 @@ const spawnTreeOn = (hexEntity) => {
 
 const spawnHexAt = (coord) => {
   if (Hex.get(coord) === undefined) {
-    const e = new Entity();
-    e.addComponent(new Mesh(instancedMesh));
-    e.addComponent(new Transform());
-    e.components.transform.setPosition(toHexPosition(coord));
-    e.addComponent(new Hex(coord));
-    e.addComponent(new BoxCollider());
+    const e = new Entity(
+      new Mesh(instancedMesh),
+      new Transform({ pos: toHexPosition(coord) }),
+      new Hex(coord),
+      new BoxCollider(),
+      new Clickable()
+    );
     return e;
     if (Math.random() < 0.4) {
       spawnMountainOn(e);
@@ -595,7 +597,9 @@ const addResource = (type, producer) => {
   new Entity(
     new Mesh(mesh),
     r,
-    new Transform({ parent: producer.getEntity().components.transform })
+    new Transform({ parent: producer.getEntity().components.transform }),
+    new BoxCollider(),
+    new Clickable()
   );
   return r;
 };
@@ -965,7 +969,7 @@ const getWorldRayFromCamera = (cameraEntity, viewPos) => {
 
 const getRayCollision = (start, dir) => {
   var best = null;
-  getEntitiesWith(Collider, Transform).forEach((entity) => {
+  getEntitiesWith(Collider, Transform, Clickable).forEach((entity) => {
     const { collider, transform } = entity.components;
     if (collider && transform) {
       const r = collider.raycast(start, dir, transform.getWorldMatrix());
@@ -1079,7 +1083,9 @@ class InputManager extends StateMachine {
         const [collider, _] = collision;
         const e = collider.getEntity();
         cameraEntity.components.camera.setTarget(e.components.transform.pos);
-        spawnAroundHex(e);
+        if (e.components.hex) {
+          spawnAroundHex(e);
+        }
       }
     }
 
@@ -1104,27 +1110,26 @@ class OpenState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        manager.replaceState(new HexSelectedState(e.components.hex));
+        manager.replaceState(new SelectedState(e));
       }
     }
   }
 }
 
-class HexSelectedState extends State {
-  constructor(hex) {
+class SelectedState extends State {
+  constructor(entity) {
     super();
-    this.hex = hex;
+    this.entity = entity;
   }
 
   init() {
     console.log(this);
-    this.hex.getEntity().addComponent(new Selected());
+    this.entity.addComponent(new Selected());
     markerEntity.components.mesh.setVisible(true);
   }
 
   cleanup() {
-    const entity = this.hex.getEntity();
-    entity.removeComponent(entity.components.selected);
+    this.entity.removeComponent(this.entity.components.selected);
     markerEntity.components.mesh.setVisible(false);
   }
 
@@ -1145,11 +1150,11 @@ class HexSelectedState extends State {
       if (collision) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        if (vec2.equals(this.hex.coords, e.components.hex.coords)) {
+        if (this.entity === e) {
           unselected = true;
           manager.replaceState(new OpenState());
         } else {
-          manager.replaceState(new HexSelectedState(e.components.hex));
+          manager.replaceState(new SelectedState(e));
         }
       }
     }
@@ -1165,7 +1170,7 @@ class HexSelectedState extends State {
       if (collision && !unselected) {
         const [collider, _] = collision;
         const e = collider.getEntity();
-        manager.replaceState(new HexSelectedState(e.components.hex));
+        manager.replaceState(new SelectedState(e));
         manager.commands.push({ type: "clicked", val: state.mpos.val });
       }
     }
@@ -1198,7 +1203,9 @@ const applyActions = () => {
             cameraEntity.components.camera.setTarget(
               e.components.transform.pos
             );
-            spawnAroundHex(e);
+            if (e.components.hex) {
+              spawnAroundHex(e);
+            }
 
             moveTo(e);
           }

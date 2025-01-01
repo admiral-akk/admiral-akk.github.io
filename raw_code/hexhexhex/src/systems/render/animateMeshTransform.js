@@ -2,6 +2,7 @@ import { vec3 } from "gl-matrix";
 import { Hex } from "../../components/game/hex.js";
 import { Transform } from "../../components/render/transform.js";
 import { System } from "../../ecs/system.js";
+import { Coordinate } from "../../components/game/coordinate.js";
 
 const sqrt32 = Math.sqrt(3) / 2;
 function toHexPosition([x, y]) {
@@ -13,11 +14,11 @@ function toHexPosition([x, y]) {
 
 class AnimateMeshTransform extends System {
   constructor() {
-    super([Hex, Transform]);
+    super([Hex, Coordinate, Transform]);
   }
 
-  apply({ hex, transform }) {
-    transform.setPosition(toHexPosition(hex.coords));
+  apply({ coordinate, transform }) {
+    transform.setPosition(toHexPosition(coordinate.pos));
   }
 }
 

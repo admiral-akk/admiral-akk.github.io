@@ -46,6 +46,8 @@ import { Coordinate } from "./components/game/coordinate.js";
 import { Option } from "./components/game/option.js";
 import { Input } from "./components/game/input.js";
 import { Output } from "./components/game/output.js";
+import { Upgrade } from "./components/game/upgrade.js";
+import { UpgradePositions } from "./systems/render/upgradePositions.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -304,6 +306,7 @@ const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
 const brown = "#5D4037";
+const blue = "#5D40EE";
 const darkGreen = "#2E7D32";
 const grey = "#CCCCCC";
 const darkgrey = "#888888";
@@ -328,6 +331,15 @@ const generateHutVertices = () => {
     [0.2, 0.3, brown],
     [0.2, 0.4, brown],
     [0.4, 0, brown],
+  ];
+};
+
+const generateHutBlueprintVertices = () => {
+  return [
+    [0, 0.3, blue],
+    [0.2, 0.3, blue],
+    [0.2, 0.4, blue],
+    [0.4, 0, blue],
   ];
 };
 
@@ -368,6 +380,17 @@ const hutMesh = new InstancedMesh(
   program,
   100
 );
+
+const hutBlueprintMesh = new InstancedMesh(
+  gl,
+  generateSymmetricMesh(
+    generateHutBlueprintVertices(),
+    generateRegularPolygon(12, 1)
+  ),
+  program,
+  100
+);
+
 const treeMesh = new InstancedMesh(
   gl,
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
@@ -629,7 +652,7 @@ const addResource = (type, producer, inputOutputCallback) => {
     default:
       throw new Error(`Unknown resource: ${type}`);
   }
-  const r = new Resource(type, producer);
+  const r = new Resource(type);
   new Entity(
     new Mesh(mesh),
     r,
@@ -642,7 +665,7 @@ const addResource = (type, producer, inputOutputCallback) => {
 };
 
 const addProducer = (entity, inputs, outputs) => {
-  const producer = new Producer(inputs, outputs);
+  const producer = new Producer();
   entity.addComponent(producer);
   for (let [type, count] of Object.entries(inputs)) {
     for (let i = 0; i < count; i++) {
@@ -654,6 +677,45 @@ const addProducer = (entity, inputs, outputs) => {
       producer.outputs.push(addResource(type, producer, () => new Output()));
     }
   }
+};
+
+const addUpgrade = (entity, inputs) => {
+  const upgrade = new Upgrade();
+  entity.addComponent(upgrade);
+  for (let [type, count] of Object.entries(inputs)) {
+    for (let i = 0; i < count; i++) {
+      upgrade.inputs.push(addResource(type, upgrade, () => new Input()));
+    }
+  }
+};
+
+const spawnBlueprint = (hexEntity) => {
+  const { coordinate, transform } = hexEntity.components;
+  const e = new Entity(
+    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
+    new Structure(),
+    new Coordinate(coordinate.pos),
+    new BoxCollider([2 * resourceSize, 2 * resourceSize, 2 * resourceSize]),
+    new Upgrade(),
+    new Clickable()
+  );
+  addUpgrade(e, { people: 2 });
+
+  // remove all of the options for the hex
+  getEntitiesWith(Option, Structure)
+    .filter((ent) => {
+      return ent.components.option.target === hexEntity;
+    })
+    .forEach((ent) => ent.deleteEntity());
+
+  const m = new Entity(
+    new Transform({
+      parent: e.components.transform,
+      pos: vec3.clone([0.2, 0, 0]),
+    }),
+    new Mesh(hutBlueprintMesh)
+  );
+  return e;
 };
 
 const spawnVillage = (hexEntity) => {
@@ -742,6 +804,7 @@ const systems = [
   new MoveCamera(),
   new PositionResources(),
   new MarkSelected(markerEntity),
+  new UpgradePositions(),
   new AnimateMeshTransform(),
   new ApplyAnimations(),
   new UpdateMeshTransform(),
@@ -1223,7 +1286,7 @@ class SelectedState extends State {
         // check if the right clicked thing is the target
         if (this.entity.components.option?.target === e) {
           manager.replaceState(new OpenState());
-          spawnVillage(e);
+          spawnBlueprint(e);
         }
       }
     }

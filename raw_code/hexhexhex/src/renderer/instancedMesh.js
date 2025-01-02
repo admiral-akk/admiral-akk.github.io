@@ -8,9 +8,7 @@ class InstancedMesh {
     this.program = program;
     this.meshToIndex = new Bimap();
     instancedMeshes.push(this);
-    const vao = gl.createVertexArray();
     this.gl = gl;
-    gl.bindVertexArray(vao);
     const modelBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer);
     gl.bufferData(
@@ -18,44 +16,10 @@ class InstancedMesh {
       new Float32Array(modelArray),
       gl.STATIC_DRAW
     );
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
-    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
-    const transformArray = [];
-    const totalSize = 20;
-    for (let i = 0; i < maxCount * 20; i++) {
-      transformArray.push(0);
-    }
+    this.transformArray = new Float32Array(maxCount * 20);
     const transformBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(transformArray),
-      gl.STATIC_DRAW
-    );
-
-    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
-    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
-    gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
-    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
-    gl.vertexAttribIPointer(7, 4, gl.INT, totalSize * 4, 16 * 4);
-
-    gl.vertexAttribDivisor(3, 1);
-    gl.vertexAttribDivisor(4, 1);
-    gl.vertexAttribDivisor(5, 1);
-    gl.vertexAttribDivisor(6, 1);
-    gl.vertexAttribDivisor(7, 1);
-
-    gl.enableVertexAttribArray(0);
-    gl.enableVertexAttribArray(1);
-    gl.enableVertexAttribArray(2);
-    gl.enableVertexAttribArray(3);
-    gl.enableVertexAttribArray(4);
-    gl.enableVertexAttribArray(5);
-    gl.enableVertexAttribArray(6);
-    gl.enableVertexAttribArray(7);
-
-    gl.bindVertexArray(null);
+    gl.bufferData(gl.ARRAY_BUFFER, this.transformArray.length, gl.STATIC_DRAW);
 
     var minX = 100000000;
     var minY = 100000000;
@@ -82,10 +46,53 @@ class InstancedMesh {
     ];
     this.modelArray = modelArray;
     this.modelBuffer = modelBuffer;
+    this.transformBuffer = transformBuffer;
+    this.maxCount = maxCount;
+    this.regenerateVao();
+  }
+
+  regenerateVao() {
+    const { gl } = this;
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.modelBuffer);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
+    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+
+    const totalSize = 20;
+    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
+    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
+    gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
+    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
+    gl.vertexAttribIPointer(7, 4, gl.INT, totalSize * 4, 16 * 4);
+
+    gl.vertexAttribDivisor(3, 1);
+    gl.vertexAttribDivisor(4, 1);
+    gl.vertexAttribDivisor(5, 1);
+    gl.vertexAttribDivisor(6, 1);
+    gl.vertexAttribDivisor(7, 1);
+
+    gl.enableVertexAttribArray(0);
+    gl.enableVertexAttribArray(1);
+    gl.enableVertexAttribArray(2);
+    gl.enableVertexAttribArray(3);
+    gl.enableVertexAttribArray(4);
+    gl.enableVertexAttribArray(5);
+    gl.enableVertexAttribArray(6);
+    gl.enableVertexAttribArray(7);
+
+    gl.bindVertexArray(null);
+    this.vao = vao;
+  }
+
+  resize() {
+    this.modelArray = modelArray;
+    this.modelBuffer = modelBuffer;
     this.transformArray = new Float32Array(transformArray);
     this.transformBuffer = transformBuffer;
-    this.vao = vao;
-    this.maxCount = maxCount;
   }
 
   addMesh(mesh) {

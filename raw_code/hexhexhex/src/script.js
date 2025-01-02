@@ -1288,7 +1288,15 @@ class SelectedState extends State {
           manager.replaceState(new OpenState());
           spawnBlueprint(e);
         }
+
+        // check if the currently selecting thing is an output
+        // and the target is an input
+        if (this.entity.components.output && e.components.input) {
+          this.entity.components.output.connect(e.components.input);
+        }
       }
+
+      // check
     }
   }
 }

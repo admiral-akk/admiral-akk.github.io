@@ -5,6 +5,7 @@ const instancedMeshes = [];
 
 class InstancedMesh {
   constructor(gl, modelArray, program, maxCount) {
+    maxCount = 1;
     this.program = program;
     this.meshToIndex = new Bimap();
     instancedMeshes.push(this);
@@ -19,7 +20,11 @@ class InstancedMesh {
     this.transformArray = new Float32Array(maxCount * 20);
     const transformBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.transformArray.length, gl.STATIC_DRAW);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      4 * this.transformArray.length,
+      gl.STATIC_DRAW
+    );
 
     var minX = 100000000;
     var minY = 100000000;
@@ -89,13 +94,39 @@ class InstancedMesh {
   }
 
   resize() {
-    this.modelArray = modelArray;
-    this.modelBuffer = modelBuffer;
-    this.transformArray = new Float32Array(transformArray);
-    this.transformBuffer = transformBuffer;
+    const { gl } = this;
+    const newCount = this.maxCount * 2;
+    const newTransformArray = new Float32Array(newCount * 20);
+    newTransformArray.set(this.transformArray, 0);
+    const newTransformBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.COPY_READ_BUFFER, this.transformBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, newTransformBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      4 * newTransformArray.length,
+      gl.STATIC_DRAW
+    );
+    gl.copyBufferSubData(
+      gl.COPY_READ_BUFFER,
+      gl.ARRAY_BUFFER,
+      0,
+      0,
+      4 * this.transformArray.length
+    );
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.COPY_READ_BUFFER, null);
+    this.transformArray = newTransformArray;
+    this.transformBuffer = newTransformBuffer;
+    this.maxCount = newCount;
+    this.regenerateVao();
   }
 
   addMesh(mesh) {
+    if (this.meshToIndex.size() === this.maxCount) {
+      this.resize();
+    }
     if (this.meshToIndex.getKey(mesh) !== undefined) {
       return;
     }

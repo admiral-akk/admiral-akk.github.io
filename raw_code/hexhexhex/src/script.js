@@ -664,94 +664,30 @@ const addResource = (type, producer, inputOutputCallback) => {
   return r;
 };
 
-const addProducer = (entity, inputs, outputs) => {
+const addProducer = (entity, { input, output }) => {
   const producer = new Producer();
   entity.addComponent(producer);
-  for (let [type, count] of Object.entries(inputs)) {
+  for (let [type, count] of Object.entries(input)) {
     for (let i = 0; i < count; i++) {
       producer.inputs.push(addResource(type, producer, () => new Input()));
     }
   }
-  for (let [type, count] of Object.entries(outputs)) {
+  for (let [type, count] of Object.entries(output)) {
     for (let i = 0; i < count; i++) {
       producer.outputs.push(addResource(type, producer, () => new Output()));
     }
   }
 };
 
-const addUpgrade = (entity, inputs) => {
-  const upgrade = new Upgrade();
+const addUpgrade = (entity, { input, result }) => {
+  const upgrade = new Upgrade(result);
   entity.addComponent(upgrade);
-  for (let [type, count] of Object.entries(inputs)) {
+  for (let [type, count] of Object.entries(input)) {
     for (let i = 0; i < count; i++) {
       upgrade.inputs.push(addResource(type, upgrade, () => new Input()));
     }
   }
 };
-
-const spawnBlueprint = (hexEntity) => {
-  const { coordinate, transform } = hexEntity.components;
-  const e = new Entity(
-    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Structure(),
-    new Coordinate(coordinate.pos),
-    new BoxCollider([2 * resourceSize, 2 * resourceSize, 2 * resourceSize]),
-    new Upgrade(),
-    new Clickable()
-  );
-  addUpgrade(e, { people: 2 });
-
-  // remove all of the options for the hex
-  getEntitiesWith(Option, Structure)
-    .filter((ent) => {
-      return ent.components.option.target === hexEntity;
-    })
-    .forEach((ent) => ent.deleteEntity());
-
-  const m = new Entity(
-    new Transform({
-      parent: e.components.transform,
-      pos: vec3.clone([0.2, 0, 0]),
-    }),
-    new Mesh(hutBlueprintMesh)
-  );
-  return e;
-};
-
-const spawnVillage = (hexEntity) => {
-  const { coordinate, transform } = hexEntity.components;
-  const e = new Entity(
-    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Structure(),
-    new Coordinate(coordinate.pos),
-    new BoxCollider([2 * resourceSize, 2 * resourceSize, 2 * resourceSize]),
-    new Clickable()
-  );
-  addProducer(
-    e,
-    {
-      food: 1,
-    },
-    { people: 3 }
-  );
-
-  // remove all of the options for the hex
-  getEntitiesWith(Option, Structure)
-    .filter((ent) => {
-      return ent.components.option.target === hexEntity;
-    })
-    .forEach((ent) => ent.deleteEntity());
-
-  const m = new Entity(
-    new Transform({
-      parent: e.components.transform,
-      pos: vec3.clone([0.2, 0, 0]),
-    }),
-    new Mesh(hutMesh)
-  );
-  return e;
-};
-
 const spawnAroundHex = (entity) => {
   Position.adjacent(entity.components.coordinate.pos).forEach((p) =>
     spawnHexAt(p)
@@ -792,7 +728,90 @@ const spawnUnitAt = (coords) => {
   );
 };
 
-spawnVillage(start);
+// a building has:
+//
+// - an id
+// - production(s)
+//   - list of inputs
+//   - list of outputs
+// - upgrade(s)
+//   - list of inputs
+//   - id of what it produces
+// - a mesh
+// - an option mesh
+
+const village = {
+  id: 1,
+  production: [
+    {
+      input: {
+        food: 1,
+      },
+      output: { people: 3 },
+    },
+  ],
+  upgrade: [],
+  mesh: hutMesh,
+  option: farmMesh,
+};
+
+const farmBlueprint = {
+  id: 2,
+  production: [],
+  upgrade: [
+    {
+      input: {
+        people: 2,
+      },
+      result: 3,
+    },
+  ],
+  mesh: hutBlueprintMesh,
+  option: farmMesh,
+};
+
+const farm = {
+  id: 3,
+  production: [{ input: { people: 1 }, output: { food: 2 } }],
+  upgrade: [],
+  mesh: treeMesh,
+  option: farmMesh,
+};
+
+const spawnBuilding = (hexEntity, building) => {
+  const { coordinate, transform } = hexEntity.components;
+  const e = new Entity(
+    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
+    new Structure(),
+    new Coordinate(coordinate.pos)
+  );
+  for (let i = 0; i < building.production.length; i++) {
+    // to do - handle multiple producers?
+    addProducer(e, building.production[i]);
+  }
+
+  for (let i = 0; i < building.upgrade.length; i++) {
+    addUpgrade(e, building.upgrade[i]);
+  }
+
+  // remove all of the options for the hex
+  getEntitiesWith(Option, Structure)
+    .filter((ent) => {
+      return ent.components.option.target === hexEntity;
+    })
+    .forEach((ent) => ent.deleteEntity());
+
+  const m = new Entity(
+    new Transform({
+      parent: e.components.transform,
+      pos: vec3.clone([0.2, 0, 0]),
+    }),
+    new Mesh(building.mesh)
+  );
+  return e;
+};
+
+spawnBuilding(start, village);
 
 const markerEntity = new Entity(new Mesh(selectedMarker), new Transform());
 {
@@ -1286,7 +1305,7 @@ class SelectedState extends State {
         // check if the right clicked thing is the target
         if (this.entity.components.option?.target === e) {
           manager.replaceState(new OpenState());
-          spawnBlueprint(e);
+          spawnBuilding(e, farmBlueprint);
         }
 
         // check if the currently selecting thing is an output

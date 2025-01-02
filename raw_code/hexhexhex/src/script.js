@@ -44,6 +44,8 @@ import { Component } from "./ecs/component.js";
 import { Clickable } from "./components/client/clickable.js";
 import { Coordinate } from "./components/game/coordinate.js";
 import { Option } from "./components/game/option.js";
+import { Input } from "./components/game/input.js";
+import { Output } from "./components/game/output.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -615,7 +617,7 @@ const spawnHexAt = (coord) => {
   return null;
 };
 
-const addResource = (type, producer) => {
+const addResource = (type, producer, inputOutputCallback) => {
   var mesh = null;
   switch (type) {
     case "food":
@@ -633,7 +635,8 @@ const addResource = (type, producer) => {
     r,
     new Transform({ parent: producer.getEntity().components.transform }),
     new BoxCollider([0.1, 0.1, 0.1]),
-    new Clickable()
+    new Clickable(),
+    inputOutputCallback()
   );
   return r;
 };
@@ -643,12 +646,12 @@ const addProducer = (entity, inputs, outputs) => {
   entity.addComponent(producer);
   for (let [type, count] of Object.entries(inputs)) {
     for (let i = 0; i < count; i++) {
-      producer.inputs.push(addResource(type, producer));
+      producer.inputs.push(addResource(type, producer, () => new Input()));
     }
   }
   for (let [type, count] of Object.entries(outputs)) {
     for (let i = 0; i < count; i++) {
-      producer.outputs.push(addResource(type, producer));
+      producer.outputs.push(addResource(type, producer, () => new Output()));
     }
   }
 };

@@ -22,6 +22,10 @@ class UpdateMeshTransform extends System {
       // update transform
       mesh.instancedMesh.updateTransform(mesh, transform.getWorldMatrix());
     }
+    if (mesh.visible) {
+      // update color
+      mesh.instancedMesh.updateColor(mesh, mesh.color);
+    }
   }
 }
 

@@ -3,6 +3,9 @@ import { Bimap } from "../util/bimap";
 
 const instancedMeshes = [];
 
+const totalModelAttribSize = 12;
+const totalInstanceAttribSize = 24;
+
 class InstancedMesh {
   constructor(gl, modelArray) {
     const maxCount = 1;
@@ -16,7 +19,7 @@ class InstancedMesh {
       new Float32Array(modelArray),
       gl.STATIC_DRAW
     );
-    this.transformArray = new Float32Array(maxCount * 20);
+    this.transformArray = new Float32Array(maxCount * totalInstanceAttribSize);
     const transformBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, transformBuffer);
     gl.bufferData(
@@ -61,23 +64,59 @@ class InstancedMesh {
     gl.bindVertexArray(vao);
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.modelBuffer);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
-    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, totalModelAttribSize * 3, 0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, totalModelAttribSize * 3, 12);
+    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, totalModelAttribSize * 3, 24);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
-    const totalSize = 20;
-    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, totalSize * 4, 0 * 4);
-    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, totalSize * 4, 4 * 4);
-    gl.vertexAttribPointer(5, 4, gl.FLOAT, false, totalSize * 4, 8 * 4);
-    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, totalSize * 4, 12 * 4);
-    gl.vertexAttribIPointer(7, 4, gl.INT, totalSize * 4, 16 * 4);
+    gl.vertexAttribPointer(
+      3,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      0 * 4
+    );
+    gl.vertexAttribPointer(
+      4,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      4 * 4
+    );
+    gl.vertexAttribPointer(
+      5,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      8 * 4
+    );
+    gl.vertexAttribPointer(
+      6,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      12 * 4
+    );
+    gl.vertexAttribIPointer(7, 4, gl.INT, totalInstanceAttribSize * 4, 16 * 4);
+    gl.vertexAttribPointer(
+      8,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      20 * 4
+    );
 
     gl.vertexAttribDivisor(3, 1);
     gl.vertexAttribDivisor(4, 1);
     gl.vertexAttribDivisor(5, 1);
     gl.vertexAttribDivisor(6, 1);
     gl.vertexAttribDivisor(7, 1);
+    gl.vertexAttribDivisor(8, 1);
 
     gl.enableVertexAttribArray(0);
     gl.enableVertexAttribArray(1);
@@ -87,6 +126,7 @@ class InstancedMesh {
     gl.enableVertexAttribArray(5);
     gl.enableVertexAttribArray(6);
     gl.enableVertexAttribArray(7);
+    gl.enableVertexAttribArray(8);
 
     gl.bindVertexArray(null);
     this.vao = vao;
@@ -95,7 +135,9 @@ class InstancedMesh {
   resize() {
     const { gl } = this;
     const newCount = this.maxCount * 2;
-    const newTransformArray = new Float32Array(newCount * 20);
+    const newTransformArray = new Float32Array(
+      newCount * totalInstanceAttribSize
+    );
     newTransformArray.set(this.transformArray, 0);
     const newTransformBuffer = gl.createBuffer();
 
@@ -135,15 +177,21 @@ class InstancedMesh {
 
   copy(srcIndex, dstIndex) {
     this.transformArray.set(
-      this.transformArray.slice(20 * srcIndex, 20 * (srcIndex + 1)),
-      20 * dstIndex
+      this.transformArray.slice(
+        totalInstanceAttribSize * srcIndex,
+        totalInstanceAttribSize * (srcIndex + 1)
+      ),
+      totalInstanceAttribSize * dstIndex
     );
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
     this.gl.bufferSubData(
       this.gl.ARRAY_BUFFER,
-      4 * 20 * dstIndex,
-      this.transformArray.slice(20 * dstIndex, 20 * (dstIndex + 1))
+      4 * totalInstanceAttribSize * dstIndex,
+      this.transformArray.slice(
+        totalInstanceAttribSize * dstIndex,
+        totalInstanceAttribSize * (dstIndex + 1)
+      )
     );
   }
 
@@ -162,7 +210,7 @@ class InstancedMesh {
     const index = this.meshToIndex.getKey(mesh);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
 
-    const offset = 20 * index;
+    const offset = totalInstanceAttribSize * index;
     this.transformArray.set(newMatrix, offset);
     this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 4 * offset, newMatrix);
   }
@@ -171,7 +219,7 @@ class InstancedMesh {
     const { gl } = this;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
-    const offset = 20 * index + 16;
+    const offset = totalInstanceAttribSize * index + 16;
     const existingSlice = this.transformArray.slice(offset + 16, offset + 20);
     this.transformArray.set(
       [index, existingSlice[1], existingSlice[2], existingSlice[3]],
@@ -186,6 +234,19 @@ class InstancedMesh {
         existingSlice[2],
         existingSlice[3],
       ])
+    );
+  }
+
+  updateColor(mesh, color) {
+    const { gl } = this;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+
+    const index = this.meshToIndex.getKey(mesh);
+    const offset = totalInstanceAttribSize * index + 20;
+    gl.bufferSubData(
+      gl.ARRAY_BUFFER,
+      4 * offset,
+      this.transformArray.slice(offset, offset + 4)
     );
   }
 

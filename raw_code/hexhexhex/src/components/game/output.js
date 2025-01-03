@@ -4,6 +4,7 @@ export class Output extends Component {
   constructor() {
     super();
     this.reciever = null;
+    this.active = false;
   }
 
   disconnect() {

@@ -16,6 +16,7 @@ function createProgram(gl, vertShader, fragShader) {
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.log(gl.getShaderInfoLog(vertexShader));
     console.log(gl.getShaderInfoLog(fragmentShader));
+    console.log("FAILED TO COMPILE");
   }
   return program;
 }

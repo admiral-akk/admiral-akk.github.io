@@ -53,6 +53,7 @@ import { buildings } from "./building.js";
 import { UpgradeBuildings } from "./systems/render/upgradeBuildings.js";
 import { addOption } from "./actions/addOption.js";
 import { randomRange } from "./util/array.js";
+import { connectResource } from "./actions/connectResource.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -75,7 +76,6 @@ layout(location = 3) in mat4 aModel;
 layout(location = 7) in ivec4 aInstancedMetadata;
 
 out vec3 vColor;
-out vec2 vUv;
 out vec4 vPos;
 out vec4 vTransPos;
 flat out ivec4 vInstancedMetadata;
@@ -87,7 +87,6 @@ void main() {
 
     gl_Position = uProjection * uView * vPos;
     vShadowCoord = (uShadowVP * vPos);
-    vUv = aPosition.xz;
     vColor = aColor;
     vNormal = aNormal;
     vTransPos = gl_Position;
@@ -110,17 +109,16 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
 layout(location = 3) in mat4 aModel;
 layout(location = 7) in ivec4 aInstancedMetadata;
+layout(location = 8) in vec4 aInstanceColor;
 
 out vec3 vColor;
-out vec2 vUv;
-out vec4 vPos;
 out vec4 vTransPos;
 flat out ivec4 vInstancedMetadata;
 out vec3 vNormal;
 out vec4 vShadowCoord;
 
 void main() {
-    vPos = aModel * vec4(aPosition,1.);
+    vec4 vPos = aModel * vec4(aPosition,1.);
     
 
     // move the sample over time
@@ -134,10 +132,8 @@ void main() {
     vPos.z += zNoise * smoothstep(0.2,0.4, vPos.y) / 7.;
 
 
-
     gl_Position = uProjection * uView * vPos;
     vShadowCoord = (uShadowVP * vPos);
-    vUv = aPosition.xz;
     vColor = aColor;
     vNormal = aNormal;
     vTransPos = gl_Position;
@@ -158,8 +154,6 @@ layout(std140) uniform Sun {
 };
 
 in vec3 vColor;
-in vec2 vUv;
-in vec4 vPos;
 in vec4 vTransPos;
 flat in ivec4 vInstancedMetadata;
 in vec3 vNormal;
@@ -174,9 +168,6 @@ layout(location=0) out vec4 fragColor;
 layout(location=1) out float depth; 
 
 void main() {
-  
-  float noiseVal = texture(uSampler1, 0.9 * vPos.xz).r;
-  float dist = smoothstep(0.3,0.35,length(vUv) -  0.4 * noiseVal);
 
   float distFromZero = 0.;
 
@@ -208,6 +199,7 @@ void main() {
 
   fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
 
+  
   if (vInstancedMetadata.y == 1) {
     fragColor.r = 1.;
   }
@@ -1070,7 +1062,7 @@ class SelectedState extends State {
         // check if the currently selecting thing is an output
         // and the target is an input
         if (this.entity.components.output && e.components.input) {
-          this.entity.components.output.connect(e.components.input);
+          connectResource(this.entity.components.output, e.components.input);
         }
       }
 

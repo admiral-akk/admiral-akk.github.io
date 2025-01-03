@@ -5,13 +5,12 @@ import { InstancedMesh } from "../../renderer/instancedMesh";
 const instancedMeshes = new Map();
 
 export class Mesh extends Component {
-  constructor(arr) {
+  constructor(modelArray) {
     super();
-    if (!instancedMeshes.get(arr)) {
-      const [mesh, program] = arr;
-      instancedMeshes.set(arr, new InstancedMesh(gl, mesh, program));
+    if (!instancedMeshes.get(modelArray)) {
+      instancedMeshes.set(modelArray, new InstancedMesh(gl, modelArray));
     }
-    this.instancedMesh = instancedMeshes.get(arr);
+    this.instancedMesh = instancedMeshes.get(modelArray);
     this.visible = true;
     this.updated = true;
   }

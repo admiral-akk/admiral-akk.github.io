@@ -246,6 +246,7 @@ const treeProgram = createProgram(
   treeVertexShaderSource,
   fragmentShaderSource
 );
+
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -370,21 +371,18 @@ const generateTreeVertices = () => {
   return vertices;
 };
 
-const hutMesh = [
-  generateSymmetricMesh(generateHutVertices(), generateRegularPolygon(12, 1)),
-  program,
-];
-const hutBlueprintMesh = [
-  generateSymmetricMesh(
-    generateHutBlueprintVertices(),
-    generateRegularPolygon(12, 1)
-  ),
-  program,
-];
-const treeMesh = [
-  generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
-  treeProgram,
-];
+const hutMesh = generateSymmetricMesh(
+  generateHutVertices(),
+  generateRegularPolygon(12, 1)
+);
+const hutBlueprintMesh = generateSymmetricMesh(
+  generateHutBlueprintVertices(),
+  generateRegularPolygon(12, 1)
+);
+const treeMesh = generateSymmetricMesh(
+  generateTreeVertices(),
+  generateRegularPolygon(6, 1)
+);
 
 const generateRockVertices = () => {
   const vertices = [
@@ -397,31 +395,25 @@ const generateRockVertices = () => {
   return vertices;
 };
 
-const mountainArr = [
-  generateSymmetricMesh(
-    generateMountainVertices(),
-    generateRegularPolygon(7, 1)
-  ),
-  program,
-];
+const mountainArr = generateSymmetricMesh(
+  generateMountainVertices(),
+  generateRegularPolygon(7, 1)
+);
 
-const rockMesh = [
-  generateSymmetricMesh(generateRockVertices(), generateRegularPolygon(5, 1)),
-  program,
-];
+const rockMesh = generateSymmetricMesh(
+  generateRockVertices(),
+  generateRegularPolygon(5, 1)
+);
 
-const hexArr = [
-  generateSymmetricMesh(
-    [
-      [-0.25, 1, "#444444"],
-      [0, 1, "#888800"],
-      [0.25, 0.8, "#008800"],
-      [0.25, 0, "#008800"],
-    ],
-    generateRegularPolygon(6, 1)
-  ),
-  program,
-];
+const hexArr = generateSymmetricMesh(
+  [
+    [-0.25, 1, "#444444"],
+    [0, 1, "#888800"],
+    [0.25, 0.8, "#008800"],
+    [0.25, 0, "#008800"],
+  ],
+  generateRegularPolygon(6, 1)
+);
 
 const generateUnitVertices = () => {
   const vertices = [];
@@ -438,84 +430,65 @@ const generateUnitVertices = () => {
   return vertices;
 };
 
-const units = [
-  generateSymmetricMesh(generateUnitVertices(), generateRegularPolygon(12, 1)),
-  program,
-];
-
+const units = generateSymmetricMesh(
+  generateUnitVertices(),
+  generateRegularPolygon(12, 1)
+);
 const resourceSize = 0.05;
 const optionSize = 0.1;
 
-const farmOptionArr = [
-  generateSymmetricMesh(
-    [
-      [-optionSize, optionSize, [0.5, 0.7, 0]],
-      [optionSize, optionSize, [0.5, 0.7, 0]],
-      [optionSize, 0, [0.5, 0.7, 0]],
-    ],
-    generateRegularPolygon(4, 1)
-  ),
-  program,
-];
+const farmOptionArr = generateSymmetricMesh(
+  [
+    [-optionSize, optionSize, [0.5, 0.7, 0]],
+    [optionSize, optionSize, [0.5, 0.7, 0]],
+    [optionSize, 0, [0.5, 0.7, 0]],
+  ],
+  generateRegularPolygon(4, 1)
+);
 
-const foodMesh = [
-  generateSymmetricMesh(
-    [
-      [-resourceSize, resourceSize, [0.1, 0.7, 0]],
-      [resourceSize, resourceSize, [0.1, 0.7, 0]],
-      [resourceSize, 0, [0.1, 0.7, 0]],
-    ],
-    generateRegularPolygon(4, 1)
-  ),
-  program,
-];
+const foodMesh = generateSymmetricMesh(
+  [
+    [-resourceSize, resourceSize, [0.1, 0.7, 0]],
+    [resourceSize, resourceSize, [0.1, 0.7, 0]],
+    [resourceSize, 0, [0.1, 0.7, 0]],
+  ],
+  generateRegularPolygon(4, 1)
+);
 
-const personMesh = [
-  generateSymmetricMesh(
-    [
-      [-resourceSize, resourceSize, [1, 0.5, 0]],
-      [resourceSize, resourceSize, [1, 0.5, 0]],
-      [resourceSize, 0, [1, 0.5, 0]],
-    ],
-    generateRegularPolygon(4, 1)
-  ),
-  program,
-];
+const personMesh = generateSymmetricMesh(
+  [
+    [-resourceSize, resourceSize, [1, 0.5, 0]],
+    [resourceSize, resourceSize, [1, 0.5, 0]],
+    [resourceSize, 0, [1, 0.5, 0]],
+  ],
+  generateRegularPolygon(4, 1)
+);
 
-const targetArr = [
-  generateSymmetricMesh(
-    [
-      [-0.25, 0.25, [1, 0, 0]],
-      [0.25, 0.25, [1, 0, 0]],
-      [0.25, 0, [1, 0, 0]],
-    ],
-    generateRegularPolygon(4, 1)
-  ),
-  program,
-];
+const targetArr = generateSymmetricMesh(
+  [
+    [-0.25, 0.25, [1, 0, 0]],
+    [0.25, 0.25, [1, 0, 0]],
+    [0.25, 0, [1, 0, 0]],
+  ],
+  generateRegularPolygon(4, 1)
+);
 
-const selectedArr = [
-  generateSymmetricMesh(
-    [
-      [0, 0.8, [1, 1, 1]],
-      [0, 0.7, [1, 1, 1]],
-    ],
-    generateRegularPolygon(6, 1)
-  ),
-  program,
-];
+const selectedArr = generateSymmetricMesh(
+  [
+    [0, 0.8, [1, 1, 1]],
+    [0, 0.7, [1, 1, 1]],
+  ],
+  generateRegularPolygon(6, 1)
+);
 
-const pathMarker = [
-  generateSymmetricMesh(
-    [
-      [-0.1, 0.1, white],
-      [0.1, 0.1, white],
-      [0.1, 0, white],
-    ],
-    generateRegularPolygon(4, 1)
-  ),
-  program,
-];
+const pathMarker = generateSymmetricMesh(
+  [
+    [-0.1, 0.1, white],
+    [0.1, 0.1, white],
+    [0.1, 0, white],
+  ],
+  generateRegularPolygon(4, 1)
+);
 
 var clickedIndex = -1;
 
@@ -1439,7 +1412,7 @@ const draw = () => {
     ]);
     sunShadowMap.setUniform(program);
   };
-  renderer.render(setUniforms);
+  renderer.render(program, setUniforms);
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);

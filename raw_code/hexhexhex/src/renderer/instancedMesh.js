@@ -4,9 +4,8 @@ import { Bimap } from "../util/bimap";
 const instancedMeshes = [];
 
 class InstancedMesh {
-  constructor(gl, modelArray, program) {
+  constructor(gl, modelArray) {
     const maxCount = 1;
-    this.program = program;
     this.meshToIndex = new Bimap();
     instancedMeshes.push(this);
     this.gl = gl;

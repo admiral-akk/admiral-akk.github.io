@@ -48,6 +48,7 @@ import { Input } from "./components/game/input.js";
 import { Output } from "./components/game/output.js";
 import { Upgrade } from "./components/game/upgrade.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
+import { buildings } from "./building.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -671,56 +672,6 @@ const spawnUnitAt = (coords) => {
   );
 };
 
-// a building has:
-//
-// - an id
-// - production(s)
-//   - list of inputs
-//   - list of outputs
-// - upgrade(s)
-//   - list of inputs
-//   - id of what it produces
-// - a mesh
-// - an option mesh
-
-const village = {
-  id: 1,
-  production: [
-    {
-      input: {
-        food: 1,
-      },
-      output: { people: 3 },
-    },
-  ],
-  upgrade: [],
-  mesh: hutMesh,
-  option: farmOptionArr,
-};
-
-const farmBlueprint = {
-  id: 2,
-  production: [],
-  upgrade: [
-    {
-      input: {
-        people: 2,
-      },
-      result: 3,
-    },
-  ],
-  mesh: hutBlueprintMesh,
-  option: farmOptionArr,
-};
-
-const farm = {
-  id: 3,
-  production: [{ input: { people: 1 }, output: { food: 2 } }],
-  upgrade: [],
-  mesh: treeMesh,
-  option: farmOptionArr,
-};
-
 const spawnBuilding = (hexEntity, building) => {
   const { coordinate, transform } = hexEntity.components;
   const e = new Entity(
@@ -754,7 +705,7 @@ const spawnBuilding = (hexEntity, building) => {
   return e;
 };
 
-spawnBuilding(start, village);
+spawnBuilding(start, buildings.village);
 
 const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
 {
@@ -1248,7 +1199,7 @@ class SelectedState extends State {
         // check if the right clicked thing is the target
         if (this.entity.components.option?.target === e) {
           manager.replaceState(new OpenState());
-          spawnBuilding(e, farmBlueprint);
+          spawnBuilding(e, buildings.farmBlueprint);
         }
 
         // check if the currently selecting thing is an output

@@ -50,6 +50,7 @@ import { Output } from "./components/game/output.js";
 import { Upgrade } from "./components/game/upgrade.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
 import { buildings } from "./building.js";
+import { UpgradeBuildings } from "./systems/render/upgradeBuildings.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -591,6 +592,7 @@ const systems = [
   new PositionResources(),
   new MarkSelected(markerEntity),
   new UpgradePositions(),
+  new UpgradeBuildings(),
   new AnimateMeshTransform(),
   new ApplyAnimations(),
   new UpdateMeshTransform(),

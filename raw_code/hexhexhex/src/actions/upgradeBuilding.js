@@ -4,9 +4,15 @@ import { addUpgrade } from "./addUpgrade.js";
 
 export function upgradeBuilding(building, result) {
   // remove the existing building
-  building.components.upgrade?.removeComponent();
-  building.components.production?.removeComponent();
-  building.components.building?.removeComponent();
+  if (building.components.upgrade) {
+    building.removeComponent(building.components.upgrade);
+  }
+  if (building.components.production) {
+    building.removeComponent(building.components.production);
+  }
+  if (building.components.building) {
+    building.removeComponent(building.components.building);
+  }
 
   for (let i = 0; i < result.production.length; i++) {
     // to do - handle multiple producers?

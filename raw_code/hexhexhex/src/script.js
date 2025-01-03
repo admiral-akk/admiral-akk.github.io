@@ -10,7 +10,7 @@ import {
 } from "./renderer/mesh.js";
 import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
-import { InstancedMesh, instancedMeshes } from "./renderer/instancedMesh.js";
+import { instancedMeshes } from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity, getEntitiesWith } from "./ecs/entity.js";
 import { Mesh } from "./components/render/mesh.js";
@@ -29,7 +29,7 @@ import { Sun } from "./renderer/sun.js";
 import { Unit } from "./components/game/unit.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
-import { window } from "./engine/window.js";
+import { gl } from "./engine/renderer.js";
 import { input } from "./engine/input.js";
 import { Selected } from "./components/client/selected.js";
 import { MarkSelected } from "./systems/render/markSelected.js";
@@ -53,11 +53,7 @@ const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
 );
-const windowManager = window;
-const gl = windowManager.canvas.getContext("webgl2");
-gl.getExtension("EXT_color_buffer_float");
-gl.getExtension("OES_texture_float_linear");
-gl.getExtension("WEBGL_depth_texture");
+
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
@@ -374,29 +370,21 @@ const generateTreeVertices = () => {
   return vertices;
 };
 
-const hutMesh = new InstancedMesh(
-  gl,
+const hutMesh = [
   generateSymmetricMesh(generateHutVertices(), generateRegularPolygon(12, 1)),
   program,
-  100
-);
-
-const hutBlueprintMesh = new InstancedMesh(
-  gl,
+];
+const hutBlueprintMesh = [
   generateSymmetricMesh(
     generateHutBlueprintVertices(),
     generateRegularPolygon(12, 1)
   ),
   program,
-  100
-);
-
-const treeMesh = new InstancedMesh(
-  gl,
+];
+const treeMesh = [
   generateSymmetricMesh(generateTreeVertices(), generateRegularPolygon(6, 1)),
   treeProgram,
-  10000
-);
+];
 
 const generateRockVertices = () => {
   const vertices = [
@@ -409,25 +397,20 @@ const generateRockVertices = () => {
   return vertices;
 };
 
-const mountainMesh = new InstancedMesh(
-  gl,
+const mountainArr = [
   generateSymmetricMesh(
     generateMountainVertices(),
     generateRegularPolygon(7, 1)
   ),
   program,
-  10000
-);
+];
 
-const rockMesh = new InstancedMesh(
-  gl,
+const rockMesh = [
   generateSymmetricMesh(generateRockVertices(), generateRegularPolygon(5, 1)),
   program,
-  10000
-);
+];
 
-const instancedMesh = new InstancedMesh(
-  gl,
+const hexArr = [
   generateSymmetricMesh(
     [
       [-0.25, 1, "#444444"],
@@ -438,8 +421,7 @@ const instancedMesh = new InstancedMesh(
     generateRegularPolygon(6, 1)
   ),
   program,
-  10000
-);
+];
 
 const generateUnitVertices = () => {
   const vertices = [];
@@ -456,18 +438,15 @@ const generateUnitVertices = () => {
   return vertices;
 };
 
-const units = new InstancedMesh(
-  gl,
+const units = [
   generateSymmetricMesh(generateUnitVertices(), generateRegularPolygon(12, 1)),
   program,
-  100
-);
+];
 
 const resourceSize = 0.05;
 const optionSize = 0.1;
 
-const farmMesh = new InstancedMesh(
-  gl,
+const farmOptionArr = [
   generateSymmetricMesh(
     [
       [-optionSize, optionSize, [0.5, 0.7, 0]],
@@ -477,11 +456,9 @@ const farmMesh = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  1000
-);
+];
 
-const foodMesh = new InstancedMesh(
-  gl,
+const foodMesh = [
   generateSymmetricMesh(
     [
       [-resourceSize, resourceSize, [0.1, 0.7, 0]],
@@ -491,11 +468,9 @@ const foodMesh = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  1000
-);
+];
 
-const personMesh = new InstancedMesh(
-  gl,
+const personMesh = [
   generateSymmetricMesh(
     [
       [-resourceSize, resourceSize, [1, 0.5, 0]],
@@ -505,10 +480,9 @@ const personMesh = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  1000
-);
-const target = new InstancedMesh(
-  gl,
+];
+
+const targetArr = [
   generateSymmetricMesh(
     [
       [-0.25, 0.25, [1, 0, 0]],
@@ -518,10 +492,9 @@ const target = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  4
-);
-const selectedMarker = new InstancedMesh(
-  gl,
+];
+
+const selectedArr = [
   generateSymmetricMesh(
     [
       [0, 0.8, [1, 1, 1]],
@@ -530,11 +503,9 @@ const selectedMarker = new InstancedMesh(
     generateRegularPolygon(6, 1)
   ),
   program,
-  4
-);
+];
 
-const pathMarker = new InstancedMesh(
-  gl,
+const pathMarker = [
   generateSymmetricMesh(
     [
       [-0.1, 0.1, white],
@@ -544,8 +515,7 @@ const pathMarker = new InstancedMesh(
     generateRegularPolygon(4, 1)
   ),
   program,
-  4000
-);
+];
 
 var clickedIndex = -1;
 
@@ -563,7 +533,7 @@ const cameraEntity = new Entity();
 
 const spawnMountainOn = (hexEntity) => {
   const e = new Entity();
-  e.addComponent(new Mesh(mountainMesh));
+  e.addComponent(new Mesh(mountainArr));
   e.addComponent(new Transform({ parent: hexEntity.components.transform }));
   const pos = vec3.create();
   pos[0] += Math.random() * 0.15;
@@ -604,7 +574,7 @@ const spawnHexAt = (coord) => {
   );
   if (!hexExists) {
     const e = new Entity(
-      new Mesh(instancedMesh),
+      new Mesh(hexArr),
       new Transform({ pos: toHexPosition(coord) }),
       new Hex(),
       new BoxCollider(),
@@ -613,7 +583,7 @@ const spawnHexAt = (coord) => {
     );
     for (let i = 0; i < 3; i++) {
       new Entity(
-        new Mesh(farmMesh),
+        new Mesh(farmOptionArr),
         new Transform({
           parent: e.components.transform,
           pos: [0.4 * i - 0.4, 1, 0],
@@ -713,7 +683,7 @@ cameraEntity.components.camera.target = vec3.clone(
 const targetTransform = new Transform();
 {
   const targetEntity = new Entity();
-  targetEntity.addComponent(new Mesh(target));
+  targetEntity.addComponent(new Mesh(targetArr));
   targetTransform.setPosition([0, -50, 0]);
   targetEntity.addComponent(targetTransform);
 }
@@ -752,7 +722,7 @@ const village = {
   ],
   upgrade: [],
   mesh: hutMesh,
-  option: farmMesh,
+  option: farmOptionArr,
 };
 
 const farmBlueprint = {
@@ -767,7 +737,7 @@ const farmBlueprint = {
     },
   ],
   mesh: hutBlueprintMesh,
-  option: farmMesh,
+  option: farmOptionArr,
 };
 
 const farm = {
@@ -775,7 +745,7 @@ const farm = {
   production: [{ input: { people: 1 }, output: { food: 2 } }],
   upgrade: [],
   mesh: treeMesh,
-  option: farmMesh,
+  option: farmOptionArr,
 };
 
 const spawnBuilding = (hexEntity, building) => {
@@ -813,7 +783,7 @@ const spawnBuilding = (hexEntity, building) => {
 
 spawnBuilding(start, village);
 
-const markerEntity = new Entity(new Mesh(selectedMarker), new Transform());
+const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
 {
   markerEntity.components.transform.setPosition([0, 0.4, 0]);
   markerEntity.components.mesh.setVisible(false);

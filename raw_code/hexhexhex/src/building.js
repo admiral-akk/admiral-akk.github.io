@@ -1,6 +1,5 @@
 import { generateRegularPolygon, generateSymmetricMesh } from "./renderer/mesh";
 
-const resourceSize = 0.05;
 const optionSize = 0.1;
 
 const blue = "#5D40EE";

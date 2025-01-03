@@ -511,18 +511,24 @@ const spawnHexAt = (coord) => {
       new Clickable(),
       new Coordinate(coord)
     );
+    const farmBlueprint = buildings.farmBlueprint;
     for (let i = 0; i < 3; i++) {
-      new Entity(
-        new Mesh(farmOptionArr),
+      const o = new Entity(
+        new BoxCollider([2 * optionSize, 2 * optionSize, 2 * optionSize]),
+        new Clickable(),
+        new Option(e, farmBlueprint),
         new Transform({
           parent: e.components.transform,
           pos: [0.4 * i - 0.4, 1, 0],
-        }),
-        new Structure(),
-        new BoxCollider([2 * optionSize, 2 * optionSize, 2 * optionSize]),
-        new Clickable(),
-        new Option(e)
+        })
       );
+      const m = new Entity(
+        new Mesh(farmBlueprint.option),
+        new Transform({
+          parent: o.components.transform,
+        })
+      );
+      o.addComponent(new Structure(m));
     }
     return e;
     if (Math.random() < 0.4) {

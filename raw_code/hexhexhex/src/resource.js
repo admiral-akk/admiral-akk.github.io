@@ -2,8 +2,10 @@ import { generateRegularPolygon, generateSymmetricMesh } from "./renderer/mesh";
 
 const resourceSize = 0.05;
 
-const green = "#5DE00";
+const green = "#5DE000";
 const yellow = [1, 0.5, 0];
+const grey = [0.5, 0.5, 0.5];
+const brown = "#663300";
 
 const generateResourceMesh = (color) =>
   generateSymmetricMesh(
@@ -17,12 +19,31 @@ const generateResourceMesh = (color) =>
 
 const resources = {};
 
-resources.food = {
-  mesh: generateResourceMesh(green),
+const addResource = (...newResources) => {
+  for (let i = 0; i < newResources.length; i++) {
+    const resource = newResources[i];
+    resource.id = Object.keys(resource).length;
+    resources[resource.name] = resource;
+  }
 };
 
-resources.people = {
-  mesh: generateResourceMesh(yellow),
-};
+addResource(
+  {
+    name: "food",
+    mesh: generateResourceMesh(green),
+  },
+  {
+    name: "people",
+    mesh: generateResourceMesh(yellow),
+  },
+  {
+    name: "stone",
+    mesh: generateResourceMesh(grey),
+  },
+  {
+    name: "wood",
+    mesh: generateResourceMesh(brown),
+  }
+);
 
 export { resources };

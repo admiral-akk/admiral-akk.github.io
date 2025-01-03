@@ -411,7 +411,6 @@ const units = generateSymmetricMesh(
   generateUnitVertices(),
   generateRegularPolygon(12, 1)
 );
-const optionSize = 0.1;
 
 const targetArr = generateSymmetricMesh(
   [

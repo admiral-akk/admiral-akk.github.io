@@ -1,4 +1,5 @@
 export function connectResource(source, sink) {
+  console.log(source, sink);
   // check if the source is usable
   if (!source.active) {
     return;

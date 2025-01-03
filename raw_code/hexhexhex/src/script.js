@@ -50,10 +50,13 @@ import { Output } from "./components/game/output.js";
 import { Upgrade } from "./components/game/upgrade.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
 import { buildings } from "./building.js";
-import { UpgradeBuildings } from "./systems/render/upgradeBuildings.js";
+import { UpgradeBuildings } from "./systems/game/upgradeBuildings.js";
 import { addOption } from "./actions/addOption.js";
 import { randomRange } from "./util/array.js";
 import { connectResource } from "./actions/connectResource.js";
+import { UpdateResourceActive } from "./systems/render/updateResourceActive.js";
+import { CheckProducer } from "./systems/game/checkProducer.js";
+import { UpdateInputSatisfied } from "./systems/render/updateInputSatisfied.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -134,7 +137,7 @@ void main() {
 
     gl_Position = uProjection * uView * vPos;
     vShadowCoord = (uShadowVP * vPos);
-    vColor = aColor;
+    vColor = aColor * aInstanceColor.a ;
     vNormal = aNormal;
     vTransPos = gl_Position;
     vInstancedMetadata = aInstancedMetadata;
@@ -570,12 +573,16 @@ const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
   markerEntity.components.mesh.setVisible(false);
 }
 
+const gameSystems = [new CheckProducer(), new UpgradeBuildings()];
+
 const systems = [
+  ...gameSystems,
   new MoveCamera(),
   new PositionResources(),
   new MarkSelected(markerEntity),
   new UpgradePositions(),
-  new UpgradeBuildings(),
+  new UpdateResourceActive(),
+  new UpdateInputSatisfied(),
   new AnimateMeshTransform(),
   new ApplyAnimations(),
   new UpdateMeshTransform(),

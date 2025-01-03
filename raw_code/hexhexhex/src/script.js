@@ -77,11 +77,13 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
 layout(location = 3) in mat4 aModel;
 layout(location = 7) in ivec4 aInstancedMetadata;
+layout(location = 8) in vec4 aInstancedColor;
 
 out vec3 vColor;
 out vec4 vPos;
 out vec4 vTransPos;
 flat out ivec4 vInstancedMetadata;
+out vec4 vInstancedColor;
 out vec3 vNormal;
 out vec4 vShadowCoord;
 
@@ -94,6 +96,7 @@ void main() {
     vNormal = aNormal;
     vTransPos = gl_Position;
     vInstancedMetadata = aInstancedMetadata;
+    vInstancedColor = aInstancedColor;
 }`;
 
 const treeVertexShaderSource = `#version 300 es
@@ -161,6 +164,7 @@ in vec4 vTransPos;
 flat in ivec4 vInstancedMetadata;
 in vec3 vNormal;
 in vec4 vShadowCoord;
+in vec4 vInstancedColor;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uShadowMapSampler;
@@ -202,6 +206,7 @@ void main() {
 
   fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
 
+  fragColor *= vInstancedColor;
   
   if (vInstancedMetadata.y == 1) {
     fragColor.r = 1.;

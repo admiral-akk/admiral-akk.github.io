@@ -243,6 +243,8 @@ class InstancedMesh {
 
     const index = this.meshToIndex.getKey(mesh);
     const offset = totalInstanceAttribSize * index + 20;
+    console.log(color);
+    this.transformArray.set(color, offset);
     gl.bufferSubData(
       gl.ARRAY_BUFFER,
       4 * offset,

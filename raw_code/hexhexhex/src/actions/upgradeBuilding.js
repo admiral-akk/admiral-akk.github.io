@@ -7,8 +7,6 @@ import { Mesh } from "../components/render/mesh.js";
 import { Transform } from "../components/render/transform.js";
 
 export function upgradeBuilding(building, result) {
-  console.log(building);
-  console.log(result);
   // remove the existing building
   if (building.components.upgrade) {
     building.removeComponent(building.components.upgrade);

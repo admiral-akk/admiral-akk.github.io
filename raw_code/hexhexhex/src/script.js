@@ -1024,7 +1024,6 @@ class SelectedState extends State {
   }
 
   init() {
-    console.log(this);
     this.entity.addComponent(new Selected());
     markerEntity.components.mesh.setVisible(true);
   }

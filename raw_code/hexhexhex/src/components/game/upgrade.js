@@ -1,9 +1,9 @@
 import { Component } from "../../ecs/component";
 
 export class Upgrade extends Component {
-  constructor(resultId) {
+  constructor(result) {
     super();
     this.inputs = [];
-    this.resultId = resultId;
+    this.result = result;
   }
 }

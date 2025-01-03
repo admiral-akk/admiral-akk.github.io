@@ -8,6 +8,7 @@ import {
   generateRegularPolygon,
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
+import { spawnBuilding } from "./actions/spawnBuilding.js";
 import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { instancedMeshes } from "./renderer/instancedMesh.js";
@@ -304,7 +305,6 @@ const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
 const brown = "#5D4037";
-const blue = "#5D40EE";
 const darkGreen = "#2E7D32";
 const grey = "#CCCCCC";
 const darkgrey = "#888888";
@@ -321,24 +321,6 @@ const generateMountainVertices = () => {
   ];
 
   return vertices;
-};
-
-const generateHutVertices = () => {
-  return [
-    [0, 0.3, brown],
-    [0.2, 0.3, brown],
-    [0.2, 0.4, brown],
-    [0.4, 0, brown],
-  ];
-};
-
-const generateHutBlueprintVertices = () => {
-  return [
-    [0, 0.3, blue],
-    [0.2, 0.3, blue],
-    [0.2, 0.4, blue],
-    [0.4, 0, blue],
-  ];
 };
 
 const generateTreeVertices = () => {
@@ -372,14 +354,6 @@ const generateTreeVertices = () => {
   return vertices;
 };
 
-const hutMesh = generateSymmetricMesh(
-  generateHutVertices(),
-  generateRegularPolygon(12, 1)
-);
-const hutBlueprintMesh = generateSymmetricMesh(
-  generateHutBlueprintVertices(),
-  generateRegularPolygon(12, 1)
-);
 const treeMesh = generateSymmetricMesh(
   generateTreeVertices(),
   generateRegularPolygon(6, 1)
@@ -435,7 +409,6 @@ const units = generateSymmetricMesh(
   generateUnitVertices(),
   generateRegularPolygon(12, 1)
 );
-const resourceSize = 0.05;
 const optionSize = 0.1;
 
 const farmOptionArr = generateSymmetricMesh(
@@ -443,24 +416,6 @@ const farmOptionArr = generateSymmetricMesh(
     [-optionSize, optionSize, [0.5, 0.7, 0]],
     [optionSize, optionSize, [0.5, 0.7, 0]],
     [optionSize, 0, [0.5, 0.7, 0]],
-  ],
-  generateRegularPolygon(4, 1)
-);
-
-const foodMesh = generateSymmetricMesh(
-  [
-    [-resourceSize, resourceSize, [0.1, 0.7, 0]],
-    [resourceSize, resourceSize, [0.1, 0.7, 0]],
-    [resourceSize, 0, [0.1, 0.7, 0]],
-  ],
-  generateRegularPolygon(4, 1)
-);
-
-const personMesh = generateSymmetricMesh(
-  [
-    [-resourceSize, resourceSize, [1, 0.5, 0]],
-    [resourceSize, resourceSize, [1, 0.5, 0]],
-    [resourceSize, 0, [1, 0.5, 0]],
   ],
   generateRegularPolygon(4, 1)
 );
@@ -583,55 +538,6 @@ const spawnHexAt = (coord) => {
   }
   return null;
 };
-
-const addResource = (type, producer, inputOutputCallback) => {
-  var mesh = null;
-  switch (type) {
-    case "food":
-      mesh = foodMesh;
-      break;
-    case "people":
-      mesh = personMesh;
-      break;
-    default:
-      throw new Error(`Unknown resource: ${type}`);
-  }
-  const r = new Resource(type);
-  new Entity(
-    new Mesh(mesh),
-    r,
-    new Transform({ parent: producer.getEntity().components.transform }),
-    new BoxCollider([0.1, 0.1, 0.1]),
-    new Clickable(),
-    inputOutputCallback()
-  );
-  return r;
-};
-
-const addProducer = (entity, { input, output }) => {
-  const producer = new Producer();
-  entity.addComponent(producer);
-  for (let [type, count] of Object.entries(input)) {
-    for (let i = 0; i < count; i++) {
-      producer.inputs.push(addResource(type, producer, () => new Input()));
-    }
-  }
-  for (let [type, count] of Object.entries(output)) {
-    for (let i = 0; i < count; i++) {
-      producer.outputs.push(addResource(type, producer, () => new Output()));
-    }
-  }
-};
-
-const addUpgrade = (entity, { input, result }) => {
-  const upgrade = new Upgrade(result);
-  entity.addComponent(upgrade);
-  for (let [type, count] of Object.entries(input)) {
-    for (let i = 0; i < count; i++) {
-      upgrade.inputs.push(addResource(type, upgrade, () => new Input()));
-    }
-  }
-};
 const spawnAroundHex = (entity) => {
   Position.adjacent(entity.components.coordinate.pos).forEach((p) =>
     spawnHexAt(p)
@@ -670,39 +576,6 @@ const spawnUnitAt = (coords) => {
     new Animated(),
     new Coordinate(coords)
   );
-};
-
-const spawnBuilding = (hexEntity, building) => {
-  const { coordinate, transform } = hexEntity.components;
-  const e = new Entity(
-    new Transform({ parent: transform, pos: vec3.clone([0, 0.25, 0]) }),
-    new Structure(),
-    new Coordinate(coordinate.pos)
-  );
-  for (let i = 0; i < building.production.length; i++) {
-    // to do - handle multiple producers?
-    addProducer(e, building.production[i]);
-  }
-
-  for (let i = 0; i < building.upgrade.length; i++) {
-    addUpgrade(e, building.upgrade[i]);
-  }
-
-  // remove all of the options for the hex
-  getEntitiesWith(Option, Structure)
-    .filter((ent) => {
-      return ent.components.option.target === hexEntity;
-    })
-    .forEach((ent) => ent.deleteEntity());
-
-  const m = new Entity(
-    new Transform({
-      parent: e.components.transform,
-      pos: vec3.clone([0.2, 0, 0]),
-    }),
-    new Mesh(building.mesh)
-  );
-  return e;
 };
 
 spawnBuilding(start, buildings.village);

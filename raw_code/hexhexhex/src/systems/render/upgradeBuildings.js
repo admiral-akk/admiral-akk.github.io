@@ -8,6 +8,8 @@ export class UpgradeBuildings extends System {
   }
 
   apply({ upgrade }, building) {
+    console.log(building);
+    console.log(upgrade);
     const anyUnsatisfied = upgrade.inputs.some(
       (v) => v.getEntity().components.input.sender === null
     );

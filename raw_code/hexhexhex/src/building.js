@@ -21,7 +21,7 @@ const generateHutMesh = (color) =>
     generateRegularPolygon(12, 1)
   );
 
-const generateQuarryMesh = (color) => {
+const generateQuarryMesh = (color) =>
   generateSymmetricMesh(
     [
       [0, 0.3, color],
@@ -29,9 +29,7 @@ const generateQuarryMesh = (color) => {
     ],
     generateRegularPolygon(4, 1)
   );
-};
-
-const generateLoggingMesh = (color) => {
+const generateLoggingMesh = (color) =>
   generateSymmetricMesh(
     [
       [0, 0.3, color],
@@ -40,8 +38,6 @@ const generateLoggingMesh = (color) => {
     ],
     generateRegularPolygon(12, 1)
   );
-};
-
 const generateOptionMesh = (color) =>
   generateSymmetricMesh(
     [
@@ -60,85 +56,88 @@ const addBuilding = (...newBuildings) => {
   }
 };
 
-addBuilding(
-  {
-    name: "farm",
-    production: [{ input: { people: 1 }, output: { food: 2 } }],
+const addBuildingBlueprint = (blueprint, building) => {
+  buildings[building.name] = building;
+  blueprint.name = building.name + "Blueprint";
+  blueprint.upgrade[0].result = buildings[building.name];
+  blueprint.production = [];
+};
+
+const addParamBuilding = ({
+  name,
+  color,
+  production,
+  upgradeInput,
+  meshGenerator,
+}) => {
+  const building = {
+    name,
+    production,
+    mesh: meshGenerator(color),
     upgrade: [],
-    mesh: generateHutMesh(farmYellow),
-    option: generateOptionMesh(farmYellow),
-  },
-  {
-    name: "farmBlueprint",
+    option: generateOptionMesh(color),
+  };
+  buildings[building.name] = building;
+  const buildingBlueprint = {
+    name: building.name + "Blueprint",
     production: [],
+    mesh: meshGenerator(blueprintBlue),
     upgrade: [
       {
-        input: {
-          people: 1,
-          wood: 1,
-        },
-        result: buildings.farm,
+        input: upgradeInput,
+        result: building,
       },
     ],
-    mesh: generateHutMesh(blueprintBlue),
-    option: generateOptionMesh(farmYellow),
-  },
-  {
-    name: "village",
-    production: [
-      {
-        input: {},
-        output: { people: 3 },
-      },
-    ],
-    upgrade: [],
-    mesh: generateHutMesh(villageBeige),
-    option: generateOptionMesh(villageBeige),
-  },
-  {
-    name: "quarry",
-    production: [{ input: { people: 1 }, output: { stone: 2 } }],
-    upgrade: [],
-    mesh: generateQuarryMesh(quarryGrey),
-    option: generateOptionMesh(quarryGrey),
-  },
+    option: generateOptionMesh(color),
+  };
+  buildings[buildingBlueprint.name] = buildingBlueprint;
+};
 
-  {
-    name: "quarryBlueprint",
-    production: [
-      {
-        input: {
-          people: 2,
-        },
-        result: buildings.quarry,
-      },
-    ],
-    upgrade: [],
-    mesh: generateQuarryMesh(blueprintBlue),
-    option: generateOptionMesh(quarryGrey),
+addParamBuilding({
+  name: "farm",
+  color: farmYellow,
+  production: [{ input: { people: 1 }, output: { food: 2 } }],
+  upgradeInput: {
+    people: 1,
+    wood: 1,
   },
-  {
-    name: "loggingCamp",
-    production: [{ input: { people: 1 }, output: { wood: 2 } }],
-    upgrade: [],
-    mesh: generateLoggingMesh(loggingBrown),
-    option: generateOptionMesh(loggingBrown),
-  },
+  meshGenerator: generateHutMesh,
+});
 
-  {
-    name: "loggingCampBlueprint",
-    production: [
-      {
-        input: {
-          people: 2,
-        },
-        result: buildings.loggingCamp,
-      },
-    ],
-    upgrade: [],
-    mesh: generateLoggingMesh(blueprintBlue),
-    option: generateOptionMesh(loggingBrown),
-  }
-);
+addParamBuilding({
+  name: "village",
+  color: villageBeige,
+  production: [
+    {
+      input: {},
+      output: { people: 3 },
+    },
+  ],
+  upgradeInput: {
+    people: 1,
+    wood: 1,
+  },
+  meshGenerator: generateHutMesh,
+});
+
+addParamBuilding({
+  name: "quarry",
+  color: quarryGrey,
+  production: [{ input: { people: 1 }, output: { stone: 2 } }],
+  upgradeInput: {
+    people: 2,
+  },
+  meshGenerator: generateQuarryMesh,
+});
+
+addParamBuilding({
+  name: "loggingCamp",
+  color: loggingBrown,
+  production: [{ input: { people: 1 }, output: { wood: 2 } }],
+  upgradeInput: {
+    people: 2,
+  },
+  meshGenerator: generateLoggingMesh,
+});
 
 export { buildings };

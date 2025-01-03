@@ -10,6 +10,15 @@ Math.clamp = function (val, min, max) {
   return Math.min(max, Math.max(val, min));
 };
 
+export function randomRange(min = 0, max = 1, discreteSteps = 0) {
+  var randVal = Math.random();
+  if (discreteSteps >= 2) {
+    discreteSteps = Math.floor(discreteSteps);
+    randVal = Math.floor(randVal * discreteSteps) / (discreteSteps - 1);
+  }
+  return randVal * (max - min) + min;
+}
+
 Array.prototype.remove = function (v) {
   const index = this.indexOf(v);
   if (index > -1) {

@@ -52,6 +52,7 @@ import { UpgradePositions } from "./systems/render/upgradePositions.js";
 import { buildings } from "./building.js";
 import { UpgradeBuildings } from "./systems/render/upgradeBuildings.js";
 import { addOption } from "./actions/addOption.js";
+import { randomRange } from "./util/array.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -502,8 +503,18 @@ const spawnHexAt = (coord) => {
       new Clickable(),
       new Coordinate(coord)
     );
-    const farmBlueprint = buildings.farmBlueprint;
-    addOption(e, farmBlueprint);
+    switch (randomRange(0, 2, 3)) {
+      case 0:
+        addOption(e, buildings.farmBlueprint);
+        break;
+      case 1:
+        addOption(e, buildings.quarryBlueprint);
+        break;
+      default:
+      case 2:
+        addOption(e, buildings.loggingCampBlueprint);
+        break;
+    }
     return e;
     if (Math.random() < 0.4) {
       spawnMountainOn(e);
@@ -1054,7 +1065,7 @@ class SelectedState extends State {
         // check if the right clicked thing is the target
         if (this.entity.components.option?.target === e) {
           manager.replaceState(new OpenState());
-          spawnBuilding(e, buildings.farmBlueprint);
+          spawnBuilding(e, this.entity.components.option.result);
         }
 
         // check if the currently selecting thing is an output

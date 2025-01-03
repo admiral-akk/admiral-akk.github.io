@@ -10,4 +10,9 @@ export class Input extends Component {
     this.sender?.disconnect();
     this.sender = sender;
   }
+
+  removeComponent() {
+    this.sender?.disconnect();
+    super.removeComponent();
+  }
 }

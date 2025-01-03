@@ -6,4 +6,11 @@ export class Upgrade extends Component {
     this.inputs = [];
     this.result = result;
   }
+
+  removeComponent() {
+    for (let i = 0; i < this.inputs.length; i++) {
+      this.inputs[i].getEntity().deleteEntity();
+    }
+    super.removeComponent();
+  }
 }

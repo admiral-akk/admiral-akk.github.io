@@ -51,6 +51,7 @@ import { Upgrade } from "./components/game/upgrade.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
 import { buildings } from "./building.js";
 import { UpgradeBuildings } from "./systems/render/upgradeBuildings.js";
+import { addOption } from "./actions/addOption.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -412,15 +413,6 @@ const units = generateSymmetricMesh(
 );
 const optionSize = 0.1;
 
-const farmOptionArr = generateSymmetricMesh(
-  [
-    [-optionSize, optionSize, [0.5, 0.7, 0]],
-    [optionSize, optionSize, [0.5, 0.7, 0]],
-    [optionSize, 0, [0.5, 0.7, 0]],
-  ],
-  generateRegularPolygon(4, 1)
-);
-
 const targetArr = generateSymmetricMesh(
   [
     [-0.25, 0.25, [1, 0, 0]],
@@ -512,24 +504,7 @@ const spawnHexAt = (coord) => {
       new Coordinate(coord)
     );
     const farmBlueprint = buildings.farmBlueprint;
-    for (let i = 0; i < 3; i++) {
-      const o = new Entity(
-        new BoxCollider([2 * optionSize, 2 * optionSize, 2 * optionSize]),
-        new Clickable(),
-        new Option(e, farmBlueprint),
-        new Transform({
-          parent: e.components.transform,
-          pos: [0.4 * i - 0.4, 1, 0],
-        })
-      );
-      const m = new Entity(
-        new Mesh(farmBlueprint.option),
-        new Transform({
-          parent: o.components.transform,
-        })
-      );
-      o.addComponent(new Structure(m));
-    }
+    addOption(e, farmBlueprint);
     return e;
     if (Math.random() < 0.4) {
       spawnMountainOn(e);

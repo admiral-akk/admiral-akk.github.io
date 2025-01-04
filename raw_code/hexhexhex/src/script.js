@@ -11,7 +11,10 @@ import {
 import { spawnBuilding } from "./actions/spawnBuilding.js";
 import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
-import { instancedMeshes } from "./renderer/instancedMesh.js";
+import {
+  instancedMeshes,
+  registerInstanceMeshProgram,
+} from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity, getEntitiesWith } from "./ecs/entity.js";
 import { Mesh } from "./components/render/mesh.js";
@@ -57,6 +60,8 @@ import { connectResource } from "./actions/connectResource.js";
 import { UpdateResourceActive } from "./systems/render/updateResourceActive.js";
 import { CheckProducer } from "./systems/game/checkProducer.js";
 import { UpdateInputSatisfied } from "./systems/render/updateInputSatisfied.js";
+import { resources } from "./resource.js";
+import { CollectVisibleMeshInstances } from "./systems/render/collectVisibleMeshes.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -580,8 +585,9 @@ const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
 
 const gameSystems = [new CheckProducer(), new UpgradeBuildings()];
 
-const systems = [
-  ...gameSystems,
+const meshInstances = new CollectVisibleMeshInstances();
+
+const renderSystems = [
   new MoveCamera(),
   new PositionResources(),
   new MarkSelected(markerEntity),
@@ -591,7 +597,10 @@ const systems = [
   new AnimateMeshTransform(),
   new ApplyAnimations(),
   new UpdateMeshTransform(),
+  meshInstances,
 ];
+
+const systems = [...gameSystems, ...renderSystems];
 
 const updateHexFrustumBounds = () => {
   const [frustum, corners] = calculateFrustumPlanes(cameraEntity);
@@ -1232,7 +1241,7 @@ const draw = () => {
     ]);
     sunShadowMap.setUniform(program);
   };
-  renderer.render(program, setUniforms);
+  renderer.render(program, setUniforms, meshInstances.visibleMeshInstances);
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);

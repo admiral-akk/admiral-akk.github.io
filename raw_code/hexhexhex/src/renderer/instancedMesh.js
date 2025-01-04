@@ -1,5 +1,6 @@
 import { vec3 } from "gl-matrix";
 import { Bimap } from "../util/bimap";
+import { gl } from "../engine/renderer";
 
 const instancedMeshes = [];
 
@@ -243,7 +244,6 @@ class InstancedMesh {
 
     const index = this.meshToIndex.getKey(mesh);
     const offset = totalInstanceAttribSize * index + 20;
-    console.log(color);
     this.transformArray.set(color, offset);
     gl.bufferSubData(
       gl.ARRAY_BUFFER,
@@ -320,4 +320,17 @@ class InstancedMesh {
   }
 }
 
-export { InstancedMesh, instancedMeshes };
+const instancedMeshMap = new Map();
+
+function getInstancedMesh(modelArray) {
+  if (!instancedMeshMap.get(modelArray)) {
+    instancedMeshMap.set(modelArray, new InstancedMesh(gl, modelArray));
+  }
+  return instancedMeshMap.get(modelArray);
+}
+
+function registerInstanceMeshProgram(modelArray, program) {
+  instancedMeshMap.get(modelArray).program = program;
+}
+
+export { getInstancedMesh, registerInstanceMeshProgram, instancedMeshes };

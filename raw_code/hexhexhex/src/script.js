@@ -5,6 +5,7 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import {
+  generateLineMesh,
   generateRegularPolygon,
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
@@ -40,17 +41,10 @@ import { MarkSelected } from "./systems/render/markSelected.js";
 import { Position } from "./systems/util/position.js";
 import { Animated, Animation } from "./components/render/animations.js";
 import { ApplyAnimations } from "./systems/render/applyAnimations.js";
-import { Structure } from "./components/game/structure.js";
-import { Producer } from "./components/game/producer.js";
-import { Resource } from "./components/game/resource.js";
 import { PositionResources } from "./systems/render/positionResources.js";
 import { Component } from "./ecs/component.js";
 import { Clickable } from "./components/client/clickable.js";
 import { Coordinate } from "./components/game/coordinate.js";
-import { Option } from "./components/game/option.js";
-import { Input } from "./components/game/input.js";
-import { Output } from "./components/game/output.js";
-import { Upgrade } from "./components/game/upgrade.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
 import { buildings } from "./building.js";
 import { UpgradeBuildings } from "./systems/game/upgradeBuildings.js";
@@ -68,6 +62,46 @@ const dataManager = new DataManager(
   new DefaultPreprocessor()
 );
 
+const lineVertexShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: vert
+
+precision mediump float;
+
+uniform mat4 uView;
+uniform mat4 uProjection;
+uniform mat4 uShadowVP;
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec3 aColor;
+layout(location = 3) in mat4 aModel;
+layout(location = 7) in vec4 aInstancedMetadata1;
+layout(location = 8) in vec4 aInstancedMetadata2;
+layout(location = 9) in vec4 aInstancedMetadata3;
+layout(location = 10) in vec4 aInstancedMetadata4;
+
+out vec3 vColor;
+out vec4 vPos;
+out vec4 vTransPos;
+out vec4 vInstancedColor;
+out vec3 vNormal;
+out vec4 vShadowCoord;
+
+void main() {
+    vec3 delta =(aInstancedMetadata3.xyz - aInstancedMetadata2.xyz);
+    vec3 right = normalize(cross(delta, vec3(0.,1.,0.)));
+
+    vec3 pos = right * aPosition.x + delta * aPosition.y +  aInstancedMetadata2.xyz;
+    vPos = vec4(pos, 1.);
+
+    gl_Position = uProjection * uView * vPos;
+    vShadowCoord = (uShadowVP * vPos);
+    vColor = aColor;
+    vNormal = aNormal;
+    vTransPos = gl_Position;
+    vInstancedColor = aInstancedMetadata1;
+}`;
+
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
@@ -81,13 +115,14 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
 layout(location = 3) in mat4 aModel;
-layout(location = 7) in ivec4 aInstancedMetadata;
-layout(location = 8) in vec4 aInstancedColor;
+layout(location = 7) in vec4 aInstancedMetadata1;
+layout(location = 8) in vec4 aInstancedMetadata2;
+layout(location = 9) in vec4 aInstancedMetadata3;
+layout(location = 10) in vec4 aInstancedMetadata4;
 
 out vec3 vColor;
 out vec4 vPos;
 out vec4 vTransPos;
-flat out ivec4 vInstancedMetadata;
 out vec4 vInstancedColor;
 out vec3 vNormal;
 out vec4 vShadowCoord;
@@ -100,8 +135,7 @@ void main() {
     vColor = aColor;
     vNormal = aNormal;
     vTransPos = gl_Position;
-    vInstancedMetadata = aInstancedMetadata;
-    vInstancedColor = aInstancedColor;
+    vInstancedColor = aInstancedMetadata1;
 }`;
 
 const treeVertexShaderSource = `#version 300 es
@@ -119,12 +153,13 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
 layout(location = 3) in mat4 aModel;
-layout(location = 7) in ivec4 aInstancedMetadata;
-layout(location = 8) in vec4 aInstanceColor;
+layout(location = 7) in vec4 aInstancedMetadata1;
+layout(location = 8) in vec4 aInstancedMetadata2;
+layout(location = 9) in vec4 aInstancedMetadata3;
+layout(location = 10) in vec4 aInstancedMetadata4;
 
 out vec3 vColor;
 out vec4 vTransPos;
-flat out ivec4 vInstancedMetadata;
 out vec3 vNormal;
 out vec4 vShadowCoord;
 
@@ -145,10 +180,9 @@ void main() {
 
     gl_Position = uProjection * uView * vPos;
     vShadowCoord = (uShadowVP * vPos);
-    vColor = aColor * aInstanceColor.a ;
+    vColor = aColor * aInstancedMetadata1.a ;
     vNormal = aNormal;
     vTransPos = gl_Position;
-    vInstancedMetadata = aInstancedMetadata;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -166,7 +200,6 @@ layout(std140) uniform Sun {
 
 in vec3 vColor;
 in vec4 vTransPos;
-flat in ivec4 vInstancedMetadata;
 in vec3 vNormal;
 in vec4 vShadowCoord;
 in vec4 vInstancedColor;
@@ -213,9 +246,6 @@ void main() {
 
   fragColor *= vInstancedColor;
   
-  if (vInstancedMetadata.y == 1) {
-    fragColor.r = 1.;
-  }
 
   //fragColor = vec4(vec3(normLDot ), 1.);
 
@@ -256,7 +286,11 @@ const treeProgram = createProgram(
   treeVertexShaderSource,
   fragmentShaderSource
 );
-
+const lineProgram = createProgram(
+  gl,
+  lineVertexShaderSource,
+  fragmentShaderSource
+);
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -1241,7 +1275,10 @@ const draw = () => {
     ]);
     sunShadowMap.setUniform(program);
   };
+  gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   renderer.render(program, setUniforms, meshInstances.visibleMeshInstances);
+  renderer.render(lineProgram, setUniforms, meshInstances.lineMeshInstances);
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);

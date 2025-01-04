@@ -53,6 +53,26 @@ const addTriangle = (verts, color, mesh) => {
   }
 };
 
+const generateLineMesh = (vertCount) => {
+  const mesh = [];
+  // create base
+  const color = [1, 1, 1];
+
+  for (let i = 0; i < vertCount; i++) {
+    const temp1 = vec3.clone([-1, i / vertCount, 0]);
+    const temp2 = vec3.clone([1, i / vertCount, 0]);
+    const temp3 = vec3.clone([-1, (i + 1) / vertCount, 0]);
+    const temp4 = vec3.clone([1, (i + 1) / vertCount, 0]);
+
+    addTriangle([temp1, temp3, temp2], color, mesh);
+    addTriangle([temp2, temp3, temp4], color, mesh);
+    addTriangle([temp1, temp2, temp3], color, mesh);
+    addTriangle([temp2, temp4, temp3], color, mesh);
+  }
+
+  return mesh;
+};
+
 // [(height, scale, extra)], [vertsInCircle]
 const generateSymmetricMesh = (paramArr, verts) => {
   const mesh = [];
@@ -85,4 +105,4 @@ const generateSymmetricMesh = (paramArr, verts) => {
   return mesh;
 };
 
-export { generateRegularPolygon, generateSymmetricMesh };
+export { generateRegularPolygon, generateSymmetricMesh, generateLineMesh };

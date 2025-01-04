@@ -9,9 +9,9 @@ export class UpdateInputSatisfied extends System {
 
   apply({ mesh, input }) {
     if (input.sender === null) {
-      mesh.setColor([0.5, 0.5, 0.5, 0.5]);
+      mesh.setMetadata([0.5, 0.5, 0.5, 0.5]);
     } else {
-      mesh.setColor([1, 1, 1, 1]);
+      mesh.setMetadata([1, 1, 1, 1]);
     }
   }
 }

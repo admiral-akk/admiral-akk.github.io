@@ -9,9 +9,9 @@ export class UpdateResourceActive extends System {
 
   apply({ mesh, output }) {
     if (!output.active) {
-      mesh.setColor([0.5, 0.5, 0.5, 0.5]);
+      mesh.setMetadata([0.5, 0.5, 0.5, 0.5]);
     } else {
-      mesh.setColor([1, 1, 1, 1]);
+      mesh.setMetadata([1, 1, 1, 1]);
     }
   }
 }

@@ -1,3 +1,5 @@
+import { addLine } from "./addLine";
+
 export function connectResource(source, sink) {
   console.log(source, sink);
   // check if the source is usable
@@ -15,4 +17,6 @@ export function connectResource(source, sink) {
 
   // link em up
   source.connect(sink);
+
+  addLine(source.getEntity(), sink.getEntity());
 }

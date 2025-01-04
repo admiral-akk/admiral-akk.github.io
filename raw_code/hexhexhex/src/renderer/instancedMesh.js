@@ -5,7 +5,7 @@ import { gl } from "../engine/renderer";
 const instancedMeshes = [];
 
 const totalModelAttribSize = 12;
-const totalInstanceAttribSize = 24;
+const totalInstanceAttribSize = 32;
 
 class InstancedMesh {
   constructor(gl, modelArray) {
@@ -102,7 +102,14 @@ class InstancedMesh {
       totalInstanceAttribSize * 4,
       12 * 4
     );
-    gl.vertexAttribIPointer(7, 4, gl.INT, totalInstanceAttribSize * 4, 16 * 4);
+    gl.vertexAttribPointer(
+      7,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      16 * 4
+    );
     gl.vertexAttribPointer(
       8,
       4,
@@ -111,6 +118,22 @@ class InstancedMesh {
       totalInstanceAttribSize * 4,
       20 * 4
     );
+    gl.vertexAttribPointer(
+      9,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      24 * 4
+    );
+    gl.vertexAttribPointer(
+      10,
+      4,
+      gl.FLOAT,
+      false,
+      totalInstanceAttribSize * 4,
+      28 * 4
+    );
 
     gl.vertexAttribDivisor(3, 1);
     gl.vertexAttribDivisor(4, 1);
@@ -118,6 +141,8 @@ class InstancedMesh {
     gl.vertexAttribDivisor(6, 1);
     gl.vertexAttribDivisor(7, 1);
     gl.vertexAttribDivisor(8, 1);
+    gl.vertexAttribDivisor(9, 1);
+    gl.vertexAttribDivisor(10, 1);
 
     gl.enableVertexAttribArray(0);
     gl.enableVertexAttribArray(1);
@@ -128,6 +153,8 @@ class InstancedMesh {
     gl.enableVertexAttribArray(6);
     gl.enableVertexAttribArray(7);
     gl.enableVertexAttribArray(8);
+    gl.enableVertexAttribArray(9);
+    gl.enableVertexAttribArray(10);
 
     gl.bindVertexArray(null);
     this.vao = vao;
@@ -173,7 +200,6 @@ class InstancedMesh {
       return;
     }
     this.meshToIndex.set(mesh, this.meshToIndex.size());
-    this.updateIndex(this.gl, this.meshToIndex.size() - 1);
   }
 
   copy(srcIndex, dstIndex) {
@@ -196,6 +222,19 @@ class InstancedMesh {
     );
   }
 
+  updateMetadata(mesh, metadata) {
+    const { gl } = this;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
+
+    const index = this.meshToIndex.getKey(mesh);
+    const offset = totalInstanceAttribSize * index + 16;
+    if (metadata.length > 16) {
+      throw new Error("TOO LONG");
+    }
+    this.transformArray.set(metadata, offset);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 4 * offset, metadata);
+  }
+
   removeMesh(mesh) {
     const index = this.meshToIndex.getKey(mesh);
     if (index < this.meshToIndex.size() - 1) {
@@ -214,64 +253,6 @@ class InstancedMesh {
     const offset = totalInstanceAttribSize * index;
     this.transformArray.set(newMatrix, offset);
     this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 4 * offset, newMatrix);
-  }
-
-  updateIndex(index) {
-    const { gl } = this;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
-
-    const offset = totalInstanceAttribSize * index + 16;
-    const existingSlice = this.transformArray.slice(offset + 16, offset + 20);
-    this.transformArray.set(
-      [index, existingSlice[1], existingSlice[2], existingSlice[3]],
-      offset
-    );
-    gl.bufferSubData(
-      gl.ARRAY_BUFFER,
-      4 * offset,
-      new Int32Array([
-        index,
-        existingSlice[1],
-        existingSlice[2],
-        existingSlice[3],
-      ])
-    );
-  }
-
-  updateColor(mesh, color) {
-    const { gl } = this;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
-
-    const index = this.meshToIndex.getKey(mesh);
-    const offset = totalInstanceAttribSize * index + 20;
-    this.transformArray.set(color, offset);
-    gl.bufferSubData(
-      gl.ARRAY_BUFFER,
-      4 * offset,
-      this.transformArray.slice(offset, offset + 4)
-    );
-  }
-
-  updateVisibility(index, invisible) {
-    const { gl } = this;
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
-
-    const offset = 20 * index + 16;
-    const existingSlice = this.transformArray.slice(offset + 16, offset + 20);
-    this.transformArray.set(
-      [existingSlice[0], invisible ? 1 : 0, existingSlice[2], existingSlice[3]],
-      offset
-    );
-    gl.bufferSubData(
-      gl.ARRAY_BUFFER,
-      4 * offset,
-      new Int32Array([
-        existingSlice[0],
-        invisible ? 1 : 0,
-        existingSlice[2],
-        existingSlice[3],
-      ])
-    );
   }
 
   updateFrustum(gl, frustumPlanes) {

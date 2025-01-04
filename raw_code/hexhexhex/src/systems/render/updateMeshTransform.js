@@ -12,19 +12,12 @@ class UpdateMeshTransform extends System {
       // update visibility
       if (mesh.visible) {
         mesh.instancedMesh.addMesh(mesh);
+        mesh.instancedMesh.updateMetadata(mesh, mesh.metadata);
+        mesh.instancedMesh.updateTransform(mesh, transform.getWorldMatrix());
       } else {
         mesh.instancedMesh.removeMesh(mesh);
       }
       mesh.updated = false;
-    }
-
-    if (mesh.visible) {
-      // update transform
-      mesh.instancedMesh.updateTransform(mesh, transform.getWorldMatrix());
-    }
-    if (mesh.visible) {
-      // update color
-      mesh.instancedMesh.updateColor(mesh, mesh.color);
     }
   }
 }

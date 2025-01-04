@@ -9,11 +9,13 @@ const lineMesh = generateLineMesh(10);
 
 export const addLine = (startEntity, endEntity) => {
   const startTransform = startEntity.components.transform;
+  const color = startEntity.components.mesh.metadata.slice(0, 4);
+  console.log(color);
   const endTransform = endEntity.components.transform;
   const start = startTransform.getWorldPosition();
   const end = endTransform.getWorldPosition();
   const l = new Mesh(lineMesh);
-  l.setMetadata([...[1, 1, 1, 1], ...start, 1, ...end, 1]);
+  l.setMetadata([...color, ...start, 1, ...end, 1]);
   const e = new Entity(
     new Connection(startEntity, endEntity),
     l,

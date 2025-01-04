@@ -91,7 +91,9 @@ void main() {
     vec3 delta =(aInstancedMetadata3.xyz - aInstancedMetadata2.xyz);
     vec3 right = normalize(cross(delta, vec3(0.,1.,0.)));
 
-    vec3 pos = right * aPosition.x + delta * aPosition.y +  aInstancedMetadata2.xyz;
+    vec3 pos = right * aPosition.x * 0.02
+      + delta * aPosition.y +  aInstancedMetadata2.xyz
+      + vec3(0.,1. - pow(aPosition.y - 0.5, 2.) / 0.25,0.);
     vPos = vec4(pos, 1.);
 
     gl_Position = uProjection * uView * vPos;
@@ -136,6 +138,21 @@ void main() {
     vNormal = aNormal;
     vTransPos = gl_Position;
     vInstancedColor = aInstancedMetadata1;
+}`;
+const lineFragmentShaderSource = `#version 300 es
+#pragma vscode_glsllint_stage: frag
+
+precision mediump float;
+
+in vec4 vInstancedColor;
+
+layout(location=0) out vec4 fragColor; 
+layout(location=1) out float depth; 
+
+void main() {
+
+fragColor = vec4(vInstancedColor.rgb, 1.);
+depth = 1.;
 }`;
 
 const treeVertexShaderSource = `#version 300 es
@@ -289,7 +306,7 @@ const treeProgram = createProgram(
 const lineProgram = createProgram(
   gl,
   lineVertexShaderSource,
-  fragmentShaderSource
+  lineFragmentShaderSource
 );
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag

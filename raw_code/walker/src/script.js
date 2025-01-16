@@ -54,55 +54,12 @@ import { connectResource } from "./actions/connectResource.js";
 import { UpdateResourceActive } from "./systems/render/updateResourceActive.js";
 import { CheckProducer } from "./systems/game/checkProducer.js";
 import { UpdateInputSatisfied } from "./systems/render/updateInputSatisfied.js";
-import { resources } from "./resource.js";
 import { CollectVisibleMeshInstances } from "./systems/render/collectVisibleMeshes.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
 );
-
-const lineVertexShaderSource = `#version 300 es
-#pragma vscode_glsllint_stage: vert
-
-precision mediump float;
-
-uniform mat4 uView;
-uniform mat4 uProjection;
-uniform mat4 uShadowVP;
-
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec3 aColor;
-layout(location = 3) in mat4 aModel;
-layout(location = 7) in vec4 aInstancedMetadata1;
-layout(location = 8) in vec4 aInstancedMetadata2;
-layout(location = 9) in vec4 aInstancedMetadata3;
-layout(location = 10) in vec4 aInstancedMetadata4;
-
-out vec3 vColor;
-out vec4 vPos;
-out vec4 vTransPos;
-out vec4 vInstancedColor;
-out vec3 vNormal;
-out vec4 vShadowCoord;
-
-void main() {
-    vec3 delta =(aInstancedMetadata3.xyz - aInstancedMetadata2.xyz);
-    vec3 right = normalize(cross(delta, vec3(0.,1.,0.)));
-
-    vec3 pos = right * aPosition.x * 0.02
-      + delta * aPosition.y +  aInstancedMetadata2.xyz
-      + vec3(0.,1. - pow(aPosition.y - 0.5, 2.) / 0.25,0.);
-    vPos = vec4(pos, 1.);
-
-    gl_Position = uProjection * uView * vPos;
-    vShadowCoord = (uShadowVP * vPos);
-    vColor = aColor;
-    vNormal = aNormal;
-    vTransPos = gl_Position;
-    vInstancedColor = aInstancedMetadata1;
-}`;
 
 const vertexShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: vert
@@ -138,68 +95,6 @@ void main() {
     vNormal = aNormal;
     vTransPos = gl_Position;
     vInstancedColor = aInstancedMetadata1;
-}`;
-const lineFragmentShaderSource = `#version 300 es
-#pragma vscode_glsllint_stage: frag
-
-precision mediump float;
-
-in vec4 vInstancedColor;
-
-layout(location=0) out vec4 fragColor; 
-layout(location=1) out float depth; 
-
-void main() {
-
-fragColor = vec4(vInstancedColor.rgb, 1.);
-depth = 1.;
-}`;
-
-const treeVertexShaderSource = `#version 300 es
-#pragma vscode_glsllint_stage: vert
-
-precision mediump float;
-
-uniform mat4 uView;
-uniform mat4 uProjection;
-uniform mat4 uShadowVP;
-uniform float uTime;
-uniform sampler2D uSmoothNoiseSampler;
-
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec3 aColor;
-layout(location = 3) in mat4 aModel;
-layout(location = 7) in vec4 aInstancedMetadata1;
-layout(location = 8) in vec4 aInstancedMetadata2;
-layout(location = 9) in vec4 aInstancedMetadata3;
-layout(location = 10) in vec4 aInstancedMetadata4;
-
-out vec3 vColor;
-out vec4 vTransPos;
-out vec3 vNormal;
-out vec4 vShadowCoord;
-
-void main() {
-    vec4 vPos = aModel * vec4(aPosition,1.);
-    
-
-    // move the sample over time
-    vec2 noiseSampleUV = vPos.xz / 5. + uTime / 100.;
-
-    // offset the higher up values according to the noise texture
-    float xNoise = 2. * (texture(uSmoothNoiseSampler,  noiseSampleUV ).r - 0.5);
-    float zNoise = 2. * (texture(uSmoothNoiseSampler,  noiseSampleUV + 0.5).r - 0.5);
-
-    vPos.x += xNoise * smoothstep(0.3,0.6, vPos.y) / 7. ;
-    vPos.z += zNoise * smoothstep(0.2,0.4, vPos.y) / 7.;
-
-
-    gl_Position = uProjection * uView * vPos;
-    vShadowCoord = (uShadowVP * vPos);
-    vColor = aColor * aInstancedMetadata1.a ;
-    vNormal = aNormal;
-    vTransPos = gl_Position;
 }`;
 
 const fragmentShaderSource = `#version 300 es
@@ -298,16 +193,6 @@ void main() {
 
 const wireFrameProgram = createProgram(gl, wireFrameVertex, wireFrameFrag);
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-const treeProgram = createProgram(
-  gl,
-  treeVertexShaderSource,
-  fragmentShaderSource
-);
-const lineProgram = createProgram(
-  gl,
-  lineVertexShaderSource,
-  lineFragmentShaderSource
-);
 const quadFragmentShaderSource = `#version 300 es
 #pragma vscode_glsllint_stage: frag
 
@@ -363,91 +248,8 @@ void main()
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
-const brown = "#5D4037";
-const darkGreen = "#2E7D32";
-const grey = "#CCCCCC";
 const darkgrey = "#888888";
 const white = "#EEEEEE";
-
-const generateMountainVertices = () => {
-  const vertices = [
-    [0, 0.6, darkgrey],
-    [0.05, 0.5, darkgrey],
-    [0.15, 0.325, darkgrey],
-    [0.35, 0.225, white],
-    [0.6, 0.1, white],
-    [0.8, 0, white],
-  ];
-
-  return vertices;
-};
-
-const generateTreeVertices = () => {
-  var currHeight = 0.55;
-  var currScale = 0.6;
-  const vertices = [
-    [0, 0.1, brown],
-    [0.6, 0.1, darkGreen],
-    [0.58, 0.2, darkGreen],
-    [currHeight, currScale, darkGreen],
-  ];
-
-  const heightStep = 0.45;
-  const scaleStep = 0.1;
-  const scaleInnerDelta = 0.15;
-  const heightInnerDelta = 0.3;
-  for (let i = 0; i < 10; i++) {
-    currHeight += heightStep;
-    currScale -= scaleStep;
-    let tempScale = Math.max(0, currScale - scaleInnerDelta);
-    vertices.push([currHeight + heightInnerDelta, tempScale, darkGreen]);
-    if (tempScale <= 0) {
-      break;
-    }
-    vertices.push([currHeight, currScale, darkGreen]);
-  }
-  const [finalHeight, scale, color] = vertices[vertices.length - 1];
-  if (scale > 0) {
-    vertices.push([finalHeight, 0, color]);
-  }
-  return vertices;
-};
-
-const treeMesh = generateSymmetricMesh(
-  generateTreeVertices(),
-  generateRegularPolygon(6, 1)
-);
-
-const generateRockVertices = () => {
-  const vertices = [
-    [0, 0.1, grey],
-    [0.04, 0.1, grey],
-    [0.08, 0.05, grey],
-    [0.08, 0.0, grey],
-  ];
-
-  return vertices;
-};
-
-const mountainArr = generateSymmetricMesh(
-  generateMountainVertices(),
-  generateRegularPolygon(7, 1)
-);
-
-const rockMesh = generateSymmetricMesh(
-  generateRockVertices(),
-  generateRegularPolygon(5, 1)
-);
-
-const hexArr = generateSymmetricMesh(
-  [
-    [-0.25, 1, "#444444"],
-    [0, 1, "#888800"],
-    [0.25, 0.8, "#008800"],
-    [0.25, 0, "#008800"],
-  ],
-  generateRegularPolygon(6, 1)
-);
 
 const generateUnitVertices = () => {
   const vertices = [];
@@ -509,104 +311,11 @@ const cameraEntity = new Entity();
   cameraEntity.addComponent(t);
 }
 
-const spawnMountainOn = (hexEntity) => {
-  const e = new Entity();
-  e.addComponent(new Mesh(mountainArr));
-  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
-  const pos = vec3.create();
-  pos[0] += Math.random() * 0.15;
-  pos[1] += 0.25;
-  pos[2] += Math.random() * 0.15;
-  e.components.transform.setScale([0.75, 0.75, 0.75]);
-  e.components.transform.setPosition(pos);
-};
-
-const spawnRockOn = (hexEntity) => {
-  const e = new Entity();
-  e.addComponent(new Mesh(rockMesh));
-  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
-  const pos = vec3.create();
-  pos[0] += Math.random() - 0.5;
-  pos[1] += 0.25;
-  pos[2] += Math.random() - 0.5;
-  e.components.transform.setPosition(pos);
-};
-
-const spawnTreeOn = (hexEntity) => {
-  const e = new Entity();
-  e.addComponent(new Mesh(treeMesh));
-  e.addComponent(new Transform({ parent: hexEntity.components.transform }));
-  const pos = vec3.create();
-  pos[0] += (Math.random() - 0.5) * 0.5;
-  pos[1] += 0.25;
-  pos[2] += (Math.random() - 0.5) * 0.5;
-  e.components.transform.setPosition(pos);
-  e.components.transform.setScale([0.25, 0.25, 0.25]);
-};
-
-// add ability to select / de-select
-
-const spawnHexAt = (coord) => {
-  const hexExists = Coordinate.getEntities(coord).some(
-    (e) => e.components.hex !== undefined
-  );
-  if (!hexExists) {
-    const e = new Entity(
-      new Mesh(hexArr),
-      new Transform({ pos: toHexPosition(coord) }),
-      new Hex(),
-      new BoxCollider(),
-      new Clickable(),
-      new Coordinate(coord)
-    );
-    switch (randomRange(0, 2, 3)) {
-      case 0:
-        addOption(e, buildings.farmBlueprint);
-        break;
-      case 1:
-        addOption(e, buildings.quarryBlueprint);
-        break;
-      default:
-      case 2:
-        addOption(e, buildings.loggingCampBlueprint);
-        break;
-    }
-    return e;
-    if (Math.random() < 0.4) {
-      spawnMountainOn(e);
-    } else {
-      for (let i = 0; i < 5; i++) {
-        spawnTreeOn(e);
-      }
-      for (let i = 0; i < 3; i++) {
-        spawnRockOn(e);
-      }
-    }
-    return e;
-  }
-  return null;
-};
-const spawnAroundHex = (entity) => {
-  Position.adjacent(entity.components.coordinate.pos).forEach((p) =>
-    spawnHexAt(p)
-  );
-};
 // to spawn around 0,0, we need
 //
 
-const start = spawnHexAt([0, 0]);
-
-for (let x = -1; x <= 1; x++) {
-  for (let y = -1; y <= 1; y++) {
-    spawnHexAt([x, y]);
-  }
-}
-cameraEntity.components.camera.origin = vec3.clone(
-  start.components.transform.pos
-);
-cameraEntity.components.camera.target = vec3.clone(
-  start.components.transform.pos
-);
+cameraEntity.components.camera.origin = vec3.clone([0, 0, 0]);
+cameraEntity.components.camera.target = vec3.clone([0, 0, 0]);
 
 const targetTransform = new Transform();
 {
@@ -615,18 +324,6 @@ const targetTransform = new Transform();
   targetTransform.setPosition([0, -50, 0]);
   targetEntity.addComponent(targetTransform);
 }
-
-const spawnUnitAt = (coords) => {
-  new Entity(
-    new Mesh(units),
-    new Transform(),
-    new Unit(),
-    new Animated(),
-    new Coordinate(coords)
-  );
-};
-
-spawnBuilding(start, buildings.village);
 
 const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
 {
@@ -653,244 +350,7 @@ const renderSystems = [
 
 const systems = [...gameSystems, ...renderSystems];
 
-const updateHexFrustumBounds = () => {
-  const [frustum, corners] = calculateFrustumPlanes(cameraEntity);
-  // add in any hexes that could be visible
-
-  // 1. Slice frustum with the hex plane
-  // project the corners into the y = 0 plane
-
-  // take all of the line segments, and see which intersect the y = 0 plane
-
-  const intersectionPoint = ([start, end]) => {
-    if (start[1] === 0) {
-      return vec3.clone(start);
-    }
-
-    if (end[1] === 0) {
-      return vec3.clone(end);
-    }
-
-    if (Math.sign(start[1]) === Math.sign(end[1])) {
-      return null;
-    }
-
-    const diff = vec3.create();
-    vec3.sub(diff, start, end);
-    vec3.scaleAndAdd(diff, start, diff, -start[1] / diff[1]);
-    return diff;
-  };
-
-  const planeToLine = ([planePoint, planeNormal]) => {
-    // get the line vector
-    const lineV = vec3.create();
-    const lineP = vec3.create();
-    vec3.cross(lineV, planeNormal, [0, 1, 0]);
-    vec3.normalize(lineV, lineV);
-
-    if (planePoint[1] === 0) {
-      vec3.copy(lineP, planePoint);
-    } else {
-      // get the "down" vector parallel to the plane
-
-      const downV = vec3.create();
-      vec3.cross(downV, lineV, planeNormal);
-      vec3.normalize(downV, downV);
-
-      // if the down vector moves the point away from y = 0, then invert it
-      if (downV[1] * planePoint[1] > 0) {
-        vec3.scale(downV, downV, -1);
-      }
-
-      // finally move the point to the y = 0 plane
-
-      vec3.scaleAndAdd(
-        lineP,
-        planePoint,
-        downV,
-        Math.abs(planePoint[1] / downV[1])
-      );
-    }
-    return [lineP, lineV];
-  };
-
-  const front = frustum[2];
-  const back = frustum[3];
-  const left = frustum[4];
-  const right = frustum[5];
-
-  // get corners by finding the closest points of lines
-  const closestPoint = ([p1, v1], [p2, v2]) => {
-    const p12 = vec2.clone([p1[0] - p2[0], p1[2] - p2[2]]);
-    const v12 = vec2.clone([v1[0] - v2[0], v1[2] - v2[2]]);
-
-    const t = -vec2.dot(v12, p12) / vec2.dot(v12, v12);
-    const v = vec3.create();
-    vec3.scaleAndAdd(v, p1, v1, t);
-    return v;
-  };
-
-  const frontLine = planeToLine(front);
-  const backLine = planeToLine(back);
-  const leftLine = planeToLine(left);
-  const rightLine = planeToLine(right);
-
-  const cornerPoints = [
-    closestPoint(frontLine, leftLine),
-    closestPoint(frontLine, rightLine),
-    closestPoint(backLine, leftLine),
-    closestPoint(backLine, rightLine),
-  ];
-
-  // get max and min
-
-  var minX = 10000000;
-  var minZ = 10000000;
-  var maxX = -10000000;
-  var maxZ = -10000000;
-
-  const points = [];
-  for (let x = 0; x < 2; x++) {
-    for (let y = 0; y < 2; y++) {
-      const i1 = intersectionPoint([corners[x][y][0], corners[x][y][1]]);
-      const i2 = intersectionPoint([corners[x][0][y], corners[x][1][y]]);
-      const i3 = intersectionPoint([corners[0][y][x], corners[1][y][x]]);
-      if (i1) {
-        points.push(i1);
-      }
-      if (i2) {
-        points.push(i2);
-      }
-      if (i3) {
-        points.push(i3);
-      }
-    }
-  }
-
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-
-    minX = Math.min(p[0], minX);
-    maxX = Math.max(p[0], maxX);
-
-    minZ = Math.min(p[2], minZ);
-    maxZ = Math.max(p[2], maxZ);
-  }
-
-  //
-  // 2. map the corners of the hex plane to hex values
-
-  minX = Math.floor(minX);
-  maxX = Math.ceil(maxX);
-
-  minZ = Math.floor(minZ - 1);
-  maxZ = Math.ceil(maxZ + 1);
-
-  for (let x = minX; x <= maxX; x++) {
-    for (let y = minZ; y <= maxZ; y++) {
-      spawnHexAt([x, y]);
-    }
-  }
-
-  // now, delete any hexes that are no longer visible.
-
-  instancedMeshes.forEach((meshes) => {
-    meshes.updateFrustum(gl, frustum);
-    meshes.cullInvisible(gl);
-  });
-};
-
-const calculateNormal = ([v1, v2, v3]) => {
-  const v12 = vec3.create();
-  const v13 = vec3.create();
-
-  vec3.sub(v12, v2, v1);
-  vec3.sub(v13, v3, v1);
-  vec3.cross(v12, v12, v13);
-  vec3.normalize(v12, v12);
-  return v12;
-};
-
-const calculatePlane = (tri) => {
-  return [vec3.clone(tri[0]), calculateNormal(tri)];
-};
-
 var debugVertices = [];
-
-const calculateFrustumPlanes = (cameraEntity) => {
-  const { camera } = cameraEntity.components;
-
-  var projection = mat4.create();
-  var view = mat4.create();
-  var temp = vec3.create();
-  vec3.add(temp, camera.origin, camera.getOffset());
-
-  mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
-
-  const near = 0.1;
-  const far = 20;
-  mat4.perspective(
-    projection,
-    Math.PI / 3,
-    gl.canvas.width / gl.canvas.height,
-    near,
-    far
-  );
-
-  mat4.invert(view, view);
-  mat4.invert(projection, projection);
-  var corners = [];
-  for (let x = 0; x < 2; x++) {
-    corners.push([]);
-
-    for (let y = 0; y < 2; y++) {
-      corners[x].push([]);
-
-      for (let z = 0; z < 2; z++) {
-        const w = z == 0 ? near : far;
-        const clip = vec4.clone([
-          (x === 0 ? -1 : 1) * w,
-          (y === 0 ? -1 : 1) * w,
-          (z === 0 ? -1 : 1) * w,
-          w,
-        ]);
-        vec4.transformMat4(clip, clip, projection);
-        vec4.transformMat4(clip, clip, view);
-        corners[x][y].push(vec3.clone(clip));
-      }
-    }
-  }
-
-  // planes are a point + a normal
-  const planes = [
-    // top
-    calculatePlane([corners[0][1][0], corners[1][1][0], corners[0][1][1]]),
-    // bottom
-    calculatePlane([corners[0][0][0], corners[0][0][1], corners[1][0][0]]),
-    // back
-    calculatePlane([corners[1][0][0], corners[1][1][0], corners[0][0][0]]),
-    // front
-    calculatePlane([corners[0][0][1], corners[0][1][1], corners[1][0][1]]),
-    // left
-    calculatePlane([corners[0][0][0], corners[0][1][0], corners[0][0][1]]),
-    // right
-    calculatePlane([corners[1][0][1], corners[1][1][1], corners[1][0][0]]),
-  ];
-  debugVertices = [];
-
-  for (let x = 0; x < 2; x++) {
-    for (let y = 0; y < 2; y++) {
-      vec3.pushAll(corners[x][y][0], debugVertices);
-      vec3.pushAll(corners[x][y][1], debugVertices);
-      vec3.pushAll(corners[0][y][x], debugVertices);
-      vec3.pushAll(corners[1][y][x], debugVertices);
-      vec3.pushAll(corners[x][0][y], debugVertices);
-      vec3.pushAll(corners[x][1][y], debugVertices);
-    }
-  }
-
-  return [planes, corners];
-};
 
 // https://stackoverflow.com/a/56348846
 const getWorldRayFromCamera = (cameraEntity, viewPos) => {
@@ -1295,7 +755,6 @@ const draw = () => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   renderer.render(program, setUniforms, meshInstances.visibleMeshInstances);
-  renderer.render(lineProgram, setUniforms, meshInstances.lineMeshInstances);
 
   // Step 2: Draw the quad and pick a texture to render
   gl.useProgram(quadProgram);
@@ -1347,28 +806,3 @@ const draw = () => {
 };
 
 draw();
-
-// webgl types
-
-// Standard Objects
-
-// buffer
-// texture
-// renderbuffer
-// sampler??
-// query??
-
-// Containers
-
-// VertexArray
-// Framebuffer
-// TransformFeedback
-
-// need to add:
-
-// 1. Camera support - can mimic this on the software side
-// 2. Hex Mesh -
-// 3. Hex placement
-// 4. Hex shader
-// 5. More complicated hex mesh
-// 6. Layout trees and stuff

@@ -86,7 +86,7 @@ class Sun {
     };
   }
 
-  setUniform(program) {
+  setUniforms(program) {
     const { gl, sunState } = this;
 
     const normDir = vec3.clone(sunState.direction);

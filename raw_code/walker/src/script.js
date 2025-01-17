@@ -35,7 +35,6 @@ const dataManager = new DataManager(
 
 const wireFrameProgram = createProgram(gl, wireFrameVertex, wireFrameFrag);
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
@@ -100,21 +99,6 @@ const applyActions = () => {
   actions.length = 0;
 };
 
-// two kinds of steps - animation and game action
-//
-// idea for animation:
-// have an "animation stack" for things, so that the game state can be ahead of the animation
-
-const step = () => {
-  // handle user input
-  applyActions();
-
-  // step through system
-  applySystems();
-  //updateHexFrustumBounds();
-};
-
-var vertex_buffer = gl.createBuffer();
 const renderer = new Renderer(gl);
 const noise = new NoiseTexture(gl);
 const sunShadowMap = new Sun(gl);
@@ -122,33 +106,9 @@ const sunShadowMap = new Sun(gl);
 noise.generateSmoothValueNoise(renderer, [256, 256]);
 noise.generateValueNoise(renderer, [256, 256]);
 
-const renderInputState = () => {};
-
-const draw = () => {
-  inputManager.update();
-  time.tick();
-  requestAnimationFrame(draw);
-
-  step();
-
-  sunShadowMap.renderShadowDepth();
-
-  const setUniforms = (program) => {
-    applyCameraUniforms(cameraEntity.components.camera, program);
-    sunShadowMap.setUniform(program);
-    time.setUniforms(program);
-    sunShadowMap.setUniform(program);
-  };
-  gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  renderer.render(program, setUniforms, meshInstances.visibleMeshInstances);
-
-  // Step 2: Draw the quad and pick a texture to render
+const renderPostProcess = () => {
   gl.useProgram(quadProgram);
 
-  // TODO: good abstraction around uniforms
-  //
-  // need to handle ints vs floats vs matrices vs textures cleanly.
   gl.uniform3fv(
     gl.getUniformLocation(quadProgram, "uBackgroundColor"),
 
@@ -163,15 +123,17 @@ const draw = () => {
   );
 
   renderer.renderPostProcess(quadProgram);
+};
 
-  renderInputState();
+const debugVertexBuffer = gl.createBuffer();
+const renderDebug = () => {
   if (debugVertices.length > 0) {
     gl.useProgram(wireFrameProgram);
     // Enable the depth test
 
     // Clear the color and depth buffer
     renderer.applyUniforms(cameraEntity.components.camera, wireFrameProgram);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, debugVertexBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array(debugVertices),
@@ -182,14 +144,33 @@ const draw = () => {
     gl.drawArrays(gl.LINES, 0, debugVertices.length / 3);
     gl.flush();
   }
-  Component.checkUnallocatedComponents();
-  return;
-  gl.useProgram(renderTexture);
-  gl.activeTexture(gl.TEXTURE0 + 3);
-  gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
-  gl.uniform1i(gl.getUniformLocation(renderTexture, "uTexture"), 3);
+};
 
-  renderer.renderPostProcess(renderTexture);
+const draw = () => {
+  inputManager.update();
+  time.tick();
+  requestAnimationFrame(draw);
+
+  // handle user input
+  applyActions();
+
+  // step through system
+  applySystems();
+
+  sunShadowMap.renderShadowDepth();
+
+  const setUniforms = (program) => {
+    applyCameraUniforms(cameraEntity.components.camera, program);
+    sunShadowMap.setUniforms(program);
+    time.setUniforms(program);
+  };
+  gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  renderer.render(program, setUniforms, meshInstances.visibleMeshInstances);
+
+  renderPostProcess();
+  renderDebug();
+  Component.checkUnallocatedComponents();
 };
 
 draw();

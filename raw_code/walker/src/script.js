@@ -5,21 +5,15 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import {
-  generateLineMesh,
   generateRegularPolygon,
   generateSymmetricMesh,
 } from "./renderer/mesh.js";
 import { spawnBuilding } from "./actions/spawnBuilding.js";
 import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
-import {
-  instancedMeshes,
-  registerInstanceMeshProgram,
-} from "./renderer/instancedMesh.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity, getEntitiesWith } from "./ecs/entity.js";
 import { Mesh } from "./components/render/mesh.js";
-import { Hex } from "./components/game/hex.js";
 import { Transform } from "./components/render/transform.js";
 import { UpdateMeshTransform } from "./systems/render/updateMeshTransform.js";
 import {
@@ -27,7 +21,7 @@ import {
   toHexPosition,
 } from "./systems/render/animateMeshTransform.js";
 import { MoveCamera } from "./systems/render/moveCamera.js";
-import { BoxCollider, Collider } from "./components/collider.js";
+import { Collider } from "./components/collider.js";
 import { vec3, vec4, mat4, vec2 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
@@ -46,10 +40,7 @@ import { Component } from "./ecs/component.js";
 import { Clickable } from "./components/client/clickable.js";
 import { Coordinate } from "./components/game/coordinate.js";
 import { UpgradePositions } from "./systems/render/upgradePositions.js";
-import { buildings } from "./building.js";
 import { UpgradeBuildings } from "./systems/game/upgradeBuildings.js";
-import { addOption } from "./actions/addOption.js";
-import { randomRange } from "./util/array.js";
 import { connectResource } from "./actions/connectResource.js";
 import { UpdateResourceActive } from "./systems/render/updateResourceActive.js";
 import { CheckProducer } from "./systems/game/checkProducer.js";
@@ -248,60 +239,6 @@ void main()
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
-const darkgrey = "#888888";
-const white = "#EEEEEE";
-
-const generateUnitVertices = () => {
-  const vertices = [];
-
-  for (let i = 1; i < 10; i++) {
-    const angle = ((Math.PI / 2) * i) / 10;
-    vertices.push([i * 0.01, Math.sin(angle) * 0.1, darkgrey]);
-  }
-  for (let i = 1; i < 10; i++) {
-    const angle = ((Math.PI / 2) * i) / 10;
-    vertices.push([i * 0.01 + 0.4, Math.cos(angle) * 0.1, white]);
-  }
-
-  return vertices;
-};
-
-const units = generateSymmetricMesh(
-  generateUnitVertices(),
-  generateRegularPolygon(12, 1)
-);
-
-const targetArr = generateSymmetricMesh(
-  [
-    [-0.25, 0.25, [1, 0, 0]],
-    [0.25, 0.25, [1, 0, 0]],
-    [0.25, 0, [1, 0, 0]],
-  ],
-  generateRegularPolygon(4, 1)
-);
-
-const selectedArr = generateSymmetricMesh(
-  [
-    [0, 0.8, [1, 1, 1]],
-    [0, 0.7, [1, 1, 1]],
-  ],
-  generateRegularPolygon(6, 1)
-);
-
-const pathMarker = generateSymmetricMesh(
-  [
-    [-0.1, 0.1, white],
-    [0.1, 0.1, white],
-    [0.1, 0, white],
-  ],
-  generateRegularPolygon(4, 1)
-);
-
-var clickedIndex = -1;
-
-// FBO
-const catLoc = 1;
-
 const cameraEntity = new Entity();
 
 {
@@ -314,23 +251,6 @@ const cameraEntity = new Entity();
 // to spawn around 0,0, we need
 //
 
-cameraEntity.components.camera.origin = vec3.clone([0, 0, 0]);
-cameraEntity.components.camera.target = vec3.clone([0, 0, 0]);
-
-const targetTransform = new Transform();
-{
-  const targetEntity = new Entity();
-  targetEntity.addComponent(new Mesh(targetArr));
-  targetTransform.setPosition([0, -50, 0]);
-  targetEntity.addComponent(targetTransform);
-}
-
-const markerEntity = new Entity(new Mesh(selectedArr), new Transform());
-{
-  markerEntity.components.transform.setPosition([0, 0.4, 0]);
-  markerEntity.components.mesh.setVisible(false);
-}
-
 const gameSystems = [new CheckProducer(), new UpgradeBuildings()];
 
 const meshInstances = new CollectVisibleMeshInstances();
@@ -338,7 +258,6 @@ const meshInstances = new CollectVisibleMeshInstances();
 const renderSystems = [
   new MoveCamera(),
   new PositionResources(),
-  new MarkSelected(markerEntity),
   new UpgradePositions(),
   new UpdateResourceActive(),
   new UpdateInputSatisfied(),
@@ -740,16 +659,10 @@ const draw = () => {
     // TODO: good abstraction around uniforms
     //
     // need to handle ints vs floats vs matrices vs textures cleanly.
-    gl.activeTexture(gl.TEXTURE0 + catLoc);
+    gl.activeTexture(gl.TEXTURE0 + 1);
     gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
     gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
-    gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), catLoc);
-    gl.uniform4iv(gl.getUniformLocation(program, "uClickedCoord"), [
-      clickedIndex,
-      0,
-      0,
-      0,
-    ]);
+    gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), 1);
     sunShadowMap.setUniform(program);
   };
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);

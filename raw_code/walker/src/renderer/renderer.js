@@ -1,9 +1,5 @@
-import { mat4, vec3, vec4, quat } from "gl-matrix";
-import { instancedMeshes } from "./instancedMesh";
 import { getPostProcessVao } from "./program";
 
-const temp = vec3.create();
-const temp2 = vec4.create();
 class Renderer {
   constructor(gl) {
     this.gl = gl;
@@ -66,28 +62,6 @@ class Renderer {
     this.fbo = fbo;
     this.depthTexture = depthTexture;
     this.fragColorTexture = fragColorTexture;
-  }
-
-  applyUniforms(camera, program) {
-    const view = mat4.create();
-    const projection = mat4.create();
-
-    vec3.add(temp, camera.origin, camera.getOffset());
-
-    mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
-
-    mat4.perspective(
-      projection,
-      Math.PI / 3,
-      this.gl.canvas.width / this.gl.canvas.height,
-      0.01,
-      20
-    );
-
-    const viewLoc = this.gl.getUniformLocation(program, "uView");
-    const projectionLoc = this.gl.getUniformLocation(program, "uProjection");
-    this.gl.uniformMatrix4fv(viewLoc, false, view);
-    this.gl.uniformMatrix4fv(projectionLoc, false, projection);
   }
 
   render(program, preProgram = () => {}, meshInstances) {

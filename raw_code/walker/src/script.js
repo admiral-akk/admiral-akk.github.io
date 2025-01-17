@@ -26,6 +26,7 @@ import {
   wireFrameVertex,
 } from "./shaders.js";
 import { applySystems, meshInstances } from "./systems/system.js";
+import { applyCameraUniforms } from "./renderer/camera.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -133,7 +134,7 @@ const draw = () => {
   sunShadowMap.renderShadowDepth();
 
   const setUniforms = (program) => {
-    renderer.applyUniforms(cameraEntity.components.camera, program);
+    applyCameraUniforms(cameraEntity.components.camera, program);
 
     let textureMatrix = mat4.create();
     mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);

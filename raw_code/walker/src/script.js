@@ -4,43 +4,19 @@ import {
   DefaultCompressor,
   DefaultPreprocessor,
 } from "./util/compression.js";
-import { spawnBuilding } from "./actions/spawnBuilding.js";
 import { Camera } from "./components/render/camera.js";
 import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { Renderer } from "./renderer/renderer.js";
-import { Entity, getEntitiesWith } from "./ecs/entity.js";
-import { Mesh } from "./components/render/mesh.js";
+import { Entity } from "./ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
-import { UpdateMeshTransform } from "./systems/render/updateMeshTransform.js";
-import {
-  AnimateMeshTransform,
-  toHexPosition,
-} from "./systems/render/animateMeshTransform.js";
-import { MoveCamera } from "./systems/render/moveCamera.js";
-import { Collider } from "./components/collider.js";
-import { vec3, vec4, mat4, vec2 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
-import { Unit } from "./components/game/unit.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
 import { input } from "./engine/input.js";
-import { Selected } from "./components/client/selected.js";
-import { Position } from "./systems/util/position.js";
-import { Animated, Animation } from "./components/render/animations.js";
-import { ApplyAnimations } from "./systems/render/applyAnimations.js";
-import { PositionResources } from "./systems/render/positionResources.js";
 import { Component } from "./ecs/component.js";
-import { Clickable } from "./components/client/clickable.js";
-import { Coordinate } from "./components/game/coordinate.js";
-import { UpgradePositions } from "./systems/render/upgradePositions.js";
-import { UpgradeBuildings } from "./systems/game/upgradeBuildings.js";
-import { connectResource } from "./actions/connectResource.js";
-import { UpdateResourceActive } from "./systems/render/updateResourceActive.js";
-import { CheckProducer } from "./systems/game/checkProducer.js";
-import { UpdateInputSatisfied } from "./systems/render/updateInputSatisfied.js";
-import { CollectVisibleMeshInstances } from "./systems/render/collectVisibleMeshes.js";
 import {
   fragmentShaderSource,
   quadFragmentShaderSource,
@@ -49,6 +25,7 @@ import {
   wireFrameFrag,
   wireFrameVertex,
 } from "./shaders.js";
+import { applySystems, meshInstances } from "./systems/system.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -69,27 +46,6 @@ const cameraEntity = new Entity();
   t.setPosition([0, -4, 0]);
   cameraEntity.addComponent(t);
 }
-
-// to spawn around 0,0, we need
-//
-
-const gameSystems = [new CheckProducer(), new UpgradeBuildings()];
-
-const meshInstances = new CollectVisibleMeshInstances();
-
-const renderSystems = [
-  new MoveCamera(),
-  new PositionResources(),
-  new UpgradePositions(),
-  new UpdateResourceActive(),
-  new UpdateInputSatisfied(),
-  new AnimateMeshTransform(),
-  new ApplyAnimations(),
-  new UpdateMeshTransform(),
-  meshInstances,
-];
-
-const systems = [...gameSystems, ...renderSystems];
 
 var debugVertices = [];
 
@@ -147,12 +103,6 @@ const applyActions = () => {
 //
 // idea for animation:
 // have an "animation stack" for things, so that the game state can be ahead of the animation
-
-const applySystems = () => {
-  for (let systemIndex = 0; systemIndex < systems.length; systemIndex++) {
-    systems[systemIndex].run();
-  }
-};
 
 const step = () => {
   // handle user input

@@ -135,22 +135,7 @@ const draw = () => {
 
   const setUniforms = (program) => {
     applyCameraUniforms(cameraEntity.components.camera, program);
-
-    let textureMatrix = mat4.create();
-    mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
-    mat4.scale(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
-    mat4.multiply(textureMatrix, textureMatrix, sunShadowMap.projection);
-
-    const viewInv = mat4.clone(sunShadowMap.view);
-
-    mat4.multiply(textureMatrix, textureMatrix, viewInv);
-
-    gl.uniformMatrix4fv(
-      gl.getUniformLocation(program, "uShadowVP"),
-      false,
-      textureMatrix
-    );
-    const shadowLoc = 10;
+    sunShadowMap.setUniform(program);
     const smoothNoiseLoc = 11;
     gl.activeTexture(gl.TEXTURE0 + smoothNoiseLoc);
     gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
@@ -158,19 +143,7 @@ const draw = () => {
       gl.getUniformLocation(program, "uSmoothNoiseSampler"),
       smoothNoiseLoc
     );
-    gl.activeTexture(gl.TEXTURE0 + shadowLoc);
-    gl.bindTexture(gl.TEXTURE_2D, sunShadowMap.depthTexture);
-    gl.uniform1i(
-      gl.getUniformLocation(program, "uShadowMapSampler"),
-      shadowLoc
-    );
     gl.uniform1f(gl.getUniformLocation(program, "uTime"), time.time);
-    // TODO: good abstraction around uniforms
-    //
-    // need to handle ints vs floats vs matrices vs textures cleanly.
-    gl.activeTexture(gl.TEXTURE0 + 1);
-    gl.bindTexture(gl.TEXTURE_2D, noise.valueNoiseTex);
-    gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
     gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), 1);
     sunShadowMap.setUniform(program);
   };

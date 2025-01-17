@@ -113,6 +113,28 @@ class Sun {
       gl.getUniformBlockIndex(program, "Sun"),
       SUN_BINDING_POINT
     );
+
+    let textureMatrix = mat4.create();
+    mat4.translate(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+    mat4.scale(textureMatrix, textureMatrix, [0.5, 0.5, 0.5]);
+    mat4.multiply(textureMatrix, textureMatrix, this.projection);
+
+    const viewInv = mat4.clone(this.view);
+
+    mat4.multiply(textureMatrix, textureMatrix, viewInv);
+
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(program, "uShadowVP"),
+      false,
+      textureMatrix
+    );
+    const shadowLoc = 10;
+    gl.activeTexture(gl.TEXTURE0 + shadowLoc);
+    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+    gl.uniform1i(
+      gl.getUniformLocation(program, "uShadowMapSampler"),
+      shadowLoc
+    );
   }
 
   renderShadowDepth() {

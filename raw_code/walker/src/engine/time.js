@@ -1,5 +1,7 @@
 // keeps track of time, ensures that each step happens at a specific "time"
 
+import { gl } from "./renderer";
+
 // tells you:
 class Time {
   constructor() {
@@ -14,6 +16,10 @@ class Time {
     this.delta = (next - this.time * 1000) / 1000;
     this.time = (next - this.start) / 1000;
     this.frame++;
+  }
+
+  setUniforms(program) {
+    gl.uniform1f(gl.getUniformLocation(program, "uTime"), this.time);
   }
 }
 

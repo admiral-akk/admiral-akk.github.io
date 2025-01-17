@@ -136,15 +136,7 @@ const draw = () => {
   const setUniforms = (program) => {
     applyCameraUniforms(cameraEntity.components.camera, program);
     sunShadowMap.setUniform(program);
-    const smoothNoiseLoc = 11;
-    gl.activeTexture(gl.TEXTURE0 + smoothNoiseLoc);
-    gl.bindTexture(gl.TEXTURE_2D, noise.smoothValueNoiseTex);
-    gl.uniform1i(
-      gl.getUniformLocation(program, "uSmoothNoiseSampler"),
-      smoothNoiseLoc
-    );
-    gl.uniform1f(gl.getUniformLocation(program, "uTime"), time.time);
-    gl.uniform1i(gl.getUniformLocation(program, "uSampler1"), 1);
+    time.setUniforms(program);
     sunShadowMap.setUniform(program);
   };
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);

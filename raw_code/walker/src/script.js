@@ -9,7 +9,6 @@ import { createProgram, createPostProcessProgram } from "./renderer/program.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Entity } from "./ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
-import { mat4 } from "gl-matrix";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
 import { State, StateMachine } from "./util/stateMachine.js";
@@ -27,6 +26,11 @@ import {
 } from "./shaders.js";
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
+import { Mesh } from "./components/render/mesh.js";
+import {
+  generateRegularPolygon,
+  generateSymmetricMesh,
+} from "./renderer/mesh.js";
 
 const dataManager = new DataManager(
   new DefaultCompressor(),
@@ -146,6 +150,24 @@ const renderDebug = () => {
   }
 };
 
+const resourceSize = 1;
+const color = [0.45, 0.25, 0];
+
+const modelVerts = generateSymmetricMesh(
+  [
+    [-resourceSize, resourceSize, color],
+    [resourceSize, resourceSize, color],
+    [resourceSize, 0, color],
+  ],
+  generateRegularPolygon(4, 1)
+);
+
+const createThing = () => {
+  const modelArray = modelVerts;
+  new Entity(new Transform(), new Mesh(modelArray));
+};
+
+createThing();
 const draw = () => {
   inputManager.update();
   time.tick();

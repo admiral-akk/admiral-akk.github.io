@@ -52,7 +52,6 @@ export class Transform extends Component {
       return this.matrix;
     }
 
-    this.updated = false;
     mat4.identity(this.matrix);
 
     mat4.translate(this.matrix, this.matrix, this.pos);

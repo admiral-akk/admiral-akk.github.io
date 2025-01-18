@@ -8,7 +8,7 @@ class UpdateMeshTransform extends System {
   }
 
   apply({ mesh, transform }) {
-    if (mesh.updated) {
+    if (mesh.updated || true) {
       // update visibility
       if (mesh.visible) {
         mesh.instancedMesh.addMesh(mesh);

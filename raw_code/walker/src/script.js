@@ -11,6 +11,8 @@ import { Entity } from "./ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
+import { Brush } from "./engine/mesh/brush.js";
+import { Plane } from "./engine/mesh/plane.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
@@ -27,11 +29,7 @@ import {
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
-import {
-  generateRegularPolygon,
-  generateSymmetricMesh,
-} from "./renderer/mesh.js";
-
+import { vec3, quat, Vec3 } from "gl-matrix";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -150,21 +148,27 @@ const renderDebug = () => {
   }
 };
 
-const resourceSize = 1;
-const color = [0.45, 0.25, 0];
+const generateBox = () => {
+  const resourceSize = 1;
+  const color = [0.45, 0.25, 0];
 
-const modelVerts = generateSymmetricMesh(
-  [
-    [-resourceSize, resourceSize, color],
-    [resourceSize, resourceSize, color],
-    [resourceSize, 0, color],
-  ],
-  generateRegularPolygon(4, 1)
-);
+  const directions = [new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)];
+
+  const planes = [];
+
+  for (let i = 0; i < directions.length; i++) {
+    const dir = directions[i];
+    planes.push(new Plane(dir.clone().scale(resourceSize), -1, color));
+    planes.push(new Plane(dir.clone().scale(-resourceSize), -1, color));
+  }
+
+  const brush = new Brush(planes);
+  return brush.triangles();
+};
 
 const createThing = () => {
-  const modelArray = modelVerts;
-  new Entity(new Transform(), new Mesh(modelArray));
+  const modelArray = generateBox();
+  return new Entity(new Transform(), new Mesh(modelArray));
 };
 
 createThing();

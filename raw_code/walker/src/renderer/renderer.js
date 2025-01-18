@@ -72,7 +72,9 @@ class Renderer {
     gl.cullFace(gl.BACK);
     gl.useProgram(program);
     preProgram(program);
-    meshInstances.forEach((mi) => mi.render(gl));
+    meshInstances.forEach((mi) => {
+      mi.render(gl);
+    });
     gl.disable(gl.CULL_FACE);
     gl.disable(gl.DEPTH_TEST);
 

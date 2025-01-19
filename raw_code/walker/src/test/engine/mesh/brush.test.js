@@ -8,6 +8,7 @@ import {
 } from "../../helper";
 import { Plane } from "../../../engine/mesh/plane";
 import { Brush } from "../../../engine/mesh/brush";
+import { Triangle } from "../../../engine/mesh/triangle";
 
 function testLineEqual(line1, line2) {
   expectedApprox(Line.distanceToPoint(line1, line2.start), 0, {
@@ -32,7 +33,7 @@ test("planePoints - Empty brush produces no vertices", () => {
   assert.isEmpty(pointsToPlanes);
 });
 
-test("brush - Triangle brush produces triangular triangles", () => {
+test("brush - Triangle brush produces vertices", () => {
   const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
   const p2 = Plane.fromPoints(
     new Vec3(0, 1, 0),
@@ -64,5 +65,40 @@ test("brush - Triangle brush produces triangular triangles", () => {
       new Vec3(0, 0, 1),
     ],
     { pointsToPlanes: Array.from(pointsToPlanes.entries()), brush }
+  );
+});
+
+test("brush - Triangle brush produces triangular triangles", () => {
+  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
+  const p2 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(1, 0, 0),
+    new Vec3(0, 0, 1)
+  );
+  const p3 = Plane.fromPoints(
+    new Vec3(0, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 1)
+  );
+
+  const p4 = Plane.fromPoints(
+    new Vec3(1, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0)
+  );
+
+  const brush = new Brush([p1, p2, p3, p4]);
+
+  const triangles = brush.triangles();
+
+  listElementsMatch(
+    triangles,
+    [
+      new Triangle(new Vec3(0, 1, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 0)),
+      new Triangle(new Vec3(0, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0)),
+      new Triangle(new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)),
+      new Triangle(new Vec3(1, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 0, 0)),
+    ],
+    { triangles, brush }
   );
 });

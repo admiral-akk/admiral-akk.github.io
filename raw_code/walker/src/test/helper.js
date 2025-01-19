@@ -1,6 +1,6 @@
 import { Vec3 } from "gl-matrix";
-import { Triangle } from "three";
 import { assert } from "vitest";
+import { Triangle } from "../engine/mesh/triangle";
 
 export const expectedApprox = (v, expected, obj = {}, epsilon = 0.001) => {
   assert.isAtMost(
@@ -37,7 +37,11 @@ export const distance = (v1, v2) => {
     actualDistance = minError;
   } else {
     throw new Error(
-      `Unknown actual type: ${v1.prototype.constructor.toString()}`
+      `Unknown actual type: ${JSON.stringify(
+        v1,
+        null,
+        2
+      )}, v2: ${JSON.stringify(v2, null, 2)}`
     );
   }
 

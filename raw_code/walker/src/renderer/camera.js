@@ -5,7 +5,6 @@ const temp = vec3.create();
 export function applyCameraUniforms(camera, program) {
   const view = mat4.create();
   const projection = mat4.create();
-  console.log(camera.getOffset());
   vec3.add(temp, camera.origin, camera.getOffset());
 
   mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);

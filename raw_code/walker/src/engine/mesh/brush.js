@@ -17,7 +17,7 @@ const modelVerts = generateSymmetricMesh(
   generateRegularPolygon(4, 1)
 );
 
-function planeIntersection(p1, p2, p3) {
+export function planeIntersection(p1, p2, p3) {
   const line = Plane.planeIntersection(p1, p2);
   return Plane.lineIntersection(p3, line);
 }
@@ -47,6 +47,7 @@ export class Brush {
           const p3 = planes[k];
           const p = planeIntersection(p1, p2, p3);
           if (isNaN(p[0]) || isNaN(p[1]) || isNaN(p[2])) {
+            console.log(p, [p1, p2, p3]);
           } else {
             planeToPoints.get(p1).push(p);
             planeToPoints.get(p2).push(p);
@@ -57,6 +58,8 @@ export class Brush {
       }
     }
 
+    console.log(pointsToPlanes.keys());
+    throw new Error();
     // TODO: eliminate all vertices that are excluded by another plane
     for (const [point, pointPlanes] of pointsToPlanes.entries()) {
       for (let i = 0; i < planes.length; i++) {
@@ -66,14 +69,11 @@ export class Brush {
           planeToPoints.get(pointPlanes[0]).remove(point);
           planeToPoints.get(pointPlanes[1]).remove(point);
           planeToPoints.get(pointPlanes[2]).remove(point);
-          planeToPoints.delete(point);
+          pointsToPlanes.delete(point);
         } else {
-          // console.log("keep", point);
         }
       }
     }
-
-    console.log(pointsToPlanes.keys());
     // can't we just triangulate the points and call it?
     const verts = [];
     planes.forEach((p) => {
@@ -113,7 +113,6 @@ export class Brush {
       planeVerts.sort((a, b) => {
         return sortVal(a) - sortVal(b);
       });
-      console.log(planeVerts);
 
       const addVert = (v) => {
         verts.push(v[0], v[1], v[2]);

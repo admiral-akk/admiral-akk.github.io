@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "Kuba Karpierz",
   "license": "MIT",
   "devDependencies": {
     "vite": "^4.5.0",
-    "vite-plugin-glsl": "^1.2.1"
+    "vite-plugin-glsl": "^1.2.1",
+    "vitest": "^3.0.2"
   },
   "dependencies": {
     "gl-matrix": "4.0.0-beta.2",

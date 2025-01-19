@@ -13,6 +13,6 @@ export class RotateMeshes extends System {
   }
 
   apply({ mesh, transform }) {
-    transform.setRotation(transform.rot.clone().rotateZ(0.01));
+    //transform.setRotation(transform.rot.clone().rotateZ(0.01));
   }
 }

@@ -29,7 +29,7 @@ import {
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
-import { vec3, quat, Vec3 } from "gl-matrix";
+import { vec3, quat, Vec3, Vec2 } from "gl-matrix";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -78,6 +78,18 @@ class InputManager extends StateMachine {
 class OpenState extends State {
   handleInput(manager) {
     const { state } = input;
+
+    if (state?.rmb?.val === 1) {
+      const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
+      console.log(delta);
+      cameraEntity.components.camera.xAngle += 10 * delta.x;
+      cameraEntity.components.camera.yAngle += 10 * delta.y;
+      cameraEntity.components.camera.yAngle = Math.clamp(
+        cameraEntity.components.camera.yAngle,
+        (-1 * Math.PI) / 3,
+        (1 * Math.PI) / 3
+      );
+    }
   }
 }
 
@@ -151,6 +163,7 @@ const renderDebug = () => {
 const generateBox = () => {
   const resourceSize = 1;
   const color = [0.45, 0.25, 0];
+  const color2 = [0.45, 0.25, 0.4];
 
   const directions = [new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)];
 
@@ -162,6 +175,7 @@ const generateBox = () => {
     planes.push(new Plane(dir.clone().scale(-resourceSize), -1, color));
   }
 
+  planes.push(new Plane(new Vec3(1, 1, 1).normalize(), 0, color2));
   const brush = new Brush(planes);
   return brush.triangles();
 };

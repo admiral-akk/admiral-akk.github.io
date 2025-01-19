@@ -33,6 +33,7 @@ export class Brush {
     const planeToPoints = new Map();
     const planeToEdges = new Map();
     const planes = this.planes;
+    const pointsToPlanes = new Map();
 
     planes.forEach((p) => {
       planeToPoints.set(p, []);
@@ -50,15 +51,36 @@ export class Brush {
             planeToPoints.get(p1).push(p);
             planeToPoints.get(p2).push(p);
             planeToPoints.get(p3).push(p);
+            pointsToPlanes.set(p, [p1, p2, p3]);
           }
         }
       }
     }
 
+    // TODO: eliminate all vertices that are excluded by another plane
+    for (const [point, pointPlanes] of pointsToPlanes.entries()) {
+      for (let i = 0; i < planes.length; i++) {
+        if (Plane.distanceToPoint(planes[i], point) < -0.001) {
+          console.log("remove", point);
+          console.log(Plane.distanceToPoint(planes[i], point), planes[i]);
+          planeToPoints.get(pointPlanes[0]).remove(point);
+          planeToPoints.get(pointPlanes[1]).remove(point);
+          planeToPoints.get(pointPlanes[2]).remove(point);
+          planeToPoints.delete(point);
+        } else {
+          // console.log("keep", point);
+        }
+      }
+    }
+
+    console.log(pointsToPlanes.keys());
     // can't we just triangulate the points and call it?
     const verts = [];
     planes.forEach((p) => {
       const planeVerts = planeToPoints.get(p);
+      if (planeVerts.length < 3) {
+        return;
+      }
       const average = new Vec3();
       planeVerts.forEach((v) => average.add(v));
       average.scale(1 / planeVerts.length);
@@ -109,8 +131,6 @@ export class Brush {
       }
     });
     return verts;
-
-    // TODO: eliminate all vertices that are excluded by another plane
 
     // if two vertices share a generating plane, that forms an edge between those planes
     const edges = [];

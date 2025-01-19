@@ -6,16 +6,23 @@ Vec3.prototype.clone = function () {
 
 export class Plane {
   constructor(norm, offset, color) {
-    this.norm = norm;
+    this.norm = norm.normalize();
     this.offset = offset;
     this.color = color;
   }
 
   static lineIntersection(plane, [start, dir]) {
+    if (Math.abs(Vec3.dot(plane.norm, dir)) < 0.01) {
+      return new Vec3(NaN, NaN, NaN);
+    }
     const t =
       (plane.offset - Vec3.dot(plane.norm, start)) / Vec3.dot(plane.norm, dir);
 
     return start.clone().add(dir.clone().scale(t));
+  }
+
+  static distanceToPoint(plane, point) {
+    return Vec3.dot(plane.norm, point) - plane.offset;
   }
 
   static planeIntersection(p1, p2) {

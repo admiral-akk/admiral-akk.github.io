@@ -79,7 +79,11 @@ class OpenState extends State {
   handleInput(manager) {
     const { state } = input;
 
-    if (state?.rmb?.val === 1) {
+    if (
+      state?.rmb?.val === 1 &&
+      state?.mpos?.frame === time.frame &&
+      state?.mpos?.prev?.frame === time.frame - 1
+    ) {
       const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
       cameraEntity.components.camera.xAngle += 10 * delta.x;
       cameraEntity.components.camera.yAngle += 10 * delta.y;
@@ -168,12 +172,12 @@ const generatePyramid = () => {
 
   const planes = [];
 
-  planes.push(new Plane(new Vec3(0, 1, 0), 0, color));
-  planes.push(new Plane(new Vec3(1, -1, 0), -1, color));
-  planes.push(new Plane(new Vec3(-1, -1, 0), -1, color));
-  planes.push(new Plane(new Vec3(0, -1, -1), -1, color));
-  planes.push(new Plane(new Vec3(0, -1, 1), -1, color));
-  planes.push(new Plane(new Vec3(0, -1, 0), -0.4, color));
+  planes.push(new Plane(new Vec3(0, 1, 0), 0, { color }));
+  planes.push(new Plane(new Vec3(1, -1, 0), -1, { color }));
+  planes.push(new Plane(new Vec3(-1, -1, 0), -1, { color }));
+  planes.push(new Plane(new Vec3(0, -1, -1), -1, { color }));
+  planes.push(new Plane(new Vec3(0, -1, 1), -1, { color }));
+  planes.push(new Plane(new Vec3(0, -1, 0), -0.4, { color }));
   const brush = new Brush(planes);
   return brush.triangles();
 };
@@ -189,11 +193,13 @@ const generateBox = () => {
 
   for (let i = 0; i < directions.length; i++) {
     const dir = directions[i];
-    planes.push(new Plane(dir.clone().scale(resourceSize), -1, color));
-    planes.push(new Plane(dir.clone().scale(-resourceSize), -1, color));
+    planes.push(new Plane(dir.clone().scale(resourceSize), -1, { color }));
+    planes.push(new Plane(dir.clone().scale(-resourceSize), -1, { color }));
   }
 
-  planes.push(new Plane(Vec3.clone([1, 1, 1]).normalize(), 0, color2));
+  planes.push(
+    new Plane(Vec3.clone([1, 1, 1]).normalize(), 0, { color: color2 })
+  );
   const brush = new Brush(planes);
   return brush.triangles();
 };

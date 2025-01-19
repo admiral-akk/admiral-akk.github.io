@@ -1,21 +1,5 @@
-import { Vec2, Vec3 } from "gl-matrix";
-import {
-  generateRegularPolygon,
-  generateSymmetricMesh,
-} from "../../renderer/mesh";
+import { Vec3 } from "gl-matrix";
 import { Plane } from "./plane";
-
-const resourceSize = 1;
-const color = [0.45, 0.25, 0];
-
-const modelVerts = generateSymmetricMesh(
-  [
-    [-resourceSize, resourceSize, color],
-    [resourceSize, resourceSize, color],
-    [resourceSize, 0, color],
-  ],
-  generateRegularPolygon(4, 1)
-);
 
 export function planeIntersection(p1, p2, p3) {
   const line = Plane.planeIntersection(p1, p2);
@@ -46,7 +30,7 @@ export class Brush {
         for (let k = j + 1; k < planes.length; k++) {
           const p3 = planes[k];
           const p = planeIntersection(p1, p2, p3);
-          if (isNaN(p[0]) || isNaN(p[1]) || isNaN(p[2])) {
+          if (p === null) {
             console.log(p, [p1, p2, p3]);
           } else {
             planeToPoints.get(p1).push(p);
@@ -59,7 +43,7 @@ export class Brush {
     }
 
     console.log(pointsToPlanes.keys());
-    throw new Error();
+
     // TODO: eliminate all vertices that are excluded by another plane
     for (const [point, pointPlanes] of pointsToPlanes.entries()) {
       for (let i = 0; i < planes.length; i++) {
@@ -117,7 +101,11 @@ export class Brush {
       const addVert = (v) => {
         verts.push(v[0], v[1], v[2]);
         verts.push(p.norm[0], p.norm[1], p.norm[2]);
-        verts.push(p.color[0], p.color[1], p.color[2]);
+        verts.push(
+          p.metadata.color[0],
+          p.metadata.color[1],
+          p.metadata.color[2]
+        );
       };
       for (let i = 1; i < planeVerts.length - 1; i++) {
         const v1 = planeVerts[0];

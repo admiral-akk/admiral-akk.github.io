@@ -1,19 +1,21 @@
 import { Vec3 } from "gl-matrix";
+import { Line } from "./line";
 
 Vec3.prototype.clone = function () {
   return Vec3.clone(this);
 };
 
 export class Plane {
-  constructor(norm, offset, color) {
+  constructor(norm, offset, metadata = {}) {
     this.norm = norm.normalize();
     this.offset = offset;
-    this.color = color;
+    this.metadata = metadata;
   }
 
-  static lineIntersection(plane, [start, dir]) {
+  static lineIntersection(plane, line) {
+    const { start, dir } = line;
     if (Math.abs(Vec3.dot(plane.norm, dir)) < 0.01) {
-      return new Vec3(NaN, NaN, NaN);
+      return null;
     }
     const t =
       (plane.offset - Vec3.dot(plane.norm, start)) / Vec3.dot(plane.norm, dir);
@@ -61,6 +63,6 @@ export class Plane {
     point[other2] =
       -(p1.offset * p2.norm[other1] - p2.offset * p1.norm[other1]) / diff;
 
-    return [point, lineDir];
+    return new Line(point, lineDir);
   }
 }

@@ -14,7 +14,7 @@ export class Brush {
     this.planes = planes;
   }
 
-  triangles() {
+  planePoints() {
     // generate verts at the interesection of 3 planes, with a link to the generating planes
 
     const planeToPoints = new Map();
@@ -48,7 +48,7 @@ export class Brush {
     // eliminate all vertices that are excluded by another plane
     for (const [point, pointPlanes] of pointsToPlanes.entries()) {
       for (let i = 0; i < planes.length; i++) {
-        if (Plane.distanceToPoint(planes[i], point) < -0.001) {
+        if (Plane.distanceToPoint(planes[i], point) <= -0.001) {
           planeToPoints.get(pointPlanes[0]).remove(point);
           planeToPoints.get(pointPlanes[1]).remove(point);
           planeToPoints.get(pointPlanes[2]).remove(point);
@@ -56,6 +56,17 @@ export class Brush {
         }
       }
     }
+
+    return [planeToPoints, pointsToPlanes];
+  }
+
+  triangles() {
+    // generate verts at the interesection of 3 planes, with a link to the generating planes
+
+    const planeToEdges = new Map();
+    const planes = this.planes;
+
+    const [planeToPoints, pointsToPlanes] = this.planePoints();
 
     // triangulate the faces
     const triangles = [];

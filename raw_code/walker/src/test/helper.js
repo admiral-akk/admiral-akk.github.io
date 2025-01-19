@@ -44,6 +44,38 @@ export const distance = (v1, v2) => {
   return actualDistance;
 };
 
+export const listElementsMatch = (
+  actualList,
+  expectedList,
+  debugObj = {},
+  epsilon = 0.001
+) => {
+  const missedActualMatches = [];
+  const missedExpectedMatches = Array.from(expectedList);
+  actualList.forEach((actual) => {
+    var bestDistance = 100000;
+    var best = null;
+    expectedList.forEach((expected) => {
+      const dist = distance(actual, expected);
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        best = expected;
+      }
+    });
+    if (bestDistance > epsilon) {
+      missedActualMatches.push(actual);
+    } else {
+      missedExpectedMatches.remove(best);
+    }
+  });
+
+  debugObj.missedActualMatches = missedActualMatches;
+  debugObj.missedExpectedMatches = missedExpectedMatches;
+
+  assert.isEmpty(missedActualMatches, JSON.stringify(debugObj, null, 2));
+  assert.isEmpty(missedExpectedMatches, JSON.stringify(debugObj, null, 2));
+};
+
 export const approxDistance = (
   actual,
   expected,

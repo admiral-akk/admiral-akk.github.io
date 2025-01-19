@@ -206,7 +206,27 @@ const generateBox = () => {
 };
 
 const createThing = () => {
-  const modelTriangle = generateBox();
+  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
+  const p2 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(1, 0, 0),
+    new Vec3(0, 0, 1)
+  );
+  const p3 = Plane.fromPoints(
+    new Vec3(0, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 1)
+  );
+
+  const p4 = Plane.fromPoints(
+    new Vec3(1, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0)
+  );
+
+  const brush = new Brush([p1, p2, p3, p4]);
+
+  const modelTriangle = brush.triangles();
   const modelArray = [];
   modelTriangle.forEach((tri) => Triangle.pushVertices(tri, modelArray));
   return new Entity(new Transform(), new Mesh(modelArray));

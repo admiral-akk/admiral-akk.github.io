@@ -1,7 +1,11 @@
 import { assert, test } from "vitest";
 import { Vec3 } from "gl-matrix";
 import { Line } from "../../../engine/mesh/line";
-import { approxDistance, expectedApprox } from "../../helper";
+import {
+  approxDistance,
+  expectedApprox,
+  listElementsMatch,
+} from "../../helper";
 import { Plane } from "../../../engine/mesh/plane";
 import { Brush } from "../../../engine/mesh/brush";
 
@@ -18,13 +22,14 @@ function testLineEqual(line1, line2) {
   });
 }
 
-test("brush - Empty brush produces no triangles", () => {
+test("planePoints - Empty brush produces no vertices", () => {
   const emptyBrush = new Brush([
     new Plane(new Vec3(1, 0, 0), 1),
     new Plane(new Vec3(-1, 0, 0), 1),
   ]);
 
-  assert.isEmpty(emptyBrush.triangles());
+  const [planeToPoints, pointsToPlanes] = emptyBrush.planePoints();
+  assert.isEmpty(pointsToPlanes);
 });
 
 test("brush - Triangle brush produces triangular triangles", () => {
@@ -35,8 +40,8 @@ test("brush - Triangle brush produces triangular triangles", () => {
     new Vec3(0, 0, 1)
   );
   const p3 = Plane.fromPoints(
-    new Vec3(0, 1, 0),
     new Vec3(0, 0, 0),
+    new Vec3(0, 1, 0),
     new Vec3(0, 0, 1)
   );
 
@@ -46,10 +51,18 @@ test("brush - Triangle brush produces triangular triangles", () => {
     new Vec3(0, 0, 0)
   );
 
-  const emptyBrush = new Brush([p1, p2, p3, p4]);
+  const brush = new Brush([p1, p2, p3, p4]);
 
-  assert.isNotEmpty(
-    emptyBrush.triangles(),
-    JSON.stringify({ p1, p2, p3, p4 }, null, 2)
+  const [planeToPoints, pointsToPlanes] = brush.planePoints();
+
+  listElementsMatch(
+    Array.from(pointsToPlanes.keys()),
+    [
+      new Vec3(0, 0, 0),
+      new Vec3(0, 1, 0),
+      new Vec3(1, 0, 0),
+      new Vec3(0, 0, 1),
+    ],
+    { pointsToPlanes: Array.from(pointsToPlanes.entries()), brush }
   );
 });

@@ -1,9 +1,10 @@
 import { Vec3 } from "gl-matrix";
 import { Plane } from "./plane";
 
-export function planeIntersection(p1, p2, p3) {
+function planeIntersection(p1, p2, p3) {
   const line = Plane.planeIntersection(p1, p2);
-  return Plane.lineIntersection(p3, line);
+
+  return line === null ? null : Plane.lineIntersection(p3, line);
 }
 
 export class Brush {

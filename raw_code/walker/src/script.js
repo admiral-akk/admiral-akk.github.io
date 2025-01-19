@@ -205,7 +205,7 @@ const generateBox = () => {
 };
 
 const createThing = () => {
-  const modelArray = generatePyramid();
+  const modelArray = generateBox();
   return new Entity(new Transform(), new Mesh(modelArray));
 };
 

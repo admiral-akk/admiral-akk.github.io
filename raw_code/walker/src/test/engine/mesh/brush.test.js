@@ -102,3 +102,59 @@ test("brush - Triangle brush produces triangular triangles", () => {
     { triangles, brush }
   );
 });
+
+test("subtract - cube / cube", () => {
+  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
+  const p2 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(1, 0, 0),
+    new Vec3(0, 0, 1)
+  );
+  const p3 = Plane.fromPoints(
+    new Vec3(0, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 1)
+  );
+
+  const p4 = Plane.fromPoints(
+    new Vec3(1, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0)
+  );
+
+  const brush = new Brush([
+    new Plane(new Vec3(0, 1, 0), 0),
+    new Plane(new Vec3(0, -1, 0), -2),
+    new Plane(new Vec3(1, 0, 0), -1),
+    new Plane(new Vec3(-1, 0, 0), -1),
+    new Plane(new Vec3(0, 0, 1), -1),
+    new Plane(new Vec3(0, 0, -1), -1),
+  ]);
+
+  const brush2 = new Brush([
+    new Plane(new Vec3(0, 1, 0), 1),
+    new Plane(new Vec3(0, -1, 0), -4),
+    new Plane(new Vec3(1, 0, 0), -2),
+    new Plane(new Vec3(-1, 0, 0), -2),
+    new Plane(new Vec3(0, 0, 1), -2),
+    new Plane(new Vec3(0, 0, -1), -2),
+  ]);
+
+  const [diff] = Brush.subtract(brush, brush2);
+
+  const [planeToPoints, pointsToPlanes] = diff.planePoints();
+  listElementsMatch(
+    Array.from(pointsToPlanes.keys()),
+    [
+      new Vec3(1, 0, 1),
+      new Vec3(-1, 0, 1),
+      new Vec3(1, 0, -1),
+      new Vec3(-1, 0, -1),
+      new Vec3(1, 1, 1),
+      new Vec3(-1, 1, 1),
+      new Vec3(1, 1, -1),
+      new Vec3(-1, 1, -1),
+    ],
+    { diff, pointsToPlanes }
+  );
+});

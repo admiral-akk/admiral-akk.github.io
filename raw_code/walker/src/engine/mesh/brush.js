@@ -14,6 +14,31 @@ export class Brush {
     this.planes = planes;
   }
 
+  clone() {
+    return new Brush(Array.from(this.planes));
+  }
+
+  static subtract(b1, b2) {
+    const brushes = [];
+    // for each plane in b2
+    // add its inverse to b1, then check if anything remains
+    // if so, add that to brushes
+    const [planeToPoints, pointsToPlanes] = b1.planePoints();
+
+    const vertices = Array.from(pointsToPlanes.keys());
+
+    b2.planes.forEach((plane) => {
+      const inverted = Plane.invert(plane);
+      if (vertices.some((v) => Plane.distanceToPoint(inverted, v) > 0)) {
+        const c = b1.clone();
+        c.planes.push(inverted);
+        brushes.push(c);
+      }
+    });
+
+    return brushes;
+  }
+
   planePoints() {
     // generate verts at the interesection of 3 planes, with a link to the generating planes
 
@@ -21,7 +46,6 @@ export class Brush {
     const planeToEdges = new Map();
     const planes = this.planes;
     const pointsToPlanes = new Map();
-
     planes.forEach((p) => {
       planeToPoints.set(p, []);
       planeToEdges.set(p, []);
@@ -132,43 +156,5 @@ export class Brush {
       }
     });
     return triangles;
-
-    // if two vertices share a generating plane, that forms an edge between those planes
-    const edges = [];
-    for (let i = 0; i < planes.length; i++) {
-      const p1 = planes[i];
-      for (let j = i + 1; j < planes.length; j++) {
-        const p2 = planes[j];
-        var filteredArray = planeToPoints.get(p1).filter(function (n) {
-          return planeToPoints.get(p2).indexOf(n) !== -1;
-        });
-        if (filteredArray.length > 0) {
-          planeToEdges.get(p1).push([filteredArray[0], filteredArray[1], p2]);
-          planeToEdges.get(p2).push([filteredArray[0], filteredArray[1], p1]);
-        }
-      }
-    }
-
-    // all planes in a brush are valid?
-    // find one on the bottom
-    var minPlane = planes[0];
-    planes.forEach((p) => {
-      if (minPlane.norm.y * minPlane.offset > p.norm.y * p.offset) {
-        minPlane = p;
-      }
-    });
-
-    // find 3 verts on that plane to start the gift wrapping
-
-    // wrap verts in a convex hull via gift wrapping
-    // gift wrapping algorithm:
-    // 1. find a triangle on the boundary
-    // 2. add its edges to the queue
-    // while the queue isn't empty
-    //   3. find the best triangle
-    //   4. if any of its edges are in the queue, remove them
-    //   5. add the remaining edges to the queue
-
-    // return triangles
   }
 }

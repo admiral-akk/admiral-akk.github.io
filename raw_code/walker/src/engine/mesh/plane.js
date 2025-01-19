@@ -12,6 +12,14 @@ export class Plane {
     this.metadata = metadata;
   }
 
+  static invert(plane) {
+    return new Plane(
+      plane.norm.clone().scale(-1),
+      -plane.offset,
+      plane.metadata
+    );
+  }
+
   static fromPoints(p1, p2, p3, metadata = {}, epsilon = 0.0001) {
     const normal = Vec3.clone(p1).sub(p2);
     const delta2 = Vec3.clone(p1).sub(p3);

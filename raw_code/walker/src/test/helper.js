@@ -14,6 +14,36 @@ export const expectedApprox = (v, expected, obj = {}, epsilon = 0.001) => {
   );
 };
 
+export const distance = (v1, v2) => {
+  var actualDistance;
+  const type = typeof actual;
+
+  if (v1 instanceof Vec3) {
+    actualDistance = Vec3.distance(v1, v2);
+  } else if (type === "number" || v1 instanceof Number) {
+    actualDistance = v1 - v2;
+  } else if (v1 instanceof Triangle) {
+    var minError = 100000000;
+    for (let i = 0; i < 3; i++) {
+      var totalError = 0;
+      for (let j = 0; j < 3; j++) {
+        const p1 = v1.points[(j + i) % 3];
+        const p2 = v2.points[j];
+        totalError += Vec3.distance(p1, p2);
+      }
+      minError = Math.min(minError, totalError);
+    }
+
+    actualDistance = minError;
+  } else {
+    throw new Error(
+      `Unknown actual type: ${v1.prototype.constructor.toString()}`
+    );
+  }
+
+  return actualDistance;
+};
+
 export const approxDistance = (
   actual,
   expected,

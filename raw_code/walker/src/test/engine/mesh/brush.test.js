@@ -27,15 +27,29 @@ test("brush - Empty brush produces no triangles", () => {
   assert.isEmpty(emptyBrush.triangles());
 });
 
-test("brush - Box brush produces box triangles", () => {
-  const emptyBrush = new Brush([
-    new Plane(new Vec3(1, 0, 0), -1),
-    new Plane(new Vec3(-1, 0, 0), -1),
-    new Plane(new Vec3(0, 1, 0), -1),
-    new Plane(new Vec3(0, -1, 0), -1),
-    new Plane(new Vec3(0, 0, 1), -1),
-    new Plane(new Vec3(0, 0, -1), -1),
-  ]);
+test("brush - Triangle brush produces triangular triangles", () => {
+  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
+  const p2 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(1, 0, 0),
+    new Vec3(0, 0, 1)
+  );
+  const p3 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0),
+    new Vec3(0, 0, 1)
+  );
 
-  assert.isNotEmpty(emptyBrush.triangles());
+  const p4 = Plane.fromPoints(
+    new Vec3(1, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0)
+  );
+
+  const emptyBrush = new Brush([p1, p2, p3, p4]);
+
+  assert.isNotEmpty(
+    emptyBrush.triangles(),
+    JSON.stringify({ p1, p2, p3, p4 }, null, 2)
+  );
 });

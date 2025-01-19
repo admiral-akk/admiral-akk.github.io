@@ -1,6 +1,7 @@
 import { Vec3 } from "gl-matrix";
 import { Plane } from "./plane";
 import { Triangle } from "./triangle";
+import "../../util/array.js";
 
 function planeIntersection(p1, p2, p3) {
   const line = Plane.planeIntersection(p1, p2);

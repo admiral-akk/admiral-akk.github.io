@@ -23,6 +23,8 @@ export class Triangle {
     this.metadata = metadata;
   }
 
+  // this is fundementally about how our shader expects meshes to be formatted
+  // todo: move into rendering
   static pushVertices(triangle, modelArray) {
     const { points, pointMetadata } = triangle;
     for (let i = 0; i < points.length; i++) {

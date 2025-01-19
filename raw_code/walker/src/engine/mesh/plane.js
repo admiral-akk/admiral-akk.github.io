@@ -12,6 +12,17 @@ export class Plane {
     this.metadata = metadata;
   }
 
+  static fromPoints(p1, p2, p3, metadata = {}, epsilon = 0.0001) {
+    const normal = Vec3.clone(p1).sub(p2);
+    const delta2 = Vec3.clone(p1).sub(p3);
+    Vec3.cross(normal, normal, delta2);
+    if (Vec3.magnitude(normal) < epsilon) {
+      return null;
+    }
+    normal.normalize();
+    return new Plane(normal, Vec3.dot(normal, p1), metadata);
+  }
+
   static lineIntersection(plane, line) {
     const { start, dir } = line;
     if (Math.abs(Vec3.dot(plane.norm, dir)) < 0.01) {

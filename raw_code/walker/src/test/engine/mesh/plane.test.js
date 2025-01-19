@@ -91,3 +91,55 @@ test("lineIntersection - orthogonal line, offset", () => {
     intersection,
   });
 });
+
+test("fromPoints - colinear points return null", () => {
+  const p1 = new Vec3(1, 1, 1);
+  const p2 = new Vec3(2, 2, 2);
+  const p3 = new Vec3(3, 3, 3);
+
+  const plane = Plane.fromPoints(p1, p2, p3);
+
+  assert.isNull(plane);
+});
+
+test("fromPoints - points return plane with normal in CCW", () => {
+  const p1 = new Vec3();
+  const p2 = new Vec3(1, 0, 0);
+  const p3 = new Vec3(0, 1, 0);
+
+  const plane = Plane.fromPoints(p1, p2, p3);
+
+  approxDistance(plane.norm, new Vec3(0, 0, 1), 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+  approxDistance(plane.offset, 0, 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+});
+
+test("fromPoints - points return plane with normal in CCW", () => {
+  const p1 = new Vec3(1, 1, 1);
+  const p2 = new Vec3(1, 1, 0);
+  const p3 = new Vec3(1, 0, 1);
+
+  const plane = Plane.fromPoints(p1, p2, p3);
+
+  approxDistance(plane.norm, new Vec3(-1, 0, 0), 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+  approxDistance(plane.offset, -1, 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+});

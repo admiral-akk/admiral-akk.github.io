@@ -44,9 +44,7 @@ export class Brush {
       }
     }
 
-    console.log(pointsToPlanes.keys());
-
-    // TODO: eliminate all vertices that are excluded by another plane
+    // eliminate all vertices that are excluded by another plane
     for (const [point, pointPlanes] of pointsToPlanes.entries()) {
       for (let i = 0; i < planes.length; i++) {
         if (Plane.distanceToPoint(planes[i], point) < -0.001) {
@@ -57,8 +55,8 @@ export class Brush {
         }
       }
     }
-    // can't we just triangulate the points and call it?
-    const verts = [];
+
+    // triangulate the faces
     const triangles = [];
     planes.forEach((p) => {
       const planeVerts = planeToPoints.get(p);
@@ -98,16 +96,6 @@ export class Brush {
         return sortVal(a) - sortVal(b);
       });
 
-      const addVert = (v) => {
-        verts.push(v[0], v[1], v[2]);
-        verts.push(p.norm[0], p.norm[1], p.norm[2]);
-        verts.push(
-          p.metadata.color[0],
-          p.metadata.color[1],
-          p.metadata.color[2]
-        );
-      };
-
       for (let i = 1; i < planeVerts.length - 1; i++) {
         const v1 = planeVerts[0];
         const v2 = planeVerts[i % planeVerts.length];
@@ -129,9 +117,6 @@ export class Brush {
         });
 
         triangles.push(new Triangle(v1, v2, v3, pointMetadata));
-        addVert(v1);
-        addVert(v2);
-        addVert(v3);
       }
     });
     return triangles;

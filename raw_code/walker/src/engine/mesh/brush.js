@@ -1,5 +1,6 @@
 import { Vec3 } from "gl-matrix";
 import { Plane } from "./plane";
+import { Triangle } from "./triangle";
 
 function planeIntersection(p1, p2, p3) {
   const line = Plane.planeIntersection(p1, p2);
@@ -49,18 +50,16 @@ export class Brush {
     for (const [point, pointPlanes] of pointsToPlanes.entries()) {
       for (let i = 0; i < planes.length; i++) {
         if (Plane.distanceToPoint(planes[i], point) < -0.001) {
-          console.log("remove", point);
-          console.log(Plane.distanceToPoint(planes[i], point), planes[i]);
           planeToPoints.get(pointPlanes[0]).remove(point);
           planeToPoints.get(pointPlanes[1]).remove(point);
           planeToPoints.get(pointPlanes[2]).remove(point);
           pointsToPlanes.delete(point);
-        } else {
         }
       }
     }
     // can't we just triangulate the points and call it?
     const verts = [];
+    const triangles = [];
     planes.forEach((p) => {
       const planeVerts = planeToPoints.get(p);
       if (planeVerts.length < 3) {
@@ -108,17 +107,34 @@ export class Brush {
           p.metadata.color[2]
         );
       };
+
       for (let i = 1; i < planeVerts.length - 1; i++) {
         const v1 = planeVerts[0];
         const v2 = planeVerts[i % planeVerts.length];
         const v3 = planeVerts[(i + 1) % planeVerts.length];
 
+        const pointMetadata = new Map();
+
+        pointMetadata.set(v1, {
+          color: p.metadata.color,
+          normal: p.norm,
+        });
+        pointMetadata.set(v2, {
+          color: p.metadata.color,
+          normal: p.norm,
+        });
+        pointMetadata.set(v3, {
+          color: p.metadata.color,
+          normal: p.norm,
+        });
+
+        triangles.push(new Triangle(v1, v2, v3, pointMetadata));
         addVert(v1);
         addVert(v2);
         addVert(v3);
       }
     });
-    return verts;
+    return triangles;
 
     // if two vertices share a generating plane, that forms an edge between those planes
     const edges = [];

@@ -30,6 +30,7 @@ import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
 import { vec3, quat, Vec3, Vec2 } from "gl-matrix";
+import { Triangle } from "./engine/mesh/triangle.js";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -205,7 +206,9 @@ const generateBox = () => {
 };
 
 const createThing = () => {
-  const modelArray = generateBox();
+  const modelTriangle = generateBox();
+  const modelArray = [];
+  modelTriangle.forEach((tri) => Triangle.pushVertices(tri, modelArray));
   return new Entity(new Transform(), new Mesh(modelArray));
 };
 

@@ -1,11 +1,12 @@
 import { test } from "vitest";
 import { Vec3 } from "gl-matrix";
 import { Line } from "../../../engine/mesh/line";
-import { expectedApprox } from "../../helper";
+import { approxDistance } from "../../helper";
 
 function testPointDistance(line, p, dist) {
-  expectedApprox(Line.distanceToPoint(line, p), dist, {
-    closest: Line.closestPoint(line, p),
+  const closestPoint = Line.closestPoint(line, p);
+  approxDistance(closestPoint, p, dist, {
+    closestPoint,
     p,
     line,
   });

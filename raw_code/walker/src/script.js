@@ -179,7 +179,7 @@ const generatePyramid = () => {
   planes.push(new Plane(new Vec3(-1, -1, 0), -1, { color }));
   planes.push(new Plane(new Vec3(0, -1, -1), -1, { color }));
   planes.push(new Plane(new Vec3(0, -1, 1), -1, { color }));
-  planes.push(new Plane(new Vec3(0, -1, 0), -0.4, { color }));
+  //planes.push(new Plane(new Vec3(0, -1, 0), -0.4, { color }));
   const brush = new Brush(planes);
   return new BrushMesh(brush);
 };
@@ -208,6 +208,7 @@ const generateBox = () => {
 
 const createThing = () => {
   const brushMesh = generateBox();
+  brushMesh.subtract(generatePyramid());
 
   const modelTriangle = brushMesh.triangles();
   const modelArray = [];

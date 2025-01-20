@@ -14,6 +14,25 @@ export class Brush {
     this.planes = planes;
   }
 
+  static regularPrism(radius, sides, height, metadata = {}) {
+    const planes = [];
+    for (let i = 0; i < sides; i++) {
+      const angle = (i * Math.PI * 2) / sides;
+      planes.push(
+        new Plane(
+          new Vec3(Math.sin(angle), 0, Math.cos(angle)),
+          -radius,
+          metadata
+        )
+      );
+    }
+    planes.push(
+      new Plane(new Vec3(0, 1, 0), -height / 2, metadata),
+      new Plane(new Vec3(0, -1, 0), -height / 2, metadata)
+    );
+    return new Brush(planes);
+  }
+
   clone() {
     return new Brush(Array.from(this.planes));
   }

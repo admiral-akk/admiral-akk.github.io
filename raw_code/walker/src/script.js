@@ -207,8 +207,8 @@ const generateBox = () => {
 };
 
 const createThing = () => {
-  const brushMesh = generateBox();
-  brushMesh.subtract(generatePyramid());
+  const color = [0.45, 0.25, 0];
+  const brushMesh = new BrushMesh(Brush.regularPrism(1, 6, 1, { color }));
 
   const modelTriangle = brushMesh.triangles();
   const modelArray = [];

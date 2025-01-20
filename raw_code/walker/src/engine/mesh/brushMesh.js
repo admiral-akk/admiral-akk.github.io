@@ -33,12 +33,15 @@ export class BrushMesh {
         otherBrush.planes.forEach((plane) => {
           const inverted = Plane.invert(plane);
           if (true) {
-            inverted.applyInverseTransform(
+            // apply the other mesh's transforms, to bring it to world space
+            inverted.applyTransform(
               other.scale,
               other.rotation,
               other.translation
             );
-            inverted.applyTransform(
+
+            // invert this mesh's transforms, to bring it into model space.
+            inverted.applyInverseTransform(
               this.scale,
               this.rotation,
               this.translation
@@ -76,7 +79,10 @@ export class BrushMesh {
 
   triangles() {
     const triangles = [];
-    this.brushes.forEach((brush) => triangles.push(...brush.triangles()));
+    this.brushes.forEach((brush) => {
+      brush.applyTransform(this.scale, this.rotation, this.translation);
+      triangles.push(...brush.triangles());
+    });
     return triangles;
   }
 }

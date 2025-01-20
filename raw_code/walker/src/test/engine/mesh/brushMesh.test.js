@@ -195,3 +195,91 @@ test("add - cube / cube", () => {
     { vertices, mesh1, mesh2 }
   );
 });
+
+test("translated cube", () => {
+  const brush = new Brush([
+    new Plane(new Vec3(0, 1, 0), 0),
+    new Plane(new Vec3(0, -1, 0), -2),
+    new Plane(new Vec3(1, 0, 0), -1),
+    new Plane(new Vec3(-1, 0, 0), -1),
+    new Plane(new Vec3(0, 0, 1), -1),
+    new Plane(new Vec3(0, 0, -1), -1),
+  ]);
+
+  const mesh = new BrushMesh(brush);
+  mesh.translation = new Vec3(2, 2, 2);
+  const vertices = mesh.vertices();
+  listElementsMatch(
+    Array.from(vertices),
+    [
+      new Vec3(3, 2, 3),
+      new Vec3(1, 2, 3),
+      new Vec3(3, 2, 1),
+      new Vec3(1, 2, 1),
+      new Vec3(3, 4, 3),
+      new Vec3(1, 4, 3),
+      new Vec3(3, 4, 1),
+      new Vec3(1, 4, 1),
+    ],
+    { vertices, mesh }
+  );
+});
+
+test("rotated cube", () => {
+  const brush = new Brush([
+    new Plane(new Vec3(0, 1, 0), 0),
+    new Plane(new Vec3(0, -1, 0), -2),
+    new Plane(new Vec3(1, 0, 0), -1),
+    new Plane(new Vec3(-1, 0, 0), -1),
+    new Plane(new Vec3(0, 0, 1), -1),
+    new Plane(new Vec3(0, 0, -1), -1),
+  ]);
+
+  const mesh = new BrushMesh(brush);
+  mesh.rotation.rotateY(Math.PI / 4);
+  const vertices = mesh.vertices();
+  listElementsMatch(
+    Array.from(vertices),
+    [
+      new Vec3(Math.SQRT2, 0, 0),
+      new Vec3(-Math.SQRT2, 0, 0),
+      new Vec3(0, 0, Math.SQRT2),
+      new Vec3(0, 0, -Math.SQRT2),
+      new Vec3(Math.SQRT2, 2, 0),
+      new Vec3(-Math.SQRT2, 2, 0),
+      new Vec3(0, 2, Math.SQRT2),
+      new Vec3(0, 2, -Math.SQRT2),
+    ],
+    { vertices, mesh }
+  );
+});
+
+test("rotated + translated cube", () => {
+  const brush = new Brush([
+    new Plane(new Vec3(0, 1, 0), 0),
+    new Plane(new Vec3(0, -1, 0), -2),
+    new Plane(new Vec3(1, 0, 0), -1),
+    new Plane(new Vec3(-1, 0, 0), -1),
+    new Plane(new Vec3(0, 0, 1), -1),
+    new Plane(new Vec3(0, 0, -1), -1),
+  ]);
+
+  const mesh = new BrushMesh(brush);
+  mesh.translation = new Vec3(2, 2, 2);
+  mesh.rotation.rotateY(Math.PI / 4);
+  const vertices = mesh.vertices();
+  listElementsMatch(
+    Array.from(vertices),
+    [
+      new Vec3(2 + Math.SQRT2, 2, 2),
+      new Vec3(2 - Math.SQRT2, 2, 2),
+      new Vec3(2, 2, 2 + Math.SQRT2),
+      new Vec3(2, 2, 2 - Math.SQRT2),
+      new Vec3(2 + Math.SQRT2, 4, 2),
+      new Vec3(2 - Math.SQRT2, 4, 2),
+      new Vec3(2, 4, 2 + Math.SQRT2),
+      new Vec3(2, 4, 2 - Math.SQRT2),
+    ],
+    { vertices, mesh }
+  );
+});

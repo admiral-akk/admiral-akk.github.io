@@ -84,19 +84,15 @@ class OpenState extends State {
   handleInput(manager) {
     const { state } = input;
 
-    if (state?.rmb?.val === 1) {
-      console.log(state);
-      if (state?.mpos?.frame === time.frame) {
-        const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
-        console.log(delta);
-        cameraEntity.components.camera.xAngle += 10 * delta.x;
-        cameraEntity.components.camera.yAngle += 10 * delta.y;
-        cameraEntity.components.camera.yAngle = Math.clamp(
-          cameraEntity.components.camera.yAngle,
-          (-1 * Math.PI) / 3,
-          (1 * Math.PI) / 3
-        );
-      }
+    if (state?.rmb?.val === 1 && state?.mpos?.frame === time.frame) {
+      const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
+      cameraEntity.components.camera.xAngle += 10 * delta.x;
+      cameraEntity.components.camera.yAngle += 10 * delta.y;
+      cameraEntity.components.camera.yAngle = Math.clamp(
+        cameraEntity.components.camera.yAngle,
+        (-1 * Math.PI) / 3,
+        (1 * Math.PI) / 3
+      );
     }
   }
 }

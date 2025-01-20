@@ -60,7 +60,6 @@ export class Brush {
           const p3 = planes[k];
           const p = planeIntersection(p1, p2, p3);
           if (p === null) {
-            console.log(p, [p1, p2, p3]);
           } else {
             planeToPoints.get(p1).push(p);
             planeToPoints.get(p2).push(p);

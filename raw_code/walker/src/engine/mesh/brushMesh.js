@@ -1,11 +1,13 @@
-import { Vec3 } from "gl-matrix";
-import { Brush } from "./brush";
+import { Quat, Vec3 } from "gl-matrix";
 import { Plane } from "./plane";
 
 // A mesh is composed of brushes.
 export class BrushMesh {
   constructor(...brushes) {
     this.brushes = brushes;
+    this.translation = new Vec3();
+    this.scale = Vec3.clone([1, 1, 1]);
+    this.rotation = new Quat();
   }
 
   clone() {

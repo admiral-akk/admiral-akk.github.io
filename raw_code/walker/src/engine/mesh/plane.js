@@ -12,6 +12,10 @@ export class Plane {
     this.metadata = metadata;
   }
 
+  clone() {
+    return new Plane(Vec3.clone(this.norm), this.offset, this.metadata);
+  }
+
   static invert(plane) {
     return new Plane(
       plane.norm.clone().scale(-1),

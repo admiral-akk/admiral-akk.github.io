@@ -34,7 +34,7 @@ export class Brush {
   }
 
   clone() {
-    return new Brush(Array.from(this.planes));
+    return new Brush(Array.from(this.planes.map((p) => p.clone())));
   }
 
   planePoints() {

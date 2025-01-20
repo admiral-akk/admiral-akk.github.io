@@ -31,6 +31,7 @@ import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
 import { vec3, quat, Vec3, Vec2 } from "gl-matrix";
 import { Triangle } from "./engine/mesh/triangle.js";
+import { BrushMesh } from "./engine/mesh/brushMesh.js";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -180,7 +181,7 @@ const generatePyramid = () => {
   planes.push(new Plane(new Vec3(0, -1, 1), -1, { color }));
   planes.push(new Plane(new Vec3(0, -1, 0), -0.4, { color }));
   const brush = new Brush(planes);
-  return brush.triangles();
+  return new BrushMesh(brush);
 };
 
 const generateBox = () => {
@@ -202,31 +203,13 @@ const generateBox = () => {
     new Plane(Vec3.clone([1, 1, 1]).normalize(), 0, { color: color2 })
   );
   const brush = new Brush(planes);
-  return brush.triangles();
+  return new BrushMesh(brush);
 };
 
 const createThing = () => {
-  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
-  const p2 = Plane.fromPoints(
-    new Vec3(0, 1, 0),
-    new Vec3(1, 0, 0),
-    new Vec3(0, 0, 1)
-  );
-  const p3 = Plane.fromPoints(
-    new Vec3(0, 0, 0),
-    new Vec3(0, 1, 0),
-    new Vec3(0, 0, 1)
-  );
+  const brushMesh = generateBox();
 
-  const p4 = Plane.fromPoints(
-    new Vec3(1, 0, 0),
-    new Vec3(0, 1, 0),
-    new Vec3(0, 0, 0)
-  );
-
-  const brush = new Brush([p1, p2, p3, p4]);
-
-  const modelTriangle = brush.triangles();
+  const modelTriangle = brushMesh.triangles();
   const modelArray = [];
   modelTriangle.forEach((tri) => Triangle.pushVertices(tri, modelArray));
   return new Entity(new Transform(), new Mesh(modelArray));

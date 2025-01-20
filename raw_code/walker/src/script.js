@@ -32,11 +32,14 @@ import { Mesh } from "./components/render/mesh.js";
 import { vec3, quat, Vec3, Vec2 } from "gl-matrix";
 import { Triangle } from "./engine/mesh/triangle.js";
 import { BrushMesh } from "./engine/mesh/brushMesh.js";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
 );
-
+var stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
 const wireFrameProgram = createProgram(gl, wireFrameVertex, wireFrameFrag);
 const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
@@ -81,19 +84,19 @@ class OpenState extends State {
   handleInput(manager) {
     const { state } = input;
 
-    if (
-      state?.rmb?.val === 1 &&
-      state?.mpos?.frame === time.frame &&
-      state?.mpos?.prev?.frame === time.frame - 1
-    ) {
-      const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
-      cameraEntity.components.camera.xAngle += 10 * delta.x;
-      cameraEntity.components.camera.yAngle += 10 * delta.y;
-      cameraEntity.components.camera.yAngle = Math.clamp(
-        cameraEntity.components.camera.yAngle,
-        (-1 * Math.PI) / 3,
-        (1 * Math.PI) / 3
-      );
+    if (state?.rmb?.val === 1) {
+      console.log(state);
+      if (state?.mpos?.frame === time.frame) {
+        const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
+        console.log(delta);
+        cameraEntity.components.camera.xAngle += 10 * delta.x;
+        cameraEntity.components.camera.yAngle += 10 * delta.y;
+        cameraEntity.components.camera.yAngle = Math.clamp(
+          cameraEntity.components.camera.yAngle,
+          (-1 * Math.PI) / 3,
+          (1 * Math.PI) / 3
+        );
+      }
     }
   }
 }
@@ -218,9 +221,9 @@ const createThing = () => {
 
 createThing();
 const draw = () => {
+  stats.begin();
   inputManager.update();
   time.tick();
-  requestAnimationFrame(draw);
 
   // handle user input
   applyActions();
@@ -242,6 +245,8 @@ const draw = () => {
   renderPostProcess();
   renderDebug();
   Component.checkUnallocatedComponents();
+  stats.end();
+  requestAnimationFrame(draw);
 };
 
 draw();

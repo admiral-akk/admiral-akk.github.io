@@ -1,4 +1,4 @@
-import { Vec3 } from "gl-matrix";
+import { Quat, Vec3 } from "gl-matrix";
 import { Line } from "./line";
 
 Vec3.prototype.clone = function () {
@@ -14,6 +14,19 @@ export class Plane {
 
   clone() {
     return new Plane(Vec3.clone(this.norm), this.offset, this.metadata);
+  }
+
+  applyTransform(scale, rotation, translation) {
+    // this.offset *= Vec3.dot(this.norm, scale);
+    Vec3.transformQuat(this.norm, this.norm, rotation);
+    this.offset += Vec3.dot(this.norm, translation);
+  }
+
+  applyInverseTransform(scale, rotation, translation) {
+    this.offset -= Vec3.dot(this.norm, translation);
+    const inverseRotation = Quat.clone(rotation).invert();
+    Vec3.transformQuat(this.norm, this.norm, inverseRotation);
+    // this.offset /= Vec3.dot(scale, translation);
   }
 
   static invert(plane) {

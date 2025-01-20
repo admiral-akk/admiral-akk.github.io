@@ -14,6 +14,10 @@ export class Brush {
     this.planes = planes;
   }
 
+  applyTransform(scale, rotation, translation) {
+    this.planes.forEach((p) => p.applyTransform(scale, rotation, translation));
+  }
+
   static regularPrism(radius, sides, height, metadata = {}) {
     const planes = [];
     for (let i = 0; i < sides; i++) {

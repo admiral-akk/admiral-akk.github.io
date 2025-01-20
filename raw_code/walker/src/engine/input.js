@@ -44,6 +44,7 @@ class InputListener {
     });
 
     const updateMouseEv = (ev) => {
+      console.log(ev);
       if (ev.target.id !== "webgl") {
         return;
       }
@@ -59,8 +60,10 @@ class InputListener {
         Math.clamp(y + ev.movementY / height, 0, 1),
       ]);
 
-      this.updateValue("lmb", ev.buttons & 1 ? 1 : 0);
-      this.updateValue("rmb", ev.buttons & 2 ? 1 : 0);
+      if (ev.type === "mousedown" || ev.type === "mouseup") {
+        this.updateValue("lmb", ev.buttons & 1 ? 1 : 0);
+        this.updateValue("rmb", ev.buttons & 2 ? 1 : 0);
+      }
     };
     const canvas = document.getElementById("webgl");
     canvas.addEventListener("click", async (ev) => {

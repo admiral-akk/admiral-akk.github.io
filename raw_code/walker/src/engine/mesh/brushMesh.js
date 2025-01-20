@@ -6,8 +6,8 @@ export class BrushMesh {
   constructor(...brushes) {
     this.brushes = brushes;
     this.translation = new Vec3();
-    this.scale = Vec3.clone([1, 1, 1]);
-    this.rotation = new Quat();
+    this.scale = new Vec3(1, 1, 1);
+    this.rotation = Quat.identity(new Quat());
   }
 
   clone() {
@@ -32,6 +32,18 @@ export class BrushMesh {
         // if so, add that to brushes
         otherBrush.planes.forEach((plane) => {
           const inverted = Plane.invert(plane);
+          if (true) {
+            inverted.applyInverseTransform(
+              other.scale,
+              other.rotation,
+              other.translation
+            );
+            inverted.applyTransform(
+              this.scale,
+              this.rotation,
+              this.translation
+            );
+          }
           // check if this plane would remove everything
           if (vertices.some((v) => Plane.distanceToPoint(inverted, v) > 0)) {
             // if something would remain, add a new brush.

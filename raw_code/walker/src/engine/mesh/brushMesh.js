@@ -8,6 +8,15 @@ export class BrushMesh {
     this.brushes = brushes;
   }
 
+  clone() {
+    return new BrushMesh(...Array.from(this.brushes));
+  }
+
+  add(other) {
+    this.subtract(other);
+    this.brushes.push(...other.brushes);
+  }
+
   subtract(other) {
     const newBrushes = [];
     this.brushes.forEach((brush) => {

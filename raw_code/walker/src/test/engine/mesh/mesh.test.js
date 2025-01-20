@@ -9,6 +9,7 @@ import {
 import { Plane } from "../../../engine/mesh/plane";
 import { Brush } from "../../../engine/mesh/brush";
 import { Triangle } from "../../../engine/mesh/triangle";
+import { BrushMesh } from "../../../engine/mesh/mesh";
 
 function testLineEqual(line1, line2) {
   expectedApprox(Line.distanceToPoint(line1, line2.start), 0, {
@@ -68,7 +69,7 @@ test("brush - Triangle brush produces vertices", () => {
   );
 });
 
-test("brush - Triangle brush produces triangular triangles", () => {
+test("mesh1 - Triangle brush produces triangular triangles", () => {
   const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
   const p2 = Plane.fromPoints(
     new Vec3(0, 1, 0),
@@ -89,7 +90,9 @@ test("brush - Triangle brush produces triangular triangles", () => {
 
   const brush = new Brush([p1, p2, p3, p4]);
 
-  const triangles = brush.triangles();
+  const mesh = new BrushMesh(brush);
+
+  const triangles = mesh.triangles();
 
   listElementsMatch(
     triangles,
@@ -99,6 +102,65 @@ test("brush - Triangle brush produces triangular triangles", () => {
       new Triangle(new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)),
       new Triangle(new Vec3(1, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 0, 0)),
     ],
-    { triangles, brush }
+    { triangles, brush, mesh }
+  );
+});
+
+test("subtract - cube / cube", () => {
+  const p1 = new Plane(new Vec3(0, 1, 0), 0); // base
+  const p2 = Plane.fromPoints(
+    new Vec3(0, 1, 0),
+    new Vec3(1, 0, 0),
+    new Vec3(0, 0, 1)
+  );
+  const p3 = Plane.fromPoints(
+    new Vec3(0, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 1)
+  );
+
+  const p4 = Plane.fromPoints(
+    new Vec3(1, 0, 0),
+    new Vec3(0, 1, 0),
+    new Vec3(0, 0, 0)
+  );
+
+  const brush = new Brush([
+    new Plane(new Vec3(0, 1, 0), 0),
+    new Plane(new Vec3(0, -1, 0), -2),
+    new Plane(new Vec3(1, 0, 0), -1),
+    new Plane(new Vec3(-1, 0, 0), -1),
+    new Plane(new Vec3(0, 0, 1), -1),
+    new Plane(new Vec3(0, 0, -1), -1),
+  ]);
+
+  const brush2 = new Brush([
+    new Plane(new Vec3(0, 1, 0), 1),
+    new Plane(new Vec3(0, -1, 0), -4),
+    new Plane(new Vec3(1, 0, 0), -2),
+    new Plane(new Vec3(-1, 0, 0), -2),
+    new Plane(new Vec3(0, 0, 1), -2),
+    new Plane(new Vec3(0, 0, -1), -2),
+  ]);
+
+  const mesh1 = new BrushMesh(brush);
+  const mesh2 = new BrushMesh(brush2);
+
+  mesh1.subtract(mesh2);
+
+  const vertices = mesh1.vertices();
+  listElementsMatch(
+    Array.from(vertices),
+    [
+      new Vec3(1, 0, 1),
+      new Vec3(-1, 0, 1),
+      new Vec3(1, 0, -1),
+      new Vec3(-1, 0, -1),
+      new Vec3(1, 1, 1),
+      new Vec3(-1, 1, 1),
+      new Vec3(1, 1, -1),
+      new Vec3(-1, 1, -1),
+    ],
+    { vertices, mesh1, mesh2 }
   );
 });

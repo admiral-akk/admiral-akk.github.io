@@ -18,27 +18,6 @@ export class Brush {
     return new Brush(Array.from(this.planes));
   }
 
-  static subtract(b1, b2) {
-    const brushes = [];
-    // for each plane in b2
-    // add its inverse to b1, then check if anything remains
-    // if so, add that to brushes
-    const [planeToPoints, pointsToPlanes] = b1.planePoints();
-
-    const vertices = Array.from(pointsToPlanes.keys());
-
-    b2.planes.forEach((plane) => {
-      const inverted = Plane.invert(plane);
-      if (vertices.some((v) => Plane.distanceToPoint(inverted, v) > 0)) {
-        const c = b1.clone();
-        c.planes.push(inverted);
-        brushes.push(c);
-      }
-    });
-
-    return brushes;
-  }
-
   planePoints() {
     // generate verts at the interesection of 3 planes, with a link to the generating planes
 

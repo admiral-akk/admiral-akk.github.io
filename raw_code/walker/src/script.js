@@ -29,7 +29,7 @@ import {
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
-import { vec3, quat, Vec3, Vec2 } from "gl-matrix";
+import { vec3, quat, Vec3, Vec2, Quat } from "gl-matrix";
 import { Triangle } from "./engine/mesh/triangle.js";
 import { BrushMesh } from "./engine/mesh/brushMesh.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
@@ -92,6 +92,16 @@ class OpenState extends State {
         cameraEntity.components.camera.yAngle,
         (-1 * Math.PI) / 3,
         (1 * Math.PI) / 3
+      );
+    }
+
+    if (state?.wheel?.frame === time.frame) {
+      cameraEntity.components.camera.distance +=
+        (state.wheel.val - state.wheel.prev.val) / 400;
+      cameraEntity.components.camera.distance = Math.clamp(
+        cameraEntity.components.camera.distance,
+        1,
+        10
       );
     }
   }
@@ -207,7 +217,15 @@ const generateBox = () => {
 
 const createThing = () => {
   const color = [0.45, 0.25, 0];
+  const color2 = [0.45, 0.25, 0.4];
   const brushMesh = new BrushMesh(Brush.regularPrism(1, 6, 1, { color }));
+  brushMesh.rotation = new Quat().rotateZ(Math.PI / 2);
+  const brushMesh2 = new BrushMesh(
+    Brush.regularPrism(0.75, 6, 1.4, { color2 })
+  );
+  brushMesh2.rotation = new Quat().rotateZ(Math.PI / 2).rotateX(Math.PI / 2);
+
+  brushMesh.add(brushMesh2);
 
   const modelTriangle = brushMesh.triangles();
   const modelArray = [];

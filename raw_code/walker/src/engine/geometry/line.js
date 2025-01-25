@@ -11,17 +11,21 @@ export class Line extends Primative {
   point(t) {
     return new Vec3(this.start).scaleAndAdd(this.dir, t);
   }
-
-  closestPointOnLine(point) {
+  closestPoint(point) {
+    const delta = new Vec3();
     // if the point is right on the start, the algorithm will blow up
     // sample a different start point
-    const start = new Vec3(point.start);
+    const start = Vec3.clone(this.start);
     if (Vec3.squaredDistance(point, start) < 0.001) {
-      start.add(line.dir);
+      start.add(this.dir);
     }
     Vec3.sub(delta, start, point);
     Vec3.scaleAndAdd(delta, start, this.dir, -Vec3.dot(delta, this.dir));
     return Vec3.clone(delta);
+  }
+
+  distanceToPoint(point) {
+    return Vec3.distance(this.closestPoint(point), point);
   }
 
   lineToPlaneT(plane) {

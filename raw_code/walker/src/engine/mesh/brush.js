@@ -1,5 +1,5 @@
 import { Vec3 } from "gl-matrix";
-import { Plane } from "./plane";
+import { EdgePlane, Plane } from "./plane";
 import { Triangle } from "./triangle";
 import "../../util/array.js";
 
@@ -83,6 +83,55 @@ export class Brush {
     }
 
     return [planeToPoints, pointsToPlanes];
+  }
+
+  edges() {
+    const edges = [];
+    this.planes.forEach((p1) => {
+      this.planes.forEach((p2) => {
+        if (p1 === p2) {
+          return;
+        }
+        const line = Plane.planeIntersection(p1, p2);
+        if (line === null) {
+          return;
+        }
+
+        var maxT = 1000000;
+        var maxPlane = null;
+        var minT = -10000000;
+        var minPlane = null;
+        this.planes.forEach((p3) => {
+          const intersection = Plane.lineIntersectionT(p3, line);
+          if (intersection === null) {
+            return;
+          }
+          if (Vec3.dot(p3.norm, line.dir) > 0) {
+            if (intersection > minT) {
+              minT = intersection;
+              minPlane = p3;
+            }
+          } else {
+            if (intersection < maxT) {
+              maxT = intersection;
+              maxPlane = p3;
+            }
+          }
+        });
+
+        if (maxT - minT > 0.001) {
+          edges.push(new EdgePlane(p1, p2, minPlane, maxPlane));
+        }
+      });
+    });
+
+    return edges;
+    // 1. For each plane, find the plane intersections
+    // 2. For each intersection, cut it into segments using the other planes
+    // 3. filter down to the planes that create non-zero line segments
+    // 4. recompute the line segments using just those planes, and note which planes cause the segment to truncate at the end.
+    //  [ A | e_X | B, X | e_B | C, B | e_C | A, C | e_A | X ]
+    // 5. chain the edges together to form a face
   }
 
   triangles() {

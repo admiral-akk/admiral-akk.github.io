@@ -1,6 +1,8 @@
 import { Vec3 } from "gl-matrix";
 import { assert } from "vitest";
 import { Triangle } from "../engine/mesh/triangle";
+import { Plane } from "three";
+import { EdgePlane } from "../engine/mesh/plane";
 
 export const expectedApprox = (v, expected, obj = {}, epsilon = 0.001) => {
   assert.isAtMost(
@@ -14,12 +16,25 @@ export const expectedApprox = (v, expected, obj = {}, epsilon = 0.001) => {
   );
 };
 
+const planeDistance = (p1, p2) => {
+  return Math.abs(p1.offset - p2.offset) + 1 - Vec3.dot(p1.norm, p2.norm);
+};
+
 export const distance = (v1, v2) => {
   var actualDistance;
   var type = typeof v1;
 
   if (v1 instanceof Vec3) {
     actualDistance = Vec3.distance(v1, v2);
+  } else if (v1 instanceof EdgePlane) {
+    actualDistance = Math.max(
+      planeDistance(v1.plane1, v2.plane1),
+      planeDistance(v1.plane2, v2.plane2),
+      planeDistance(v1.start, v2.start),
+      planeDistance(v1.end, v2.end)
+    );
+  } else if (v1 instanceof Plane) {
+    actualDistance = planeDistance(v1, v2);
   } else if (type === "number" || v1 instanceof Number) {
     actualDistance = v1 - v2;
   } else if (v1 instanceof Triangle) {
@@ -46,6 +61,34 @@ export const distance = (v1, v2) => {
   }
 
   return actualDistance;
+};
+
+export const listElementsContains = (
+  actualList,
+  expectedList,
+  debugObj = {},
+  epsilon = 0.001
+) => {
+  const missedExpectedMatches = [];
+  expectedList.forEach((expected) => {
+    var bestDistance = 100000;
+    var best = null;
+    actualList.forEach((actual) => {
+      const dist = distance(actual, expected);
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        best = expected;
+      }
+    });
+    if (bestDistance > epsilon) {
+      missedExpectedMatches.push(expected);
+    }
+  });
+
+  debugObj.actualList = actualList;
+  debugObj.missedExpectedMatches = missedExpectedMatches;
+
+  assert.isEmpty(missedExpectedMatches, JSON.stringify(debugObj, null, 2));
 };
 
 export const listElementsMatch = (

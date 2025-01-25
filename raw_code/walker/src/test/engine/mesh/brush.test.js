@@ -4,11 +4,13 @@ import { Line } from "../../../engine/mesh/line";
 import {
   approxDistance,
   expectedApprox,
+  listElementsContains,
   listElementsMatch,
 } from "../../helper";
-import { Plane } from "../../../engine/mesh/plane";
+import { EdgePlane, Plane } from "../../../engine/mesh/plane";
 import { Brush } from "../../../engine/mesh/brush";
 import { Triangle } from "../../../engine/mesh/triangle";
+import { BrushMesh } from "../../../engine/mesh/brushMesh";
 
 function testLineEqual(line1, line2) {
   expectedApprox(Line.distanceToPoint(line1, line2.start), 0, {

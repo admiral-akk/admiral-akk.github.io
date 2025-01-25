@@ -143,3 +143,24 @@ test("fromPoints - points return plane with normal in CCW", () => {
     plane,
   });
 });
+
+test("fromPoints - points return plane with normal in CCW", () => {
+  const p1 = new Vec3(1, 1, 1);
+  const p2 = new Vec3(1, 1, 0);
+  const p3 = new Vec3(1, 0, 1);                                             
+
+  const plane = Plane.fromPoints(p1, p2, p3);
+
+  approxDistance(plane.norm, new Vec3(-1, 0, 0), 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+  approxDistance(plane.offset, -1, 0, {
+    p1,
+    p2,
+    p3,
+    plane,
+  });
+});

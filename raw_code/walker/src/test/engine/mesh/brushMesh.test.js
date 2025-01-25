@@ -1,9 +1,10 @@
 import { assert, test } from "vitest";
-import { Vec3 } from "gl-matrix";
+import { Quat, Vec3 } from "gl-matrix";
 import { Line } from "../../../engine/mesh/line";
 import {
   approxDistance,
   expectedApprox,
+  listElementsContains,
   listElementsMatch,
 } from "../../helper";
 import { Plane } from "../../../engine/mesh/plane";

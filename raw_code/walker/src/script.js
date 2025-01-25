@@ -218,12 +218,12 @@ const generateBox = () => {
 const createThing = () => {
   const color = [0.45, 0.25, 0];
   const color2 = [0.45, 0.25, 0.4];
-  const brushMesh = new BrushMesh(Brush.regularPrism(1, 6, 1, { color }));
+  const brushMesh = new BrushMesh(Brush.regularPrism(1, 3, 1, { color }));
   brushMesh.rotation = new Quat().rotateZ(Math.PI / 2);
   const brushMesh2 = new BrushMesh(
-    Brush.regularPrism(0.75, 6, 1.4, { color2 })
+    Brush.regularPrism(0.75, 3, 1.4, { color2 })
   );
-  brushMesh2.rotation = new Quat().rotateZ(Math.PI / 2).rotateX(Math.PI / 2);
+  brushMesh2.rotation = new Quat().rotateZ(Math.PI / 2).rotateX(Math.PI / 3);
 
   brushMesh.add(brushMesh2);
 

@@ -5,11 +5,55 @@ Vec3.prototype.clone = function () {
   return Vec3.clone(this);
 };
 
+export class EdgePlane {
+  constructor(plane1, plane2, start, end) {
+    this.plane1 = plane1;
+    this.plane2 = plane2;
+    this.start = start;
+    this.end = end;
+  }
+}
+
 export class Plane {
   constructor(norm, offset, metadata = {}) {
     this.norm = norm.normalize();
     this.offset = offset;
     this.metadata = metadata;
+  }
+
+  static edgeIntersection(p1, p2, planes) {
+    const line = Plane.planeIntersection(p1, p2);
+    if (line === null) {
+      return null;
+    }
+
+    var maxT = 1000000;
+    var maxPlane = null;
+    var minT = -10000000;
+    var minPlane = null;
+    planes.forEach((p3) => {
+      const intersection = Plane.lineIntersectionT(p3, line);
+      if (intersection === null) {
+        return;
+      }
+      if (Vec3.dot(p3.norm, line.dir) > 0) {
+        if (intersection > minT) {
+          minT = intersection;
+          minPlane = p3;
+        }
+      } else {
+        if (intersection < maxT) {
+          maxT = intersection;
+          maxPlane = p3;
+        }
+      }
+    });
+
+    if (maxT - minT > 0.001) {
+      edges.push(new EdgePlane(p1, p2, minPlane, maxPlane));
+    }
+
+    return edges;
   }
 
   clone() {
@@ -48,13 +92,22 @@ export class Plane {
     return new Plane(normal, Vec3.dot(normal, p1), metadata);
   }
 
-  static lineIntersection(plane, line) {
+  static lineIntersectionT(plane, line) {
     const { start, dir } = line;
     if (Math.abs(Vec3.dot(plane.norm, dir)) < 0.01) {
       return null;
     }
-    const t =
-      (plane.offset - Vec3.dot(plane.norm, start)) / Vec3.dot(plane.norm, dir);
+    return (
+      (plane.offset - Vec3.dot(plane.norm, start)) / Vec3.dot(plane.norm, dir)
+    );
+  }
+
+  static lineIntersection(plane, line) {
+    const { start, dir } = line;
+    const t = Plane.lineIntersectionT(plane, line);
+    if (t === null) {
+      return t;
+    }
 
     return start.clone().add(dir.clone().scale(t));
   }

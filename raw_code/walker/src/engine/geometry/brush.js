@@ -16,6 +16,10 @@ export class Brush extends Primative {
     ];
   }
 
+  static clone(brush) {
+    return Brush.addPlane(new Brush(brush.metadata), ...brush.planes);
+  }
+
   // could return null
   static addPlane(brush, ...planes) {
     brush.planes.push(...planes);
@@ -33,7 +37,6 @@ export class Brush extends Primative {
           planes: brush.planes,
         });
         if (edge !== null) {
-          console.log("edge:", edge);
           hasLine = true;
           break;
         }
@@ -60,7 +63,6 @@ export class Brush extends Primative {
           planes: brush.planes,
         });
         if (edge !== null) {
-          console.log("edge:", edge);
           nonEmptyLine = true;
           break;
         }

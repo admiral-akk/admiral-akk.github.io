@@ -2,6 +2,7 @@ import { assert, test } from "vitest";
 import { Vec3 } from "gl-matrix";
 import { Plane } from "../../../engine/geometry/Plane";
 import { Brush } from "../../../engine/geometry/Brush";
+import { Composition } from "../../../engine/geometry/Composition";
 
 export const listElementsMatch = (actualList, expectedList, debugObj = {}) => {
   const missedActualMatches = [];

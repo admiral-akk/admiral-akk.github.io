@@ -33,13 +33,11 @@ export class PlanarEdge extends Primative {
         // start
         if (start === null || line.lineToPlaneT(start) < t) {
           start = p;
-          metadata.startT = t;
         }
       } else {
         // end
         if (end === null || line.lineToPlaneT(end) > t) {
           end = p;
-          metadata.endT = t;
         }
       }
     }
@@ -51,9 +49,6 @@ export class PlanarEdge extends Primative {
     ) {
       return null;
     }
-
-    metadata.start = line.start;
-    metadata.dir = line.dir;
 
     return new PlanarEdge(plane1, plane2, start, end, metadata);
   }

@@ -97,3 +97,22 @@ test("line to Plane - returns intersection point", () => {
     intersection,
   });
 });
+
+test("line to Plane - returns correct distance point", () => {
+  const start = new Vec3(100000, 0, -1);
+  const dir = new Vec3(0, 1, -0);
+
+  const normal = new Vec3(-1, -1, -1);
+  const offset = -1;
+
+  const line = new Line(start, dir);
+  const plane = new Plane(normal, offset);
+
+  const t = line.lineToPlaneT(plane);
+
+  expectedApprox(t, -99997.2679491613, {
+    line,
+    plane,
+    t,
+  });
+});

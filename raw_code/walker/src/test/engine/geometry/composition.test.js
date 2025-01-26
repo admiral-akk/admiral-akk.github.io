@@ -99,3 +99,56 @@ test("composition with box contains appropriate faces", () => {
 
   listContainsElements(actualFaces, expectedFaces, { actualFaces });
 });
+
+test("pyramid handles top point correctly", () => {
+  const basePlane = new Plane(new Vec3(0, 1, 0), -1);
+
+  const sidePlanes = [];
+
+  const sides = 30;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    sidePlanes.push(
+      new Plane(new Vec3(Math.sin(angle), -1, Math.cos(angle)), -1)
+    );
+  }
+  var brush = new Brush();
+
+  brush = Brush.addPlane(brush, basePlane);
+  brush = Brush.addPlane(brush, ...sidePlanes);
+
+  const composition = new Composition(brush);
+
+  const actualFaces = composition.faces();
+
+  const expectedFaces = [];
+
+  for (let i = 0; i < sides; i++) {
+    const prevIndex = (i + sides - 1) % sides;
+    const nextIndex = (i + 1) % sides;
+    expectedFaces.push(
+      new Face([
+        new PlanarEdge(
+          sidePlanes[i],
+          basePlane,
+          sidePlanes[prevIndex],
+          sidePlanes[nextIndex]
+        ),
+        new PlanarEdge(
+          sidePlanes[i],
+          sidePlanes[nextIndex],
+          basePlane,
+          sidePlanes[prevIndex]
+        ),
+        new PlanarEdge(
+          sidePlanes[i],
+          sidePlanes[prevIndex],
+          sidePlanes[nextIndex],
+          basePlane
+        ),
+      ])
+    );
+  }
+
+  listContainsElements(actualFaces, expectedFaces, { actualFaces });
+});

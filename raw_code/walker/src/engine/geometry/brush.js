@@ -16,20 +16,48 @@ export class Brush extends Primative {
     ];
   }
 
-  addPlane(...planes) {
-    this.planes.push(...planes);
+  // could return null
+  static addPlane(brush, ...planes) {
+    brush.planes.push(...planes);
 
-    // check if any of the existing planes now aren't relevant
-    for (let i = this.planes.length - 1; i >= 0; i--) {
-      const plane1 = this.planes[i];
-      var nonEmptyLine = false;
+    var hasLine = false;
+    // check if any lines still exist
+    for (let i = brush.planes.length - 1; i >= 0; i--) {
+      const plane1 = brush.planes[i];
       // check if the plane produces a non-empty line given the existing planes.
-      for (let j = this.planes.length - 1; j >= 0; j--) {
-        const plane2 = this.planes[j];
+      for (let j = brush.planes.length - 1; j >= 0; j--) {
+        const plane2 = brush.planes[j];
         const edge = PlanarEdge.makePlanarEdge({
           plane1,
           plane2,
-          planes: this.planes,
+          planes: brush.planes,
+        });
+        if (edge !== null) {
+          console.log("edge:", edge);
+          hasLine = true;
+          break;
+        }
+      }
+      if (hasLine) {
+        break;
+      }
+    }
+
+    if (!hasLine) {
+      return null;
+    }
+
+    // check if any of the existing planes now aren't relevant
+    for (let i = brush.planes.length - 1; i >= 0; i--) {
+      const plane1 = brush.planes[i];
+      var nonEmptyLine = false;
+      // check if the plane produces a non-empty line given the existing planes.
+      for (let j = brush.planes.length - 1; j >= 0; j--) {
+        const plane2 = brush.planes[j];
+        const edge = PlanarEdge.makePlanarEdge({
+          plane1,
+          plane2,
+          planes: brush.planes,
         });
         if (edge !== null) {
           console.log("edge:", edge);
@@ -40,9 +68,10 @@ export class Brush extends Primative {
 
       // remove the irrelevant plane.
       if (!nonEmptyLine) {
-        this.planes.splice(i, 1);
-      } else {
+        brush.planes.splice(i, 1);
       }
     }
+
+    return brush;
   }
 }

@@ -31,9 +31,9 @@ test("brush with box contains planes", () => {
     new Plane(new Vec3(0, 0, -1), -1),
   ];
 
-  const brush = new Brush();
+  var brush = new Brush();
 
-  brush.addPlane(...planes);
+  brush = Brush.addPlane(brush, ...planes);
 
   listElementsMatch(brush.planes, planes, { brush, planes });
 });
@@ -45,9 +45,9 @@ test("brush with box contains planes", () => {
     new Plane(new Vec3(0, 1, 0), -1),
     new Plane(new Vec3(0, 0, 1), -1),
   ];
-  const brush = new Brush();
+  var brush = new Brush();
 
-  brush.addPlane(...planes);
+  brush = Brush.addPlane(brush, ...planes);
 
   listElementsMatch(brush.planes, planes);
 });
@@ -61,16 +61,34 @@ test("brush with box contains planes", () => {
     new Plane(new Vec3(0, 0, 1), -10),
     new Plane(new Vec3(0, 0, -1), -10),
   ];
-  const brush = new Brush();
+  var brush = new Brush();
 
-  brush.addPlane(...planes);
+  brush = Brush.addPlane(brush, ...planes);
   const actualPlanes = [
     new Plane(new Vec3(-1, -1, -1), -1),
     new Plane(new Vec3(1, 0, 0), -1),
     new Plane(new Vec3(0, 1, 0), -1),
     new Plane(new Vec3(0, 0, 1), -1),
   ];
-  brush.addPlane(...actualPlanes);
+  brush = Brush.addPlane(brush, ...actualPlanes);
 
   listElementsMatch(brush.planes, actualPlanes);
+});
+
+test("brush with no valid points", () => {
+  const planes = [
+    new Plane(new Vec3(1, 0, 0), -10),
+    new Plane(new Vec3(-1, 0, 0), -10),
+    new Plane(new Vec3(0, 1, 0), -10),
+    new Plane(new Vec3(0, -1, 0), -10),
+    new Plane(new Vec3(0, 0, 1), -10),
+    new Plane(new Vec3(0, 0, -1), -10),
+  ];
+  var brush = new Brush();
+
+  brush = Brush.addPlane(brush, ...planes);
+
+  brush = Brush.addPlane(brush, new Plane(new Vec3(1, 0, 0), 100));
+
+  assert.isNull(brush);
 });

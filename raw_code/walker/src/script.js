@@ -32,7 +32,7 @@ import { Mesh } from "./components/render/mesh.js";
 import { vec3, quat, Vec3, Vec2, Quat } from "gl-matrix";
 import { Triangle } from "./engine/mesh/triangle.js";
 import { BrushMesh } from "./engine/mesh/brushMesh.js";
-import Stats from "three/examples/jsm/libs/stats.module.js";
+import Stats from "stats.js";
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()

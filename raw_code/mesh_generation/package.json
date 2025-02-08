@@ -1,7 +1,7 @@
 {
-  "name": "hexhexhex",
+  "name": "mesh_generation",
   "version": "1.0.0",
-  "description": "Hexs",
+  "description": "Testing some mesh stuff",
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173",

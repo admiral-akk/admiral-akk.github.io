@@ -15,7 +15,7 @@ export default {
     commonjsOptions: {
       include: [/linked-dep/, /node_modules/],
     },
-    outDir: "../../../walker", // Output in the dist/ folder
+    outDir: "../../../mesh_generation", // Output in the dist/ folder
     emptyOutDir: true, // Empty the folder first
     sourcemap: true, // Add sourcemap
   },

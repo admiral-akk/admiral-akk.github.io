@@ -24,8 +24,11 @@ impl Plane {
     }
 
     pub fn intersection(&self, other: &Plane, opt_epsilon: Option<f32>) -> Option<Line> {
-        let epsilon = opt_epsilon.unwrap_or_else(0.0001);
-        let mut line_dir = self.normal.clone().cross(other.normal);
+        let epsilon = match opt_epsilon {
+            Some(e) => e,
+            None => 0.0001,
+        };
+        let mut line_dir = (&self.normal.clone()).cross(&other.normal);
         if (line_dir.length() <= epsilon) {
             return None;
         }

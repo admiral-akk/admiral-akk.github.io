@@ -29,15 +29,15 @@ impl Plane {
             None => 0.0001,
         };
         let mut line_dir = (&self.normal.clone()).cross(&other.normal);
-        if (line_dir.length() <= epsilon) {
+        if line_dir.length() <= epsilon {
             return None;
         }
 
         line_dir.normalize();
 
-        let largest_index = if (line_dir.x.abs() >= line_dir.y.abs().max(line_dir.z.abs())) {
+        let largest_index = if line_dir.x.abs() >= line_dir.y.abs().max(line_dir.z.abs()) {
             0
-        } else if (line_dir.y.abs() >= (line_dir.z.abs())) {
+        } else if line_dir.y.abs() >= (line_dir.z.abs()) {
             1
         } else {
             2
@@ -69,19 +69,19 @@ impl Plane {
 
         let diff = p1v1 * p2v2 - p1v2 * p2v1;
 
-        let x = if (largest_index == 0) {
+        let x = if largest_index == 0 {
             0.
         } else {
-            (self.offset * p2v2 - other.offset * p1v2)
-        };
-        let y = if (largest_index == 0) {
             self.offset * p2v2 - other.offset * p1v2
-        } else if (largest_index == 2) {
+        };
+        let y = if largest_index == 0 {
+            self.offset * p2v2 - other.offset * p1v2
+        } else if largest_index == 2 {
             -(self.offset * p2v1 - other.offset * p1v1)
         } else {
             0.
         };
-        let z = if (largest_index != 2) {
+        let z = if largest_index != 2 {
             -(self.offset * p2v1 - other.offset * p1v1)
         } else {
             0.

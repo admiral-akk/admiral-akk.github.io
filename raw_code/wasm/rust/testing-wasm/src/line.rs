@@ -96,4 +96,11 @@ mod tests {
             Vec3::new(10., 0., 1.)
         );
     }
+
+    #[test]
+    fn test_line_plane_no_intersection() {
+        let line = Line::new(&mut Vec3::new(1., 0., 0.), Vec3::new(0., 0., 1.));
+        let plane = Plane::new(&mut Vec3::new(0., 1., 0.), 0.);
+        assert_eq!(line.intersection(&plane, None), None);
+    }
 }

@@ -53,7 +53,7 @@ impl Brush {
                             match t {
                                 None => {}
                                 Some(t) => {
-                                    if (other.normal.dot(&line.dir) >= 0.) {
+                                    if other.normal.dot(&line.dir) >= 0. {
                                         min_t = min_t.max(t);
                                     } else {
                                         max_t = max_t.min(t);
@@ -63,7 +63,7 @@ impl Brush {
                         }
 
                         // check if the line has non-zero length;
-                        if (max_t - 0.0001 > min_t) {
+                        if max_t - 0.0001 > min_t {
                             has_line = true;
                         }
                     }

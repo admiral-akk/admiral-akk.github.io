@@ -28,7 +28,7 @@ impl Brush {
     }
 
     pub fn add_plane(&mut self, plane: &Plane) {
-        if (self.planes.len() < 4) {
+        if self.planes.len() < 4 {
             // this is an empty brush
             return;
         }
@@ -51,7 +51,7 @@ impl Brush {
                 break;
             }
 
-            if (!has_line) {
+            if !has_line {
                 self.planes.swap_remove(i);
             }
         }

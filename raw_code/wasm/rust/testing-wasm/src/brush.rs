@@ -1,26 +1,5 @@
+use crate::types::*;
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Line {
-    pub dir: Vec3,
-    pub start: Vec3,
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Plane {
-    pub normal: Vec3,
-    pub offset: f32,
-}
 
 #[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq)]
@@ -42,5 +21,19 @@ impl Brush {
                 Plane::new(&mut Vec3::new(0., 0., -1.), -100000.),
             ],
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("{:?}", self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let brush = Brush::new();
     }
 }

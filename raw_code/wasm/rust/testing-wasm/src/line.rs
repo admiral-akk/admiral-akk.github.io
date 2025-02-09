@@ -18,6 +18,20 @@ impl Line {
     pub fn point(&self, t: f32) -> Vec3 {
         self.start.clone().scale_and_add(t, &self.dir)
     }
+
+    pub fn closest(&self, p: &Vec3) -> Vec3 {
+        let mut start = self.start.clone();
+
+        if (p.dist_sq(&start) < 0.001) {
+            start.add(&self.dir);
+        }
+
+        let mut delta = p.clone();
+        delta.sub(&start);
+        start.scale_and_add(delta.dot(&self.dir), &self.dir);
+
+        start
+    }
 }
 
 #[cfg(test)]
@@ -42,5 +56,14 @@ mod tests {
         assert_eq!(line.point(0.), Vec3::new(0., 0., 1.));
         assert_eq!(line.point(2.), Vec3::new(2., 0., 1.));
         assert_eq!(line.point(-2.), Vec3::new(-2., 0., 1.));
+    }
+
+    #[test]
+    fn test_closest_point_on_line() {
+        let line = Line::new(&mut Vec3::new(1., 0., 0.), Vec3::new(0., 0., 1.));
+
+        assert_eq!(line.closest(&line.point(0.)), Vec3::new(0., 0., 1.));
+        assert_eq!(line.closest(&line.point(2.)), Vec3::new(2., 0., 1.));
+        assert_eq!(line.closest(&line.point(-2.)), Vec3::new(-2., 0., 1.));
     }
 }

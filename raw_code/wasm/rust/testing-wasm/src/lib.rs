@@ -1,3 +1,4 @@
+mod line;
 mod plane;
 mod utils;
 mod vec3;

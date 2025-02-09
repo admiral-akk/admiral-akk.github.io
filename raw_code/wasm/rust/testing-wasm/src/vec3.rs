@@ -3,9 +3,9 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 #[wasm_bindgen]
@@ -83,6 +83,13 @@ impl Vec3 {
         self.x += other.x * scalar;
         self.y += other.y * scalar;
         self.z += other.z * scalar;
+        *self
+    }
+
+    pub fn set(&mut self, x: f32, y: f32, z: f32) -> Self {
+        self.x = x;
+        self.y = y;
+        self.z = z;
         *self
     }
 }

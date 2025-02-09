@@ -8,7 +8,7 @@
     "build": "vite build",
     "build-wasm": "wasm-pack build ./rust/testing-wasm --out-dir ../../src/wasm",
     "test": "vitest",
-    "rust-test": "cargo test --manifest-path ./rust/testing-wasm/Cargo.toml"
+    "rust-test": "cargo fix --manifest-path ./rust/testing-wasm/Cargo.toml; cargo test --manifest-path ./rust/testing-wasm/Cargo.toml"
   },
   "keywords": [],
   "author": "Kuba Karpierz",

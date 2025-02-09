@@ -26,6 +26,36 @@ impl Brush {
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
     }
+
+    pub fn add_plane(&mut self, plane: &Plane) {
+        if (self.planes.len() < 4) {
+            // this is an empty brush
+            return;
+        }
+
+        for i in (self.planes.len() - 1)..0 {
+            // check if the plane ever creates a non-empty line
+            let mut has_line = false;
+            let plane = self.planes[i];
+            for j in (self.planes.len() - 1)..0 {
+                let other = self.planes[j];
+                let line_opt = plane.intersection(&other, None);
+                match line_opt {
+                    None => continue,
+                    Some(line) => {
+                        // check if the line has non-zero length;
+
+                        has_line = true;
+                    }
+                }
+                break;
+            }
+
+            if (!has_line) {
+                self.planes.swap_remove(i);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

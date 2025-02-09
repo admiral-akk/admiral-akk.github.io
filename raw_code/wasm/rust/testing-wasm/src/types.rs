@@ -21,26 +21,3 @@ pub struct Plane {
     pub normal: Vec3,
     pub offset: f32,
 }
-
-#[wasm_bindgen]
-#[derive(Clone, Debug, PartialEq)]
-pub struct Brush {
-    planes: Vec<Plane>,
-}
-
-#[wasm_bindgen]
-impl Brush {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Brush {
-        Self {
-            planes: vec![
-                Plane::new(&mut Vec3::new(1., 0., 0.), -100000.),
-                Plane::new(&mut Vec3::new(-1., 0., 0.), -100000.),
-                Plane::new(&mut Vec3::new(0., 1., 0.), -100000.),
-                Plane::new(&mut Vec3::new(0., -1., 0.), -100000.),
-                Plane::new(&mut Vec3::new(0., 0., 1.), -100000.),
-                Plane::new(&mut Vec3::new(0., 0., -1.), -100000.),
-            ],
-        }
-    }
-}

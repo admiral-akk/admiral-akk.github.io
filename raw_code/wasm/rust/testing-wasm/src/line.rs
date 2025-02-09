@@ -66,4 +66,15 @@ mod tests {
         assert_eq!(line.closest(&line.point(2.)), Vec3::new(2., 0., 1.));
         assert_eq!(line.closest(&line.point(-2.)), Vec3::new(-2., 0., 1.));
     }
+
+    #[test]
+    fn test_closest_point_off_line() {
+        let line = Line::new(&mut Vec3::new(1., 0., 0.), Vec3::new(0., 0., 1.));
+
+        assert_eq!(line.closest(&Vec3::new(0., 10., 0.)), Vec3::new(0., 0., 1.));
+        assert_eq!(
+            line.closest(&Vec3::new(10., -10., 0.)),
+            Vec3::new(10., 0., 1.)
+        );
+    }
 }

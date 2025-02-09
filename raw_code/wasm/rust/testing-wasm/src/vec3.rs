@@ -15,6 +15,10 @@ impl Vec3 {
         Self { x, y, z }
     }
 
+    pub fn to_string(&self) -> String {
+        format!("{:?}", self)
+    }
+
     pub fn dot(&self, other: &Vec3) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -36,6 +40,7 @@ impl Vec3 {
 
     pub fn normalize(&mut self) -> Self {
         let len = self.length();
+        println!("x is: {}", len);
         self.x /= len;
         self.y /= len;
         self.z /= len;
@@ -51,10 +56,6 @@ impl Vec3 {
 
     pub fn dist(&self, other: &Vec3) -> f32 {
         self.dist_sq(other).sqrt()
-    }
-
-    pub fn to_string(&self) -> String {
-        format!("{:?}", self)
     }
 
     pub fn add(&mut self, other: &Vec3) -> Self {
@@ -117,6 +118,7 @@ mod tests {
         assert_eq!(v, expected);
     }
 
+    #[test]
     fn test_scale() {
         let mut one = Vec3::new(1., 1., 1.);
         let expected = Vec3::new(-2., -2., -2.);
@@ -125,6 +127,7 @@ mod tests {
         assert_eq!(one, expected);
     }
 
+    #[test]
     fn test_scale_and_add() {
         let mut one = Vec3::new(1., 1., 1.);
         let other = &Vec3::new(2., 1., 0.);

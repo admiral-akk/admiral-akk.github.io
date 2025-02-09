@@ -20,10 +20,10 @@ impl Vec3 {
     }
 
     pub fn dot(&self, other: &Vec3) -> f32 {
-        let x = self.x - other.x;
-        let y = self.y - other.y;
-        let z = self.z - other.z;
-        x * x + y * y + z * z
+        let x = self.x * other.x;
+        let y = self.y * other.y;
+        let z = self.z * other.z;
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn cross(&self, other: &Vec3) -> Self {
@@ -38,7 +38,7 @@ impl Vec3 {
     }
 
     pub fn length(&self) -> f32 {
-        self.length().sqrt()
+        self.length_sq().sqrt()
     }
 
     pub fn normalize(&mut self) -> Self {
@@ -120,5 +120,27 @@ mod tests {
         let expected = Vec3::new(-5.,-3.,-1.);
         assert_eq!(v.sub(&other), expected);
         assert_eq!(v, expected);
+    }
+
+    #[test]
+    fn test_normalize() {
+
+        let mut v = Vec3::new(1.,1.,1.);
+        let sqrt_1_3 =  1. / (3. as f32).sqrt();
+        let expected = Vec3::new(sqrt_1_3,sqrt_1_3,sqrt_1_3);
+        assert_eq!(v.normalize(), expected);
+        assert_eq!(v, expected);
+    }
+
+    #[test]
+    fn test_dot() {
+
+        let one = &Vec3::new(1.,1.,0.);
+        let neg_one = &one.clone().scale(-1.);
+        let orthogonal = &Vec3::new(0.,0.,1.);
+
+        assert_eq!(one.dot(one), 2.);
+        assert_eq!(one.dot(neg_one), -2.);
+        assert_eq!(one.dot(orthogonal), 0.);
     }
 }

@@ -1,6 +1,6 @@
+mod plane;
 mod utils;
 mod vec3;
-mod plane;
 
 use wasm_bindgen::prelude::*;
 

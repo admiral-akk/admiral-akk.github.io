@@ -14,6 +14,10 @@ impl Line {
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
     }
+
+    pub fn point(&self, t: f32) -> Vec3 {
+        self.start.clone().scale_and_add(t, &self.dir)
+    }
 }
 
 #[cfg(test)]
@@ -29,5 +33,14 @@ mod tests {
 
         assert_eq!(line.dir, expected_dir);
         assert_eq!(line.start, Vec3::new(0., 0., 0.));
+    }
+
+    #[test]
+    fn test_point() {
+        let line = Line::new(&mut Vec3::new(1., 0., 0.), Vec3::new(0., 0., 1.));
+
+        assert_eq!(line.point(0.), Vec3::new(0., 0., 1.));
+        assert_eq!(line.point(2.), Vec3::new(2., 0., 1.));
+        assert_eq!(line.point(-2.), Vec3::new(-2., 0., 1.));
     }
 }

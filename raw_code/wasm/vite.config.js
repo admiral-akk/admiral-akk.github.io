@@ -1,4 +1,5 @@
 import glsl from "vite-plugin-glsl";
+import wasm from "vite-plugin-wasm";
 
 export default {
   optimizeDeps: {
@@ -19,5 +20,5 @@ export default {
     emptyOutDir: true, // Empty the folder first
     sourcemap: true, // Add sourcemap
   },
-  plugins: [glsl()],
+  plugins: [glsl(), wasm()],
 };

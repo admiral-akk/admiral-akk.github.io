@@ -33,6 +33,17 @@ import { vec3, quat, Vec3, Vec2, Quat } from "gl-matrix";
 import { Triangle } from "./engine/mesh/triangle.js";
 import { BrushMesh } from "./engine/mesh/brushMesh.js";
 import Stats from "stats.js";
+
+import * as wasm from "./wasm/testing_wasm.js";
+import { Vec3 as wasmVec3 } from "./wasm/testing_wasm.js";
+
+const v = new wasmVec3(1, 2, 3);
+const other = new wasmVec3(4, 5, 6);
+
+console.log(v.add(other).to_string());
+console.log(v.to_string());
+console.log(other.to_string());
+
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -53,6 +64,16 @@ const cameraEntity = new Entity();
   t.setPosition([0, -4, 0]);
   cameraEntity.addComponent(t);
 }
+
+const memory = new WebAssembly.Memory({ initial: 256, maximum: 256 });
+const impObj = {
+  env: { memory },
+};
+
+fetch("add.wasm")
+  .then((res) => res.arrayBuffer())
+  .then((bytes) => WebAssembly.instantiate(bytes, impObj))
+  .then((wasmMod) => console.log(wasmMod.instance.exports.add(2, 3)));
 
 var debugVertices = [];
 

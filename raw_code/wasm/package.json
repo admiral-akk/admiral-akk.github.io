@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --port 5173",
     "build": "vite build",
-    "test": "vitest"
+    "build-wasm": "wasm-pack build ./rust/testing-wasm --out-dir ../../src/wasm",
+    "test": "vitest",
+    "rust-test": "cargo test --manifest-path ./rust/testing-wasm/Cargo.toml"
   },
   "keywords": [],
   "author": "Kuba Karpierz",
@@ -14,6 +16,7 @@
   "devDependencies": {
     "vite": "^4.5.0",
     "vite-plugin-glsl": "^1.2.1",
+    "vite-plugin-wasm": "^3.4.1",
     "vitest": "^3.0.2"
   },
   "dependencies": {

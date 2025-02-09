@@ -40,7 +40,6 @@ impl Vec3 {
 
     pub fn normalize(&mut self) -> Self {
         let len = self.length();
-        println!("x is: {}", len);
         self.x /= len;
         self.y /= len;
         self.z /= len;

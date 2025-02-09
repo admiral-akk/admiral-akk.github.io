@@ -108,4 +108,30 @@ mod tests {
         assert_eq!(plane.normal, expected_normal);
         assert_eq!(plane.offset, 10.);
     }
+
+    #[test]
+    fn test_no_intersection() {
+        let plane1 = &Plane::new(&mut Vec3::new(1., 0., 0.), 0.);
+        let plane2 = &Plane::new(&mut Vec3::new(1., 0., 0.), 0.);
+
+        assert_eq!(plane1.intersection(plane2, None), None);
+    }
+
+    #[test]
+    fn test_orthogonal_intersection() {
+        let plane1 = &Plane::new(&mut Vec3::new(1., 0., 0.), 0.);
+        let plane2 = &Plane::new(&mut Vec3::new(0., 1., 0.), 0.);
+
+        let expected = Line::new(&mut Vec3::new(0., 0., 1.), Vec3::new(0., 0., 0.));
+        assert_eq!(plane1.intersection(plane2, None), Some(expected));
+    }
+
+    #[test]
+    fn test_orthogonal_intersection_with_offset() {
+        let plane1 = &Plane::new(&mut Vec3::new(1., 0., 0.), 10.);
+        let plane2 = &Plane::new(&mut Vec3::new(0., 0., 1.), 10.);
+
+        let expected = Line::new(&mut Vec3::new(0., -1., 0.), Vec3::new(10., 0., 10.));
+        assert_eq!(plane1.intersection(plane2, None), Some(expected));
+    }
 }

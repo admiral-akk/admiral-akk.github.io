@@ -65,16 +65,6 @@ const cameraEntity = new Entity();
   cameraEntity.addComponent(t);
 }
 
-const memory = new WebAssembly.Memory({ initial: 256, maximum: 256 });
-const impObj = {
-  env: { memory },
-};
-
-fetch("add.wasm")
-  .then((res) => res.arrayBuffer())
-  .then((bytes) => WebAssembly.instantiate(bytes, impObj))
-  .then((wasmMod) => console.log(wasmMod.instance.exports.add(2, 3)));
-
 var debugVertices = [];
 
 // input manager - client, determines commands

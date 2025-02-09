@@ -1,12 +1,5 @@
+use crate::types::*;
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
 
 #[wasm_bindgen]
 impl Vec3 {

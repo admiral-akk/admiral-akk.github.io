@@ -1,13 +1,5 @@
-use crate::line::Line;
-use crate::vec3::Vec3;
+use crate::types::*;
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Plane {
-    pub normal: Vec3,
-    pub offset: f32,
-}
 
 #[wasm_bindgen]
 impl Plane {

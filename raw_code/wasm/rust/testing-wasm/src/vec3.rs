@@ -20,9 +20,6 @@ impl Vec3 {
     }
 
     pub fn dot(&self, other: &Vec3) -> f32 {
-        let x = self.x * other.x;
-        let y = self.y * other.y;
-        let z = self.z * other.z;
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
@@ -46,13 +43,6 @@ impl Vec3 {
         self.x /= len;
         self.y /= len;
         self.z /= len;
-        *self
-    }
-
-    pub fn set(&mut self,x:f32,y:f32,z:f32) ->  Self {
-        self.x = x;
-        self.y = y;
-        self.z = z;
         *self
     }
 
@@ -132,6 +122,24 @@ mod tests {
         assert_eq!(v, expected);
     }
 
+    fn test_scale() {
+        let mut one = Vec3::new(1.,1.,1.);
+        let expected = Vec3::new(-2.,-2.,-2.);
+
+        assert_eq!(one.scale(-2.), expected);
+        assert_eq!(one, expected);
+    }
+
+    fn test_scale_and_add() {
+
+        let mut one = Vec3::new(1.,1.,1.);
+        let other = &Vec3::new(2.,1.,0.);
+        let expected = Vec3::new(-3.,-1.,1.);
+
+        assert_eq!(one.scale_and_add(-2., other), expected);
+        assert_eq!(one, expected);
+    }
+
     #[test]
     fn test_dot() {
 
@@ -143,4 +151,6 @@ mod tests {
         assert_eq!(one.dot(neg_one), -2.);
         assert_eq!(one.dot(orthogonal), 0.);
     }
+
+
 }

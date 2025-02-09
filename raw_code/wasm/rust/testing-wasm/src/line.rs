@@ -43,7 +43,7 @@ impl Line {
             None => 0.0001,
         };
 
-        if (plane.normal.dot(&self.dir).abs() < epsilon) {
+        if plane.normal.dot(&self.dir).abs() < epsilon {
             return None;
         }
 

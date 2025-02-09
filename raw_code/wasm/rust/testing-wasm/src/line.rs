@@ -22,7 +22,7 @@ impl Line {
     pub fn closest(&self, p: &Vec3) -> Vec3 {
         let mut start = self.start.clone();
 
-        if (p.dist_sq(&start) < 0.001) {
+        if p.dist_sq(&start) < 0.001 {
             start.add(&self.dir);
         }
 

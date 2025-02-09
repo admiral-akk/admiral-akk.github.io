@@ -33,19 +33,39 @@ impl Brush {
             return;
         }
 
+        self.planes.push(*plane);
+
         for i in (self.planes.len() - 1)..0 {
             // check if the plane ever creates a non-empty line
             let mut has_line = false;
             let plane = self.planes[i];
             for j in (self.planes.len() - 1)..0 {
                 let other = self.planes[j];
-                let line_opt = plane.intersection(&other, None);
-                match line_opt {
+                let line = plane.intersection(&other, None);
+                match line {
                     None => continue,
                     Some(line) => {
-                        // check if the line has non-zero length;
+                        let mut max_t = 1000000000. as f32;
+                        let mut min_t = -1000000000. as f32;
+                        for k in 0..self.planes.len() {
+                            let other = self.planes[k];
+                            let t = line.intersection_t(&other, None);
+                            match t {
+                                None => {}
+                                Some(t) => {
+                                    if (other.normal.dot(&line.dir) >= 0.) {
+                                        min_t = min_t.max(t);
+                                    } else {
+                                        max_t = max_t.min(t);
+                                    }
+                                }
+                            }
+                        }
 
-                        has_line = true;
+                        // check if the line has non-zero length;
+                        if (max_t - 0.0001 > min_t) {
+                            has_line = true;
+                        }
                     }
                 }
                 break;

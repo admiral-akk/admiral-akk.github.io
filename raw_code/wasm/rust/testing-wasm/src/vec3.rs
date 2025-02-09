@@ -153,4 +153,16 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn test_dist() {
+
+        let one = &Vec3::new(1.,1.,0.);
+        let neg_one = &one.clone().scale(-1.);
+        let orthogonal = &Vec3::new(0.,0.,1.);
+
+        assert_eq!(one.dist(one),0.);
+        assert_eq!(one.dist(neg_one),  2. * (2. as f32).sqrt());
+        assert_eq!(one.dist(orthogonal), (3. as f32).sqrt());
+    }
 }

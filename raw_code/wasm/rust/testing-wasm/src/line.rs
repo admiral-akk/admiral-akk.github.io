@@ -32,6 +32,25 @@ impl Line {
 
         start
     }
+
+    pub fn distance(&self, p: &Vec3) -> f32 {
+        self.closest(p).dist(&self.start)
+    }
+
+    pub fn intersection(&self, plane: &Plane, opt_epsilon: Option<f32>) -> Option<Vec3> {
+        let epsilon = match opt_epsilon {
+            Some(e) => e,
+            None => 0.0001,
+        };
+
+        if (plane.normal.dot(&self.dir).abs() < epsilon) {
+            return None;
+        }
+
+        let t = (plane.offset - plane.normal.dot(&self.start)) / plane.normal.dot(&self.dir);
+
+        Some(self.start.clone().scale_and_add(t, &self.dir))
+    }
 }
 
 #[cfg(test)]

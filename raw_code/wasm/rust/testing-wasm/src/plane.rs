@@ -15,6 +15,10 @@ impl Plane {
         format!("{:?}", self)
     }
 
+    pub fn dist(&self, p: &Vec3) -> f32 {
+        self.normal.dot(p) - self.offset
+    }
+
     pub fn intersection(&self, other: &Plane, opt_epsilon: Option<f32>) -> Option<Line> {
         let epsilon = match opt_epsilon {
             Some(e) => e,

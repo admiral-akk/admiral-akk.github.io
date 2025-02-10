@@ -46,7 +46,7 @@ impl Brush {
                 match line {
                     None => {
                         // check if the normals line up
-                        if plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset {
+                        if plane.normal.dot(&other.normal) > 0.9999 && plane.offset < other.offset {
                             is_dominated = true;
                         }
                     }
@@ -57,7 +57,13 @@ impl Brush {
                             let other = self.planes[k];
                             let t = line.intersection_t(&other, None);
                             match t {
-                                None => {}
+                                None => {
+                                    // check if the line is rejected by the plane
+                                    if other.dist(&line.start) < -0.01 {
+                                        min_t = 10000000.;
+                                        max_t = -10000000.;
+                                    }
+                                }
                                 Some(t) => {
                                     if other.normal.dot(&line.dir) >= 0. {
                                         min_t = min_t.max(t);
@@ -69,9 +75,7 @@ impl Brush {
                         }
 
                         // check if the line has non-zero length;
-                        if max_t - 0.0001 > min_t {
-                            has_line = true;
-                        }
+                        has_line |= max_t - 0.0001 >= min_t;
                     }
                 }
             }
@@ -175,7 +179,7 @@ mod tests {
         let mut brush = Brush::new();
 
         let expected_planes = vec![
-            Plane::new(&mut Vec3::new(0., 1., 0.), -1.),
+            Plane::new(&mut Vec3::new(0., 1., 0.), 0.),
             Plane::new(&mut Vec3::new(1., -1., 1.), -1.),
             Plane::new(&mut Vec3::new(-1., -1., 1.), -1.),
             Plane::new(&mut Vec3::new(1., -1., -1.), -1.),

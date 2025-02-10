@@ -40,13 +40,13 @@ impl Brush {
             let mut has_line = false;
             let mut is_dominated = false;
             let plane = self.planes[i];
-            for j in (0..self.planes.len()) {
+            for j in 0..self.planes.len() {
                 let other = self.planes[j];
                 let line = plane.intersection(&other, None);
                 match line {
                     None => {
                         // check if the normals line up
-                        if (plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset)
+                        if plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset
                         {
                             is_dominated = true;
                         }
@@ -94,12 +94,12 @@ mod tests {
         let mut extra_actual = Vec::new();
 
         for expected_val in expected.iter() {
-            if (!actual.contains(expected_val)) {
+            if !actual.contains(expected_val) {
                 missing_expected.push(expected_val);
             }
         }
         for actual_val in actual.iter() {
-            if (!expected.contains(actual_val)) {
+            if !expected.contains(actual_val) {
                 extra_actual.push(actual_val);
             }
         }

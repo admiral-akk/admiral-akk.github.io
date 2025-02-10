@@ -46,8 +46,7 @@ impl Brush {
                 match line {
                     None => {
                         // check if the normals line up
-                        if plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset
-                        {
+                        if plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset {
                             is_dominated = true;
                         }
                     }
@@ -118,54 +117,12 @@ mod tests {
         brush.add_plane(&Plane::new(&mut Vec3::new(1., 0., 0.), 0.));
 
         let expected_planes = vec![
-            Plane {
-                normal: Vec3 {
-                    x: 1.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-                offset: 0.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: -1.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-                offset: -100000.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 1.0,
-                    z: 0.0,
-                },
-                offset: -100000.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: -1.0,
-                    z: 0.0,
-                },
-                offset: -100000.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 1.0,
-                },
-                offset: -100000.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: -1.0,
-                },
-                offset: -100000.0,
-            },
+            Plane::new(&mut Vec3::new(1., 0., 0.), 0.),
+            Plane::new(&mut Vec3::new(-1., 0., 0.), -100000.),
+            Plane::new(&mut Vec3::new(0., 1., 0.), -100000.),
+            Plane::new(&mut Vec3::new(0., -1., 0.), -100000.),
+            Plane::new(&mut Vec3::new(0., 0., 1.), -100000.),
+            Plane::new(&mut Vec3::new(0., 0., -1.), -100000.),
         ];
 
         assert_same_elements(brush.planes, expected_planes);
@@ -176,54 +133,53 @@ mod tests {
         let mut brush = Brush::new();
 
         let expected_planes = vec![
-            Plane {
-                normal: Vec3 {
-                    x: 1.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-                offset: -1.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: -1.0,
-                    y: 0.0,
-                    z: 0.0,
-                },
-                offset: -1.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 1.0,
-                    z: 0.0,
-                },
-                offset: -1.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: -1.0,
-                    z: 0.0,
-                },
-                offset: -1.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 1.0,
-                },
-                offset: -1.0,
-            },
-            Plane {
-                normal: Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: -1.0,
-                },
-                offset: -1.0,
-            },
+            Plane::new(&mut Vec3::new(1., 0., 0.), -1.),
+            Plane::new(&mut Vec3::new(-1., 0., 0.), -1.),
+            Plane::new(&mut Vec3::new(0., 1., 0.), -1.),
+            Plane::new(&mut Vec3::new(0., -1., 0.), -1.),
+            Plane::new(&mut Vec3::new(0., 0., 1.), -1.),
+            Plane::new(&mut Vec3::new(0., 0., -1.), -1.),
+        ];
+
+        for plane in expected_planes.iter() {
+            brush.add_plane(plane)
+        }
+
+        assert_same_elements(brush.planes, expected_planes);
+    }
+
+    #[test]
+    fn test_rotated_add_box() {
+        let mut brush = Brush::new();
+
+        let expected_planes = vec![
+            Plane::new(&mut Vec3::new(1., 1., 1.), -1.),
+            Plane::new(&mut Vec3::new(-1., 1., 1.), -1.),
+            Plane::new(&mut Vec3::new(1., -1., 1.), -1.),
+            Plane::new(&mut Vec3::new(1., 1., -1.), -1.),
+            Plane::new(&mut Vec3::new(-1., -1., 1.), -1.),
+            Plane::new(&mut Vec3::new(-1., 1., -1.), -1.),
+            Plane::new(&mut Vec3::new(1., -1., -1.), -1.),
+            Plane::new(&mut Vec3::new(-1., -1., -1.), -1.),
+        ];
+
+        for plane in expected_planes.iter() {
+            brush.add_plane(plane)
+        }
+
+        assert_same_elements(brush.planes, expected_planes);
+    }
+
+    #[test]
+    fn test_pyramid() {
+        let mut brush = Brush::new();
+
+        let expected_planes = vec![
+            Plane::new(&mut Vec3::new(0., 1., 0.), -1.),
+            Plane::new(&mut Vec3::new(1., -1., 1.), -1.),
+            Plane::new(&mut Vec3::new(-1., -1., 1.), -1.),
+            Plane::new(&mut Vec3::new(1., -1., -1.), -1.),
+            Plane::new(&mut Vec3::new(-1., -1., -1.), -1.),
         ];
 
         for plane in expected_planes.iter() {

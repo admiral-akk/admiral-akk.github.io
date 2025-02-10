@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new() {
+    fn test_add_parallel_plane() {
         let mut brush = Brush::new();
 
         brush.add_plane(&Plane::new(&mut Vec3::new(1., 0., 0.), 0.));
@@ -167,6 +167,68 @@ mod tests {
                 offset: -100000.0,
             },
         ];
+
+        assert_same_elements(brush.planes, expected_planes);
+    }
+
+    #[test]
+    fn test_add_box() {
+        let mut brush = Brush::new();
+
+        let expected_planes = vec![
+            Plane {
+                normal: Vec3 {
+                    x: 1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                offset: -1.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: -1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                offset: -1.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 1.0,
+                    z: 0.0,
+                },
+                offset: -1.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: -1.0,
+                    z: 0.0,
+                },
+                offset: -1.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 1.0,
+                },
+                offset: -1.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -1.0,
+                },
+                offset: -1.0,
+            },
+        ];
+
+        for plane in expected_planes.iter() {
+            brush.add_plane(plane)
+        }
 
         assert_same_elements(brush.planes, expected_planes);
     }

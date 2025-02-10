@@ -9,7 +9,7 @@
     "build-wasm": "wasm-pack build ./rust/testing-wasm --out-dir ../../src/wasm",
     "test": "vitest",
     "rust-test": "cargo test --manifest-path ./rust/testing-wasm/Cargo.toml",
-    "fix": "cargo fix --manifest-path ./rust/testing-wasm/Cargo.toml"
+    "fix": "cargo fix --manifest-path ./rust/testing-wasm/Cargo.toml; git add .; git commit -m \"cargo fix\""
   },
   "keywords": [],
   "author": "Kuba Karpierz",

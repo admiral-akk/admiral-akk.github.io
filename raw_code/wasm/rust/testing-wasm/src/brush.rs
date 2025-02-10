@@ -35,15 +35,22 @@ impl Brush {
 
         self.planes.push(*plane);
 
-        for i in (self.planes.len() - 1)..0 {
+        for i in (0..self.planes.len()).rev() {
             // check if the plane ever creates a non-empty line
             let mut has_line = false;
+            let mut is_dominated = false;
             let plane = self.planes[i];
-            for j in (self.planes.len() - 1)..0 {
+            for j in (0..self.planes.len()) {
                 let other = self.planes[j];
                 let line = plane.intersection(&other, None);
                 match line {
-                    None => continue,
+                    None => {
+                        // check if the normals line up
+                        if (plane.normal.dot(&other.normal) > 0.999 && plane.offset < other.offset)
+                        {
+                            is_dominated = true;
+                        }
+                    }
                     Some(line) => {
                         let mut max_t = 1000000000. as f32;
                         let mut min_t = -1000000000. as f32;
@@ -68,10 +75,9 @@ impl Brush {
                         }
                     }
                 }
-                break;
             }
 
-            if !has_line {
+            if !has_line || is_dominated {
                 self.planes.swap_remove(i);
             }
         }
@@ -81,9 +87,87 @@ impl Brush {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fmt::Debug;
+
+    fn assert_same_elements<T: Debug + PartialEq>(actual: Vec<T>, expected: Vec<T>) {
+        let mut missing_expected = Vec::new();
+        let mut extra_actual = Vec::new();
+
+        for expected_val in expected.iter() {
+            if (!actual.contains(expected_val)) {
+                missing_expected.push(expected_val);
+            }
+        }
+        for actual_val in actual.iter() {
+            if (!expected.contains(actual_val)) {
+                extra_actual.push(actual_val);
+            }
+        }
+        assert!(
+            extra_actual.len() + missing_expected.len() == 0,
+            "missing elements: {:?}\nextra elements: {:?}",
+            missing_expected,
+            extra_actual
+        );
+    }
 
     #[test]
     fn test_new() {
-        let brush = Brush::new();
+        let mut brush = Brush::new();
+
+        brush.add_plane(&Plane::new(&mut Vec3::new(1., 0., 0.), 0.));
+
+        let expected_planes = vec![
+            Plane {
+                normal: Vec3 {
+                    x: 1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                offset: 0.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: -1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                offset: -100000.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 1.0,
+                    z: 0.0,
+                },
+                offset: -100000.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: -1.0,
+                    z: 0.0,
+                },
+                offset: -100000.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 1.0,
+                },
+                offset: -100000.0,
+            },
+            Plane {
+                normal: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -1.0,
+                },
+                offset: -100000.0,
+            },
+        ];
+
+        assert_same_elements(brush.planes, expected_planes);
     }
 }

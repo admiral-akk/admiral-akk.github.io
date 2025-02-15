@@ -19,8 +19,8 @@ class MoveCamera extends System {
     vec3.add(temp, camera.origin, camera.getOffset());
     mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
     mat4.getRotation(rot, view);
-    transform.setPosition(temp);
-    transform.setRotation(rot);
+    //transform.setPosition(temp);
+    //transform.setRotation(rot);
   }
 }
 

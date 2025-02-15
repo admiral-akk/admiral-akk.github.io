@@ -8,7 +8,7 @@ const recursiveWorld = (transform, acc) => {
     mat4.copy(acc, transform.getLocalMatrix());
   } else {
     recursiveWorld(transform.parent, acc);
-    mat4.multiply(acc, acc, transform.getLocalMatrix());
+    mat4.multiply(acc, transform.getLocalMatrix(), acc);
   }
 };
 

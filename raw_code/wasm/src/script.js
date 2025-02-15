@@ -56,14 +56,33 @@ const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
-const cameraEntity = new Entity();
+const cameraBaseT = new Transform({ pos: [0, 0, 0] });
+const cameraBase = new Entity(cameraBaseT);
 
-{
-  cameraEntity.addComponent(new Camera(gl));
-  const t = new Transform();
-  t.setPosition([0, -4, 0]);
-  cameraEntity.addComponent(t);
-}
+const yRot = new Transform({
+  parent: cameraBaseT,
+  rot: Quat.create().rotateX(Math.PI / 4 - 0.2),
+});
+const yRotEntity = new Entity(yRot);
+
+const xRot = new Transform({
+  parent: yRot,
+  rot: Quat.create().rotateY(-Math.PI / 4 + 0.1),
+});
+const xRotEntity = new Entity(xRot);
+
+const zoomT = new Transform({
+  parent: xRot,
+  pos: [0, -2, 0],
+});
+const cameraZoomOut = new Entity(zoomT);
+const cameraEntity = new Entity(
+  new Camera(gl),
+  new Transform({
+    parent: zoomT,
+    pos: [-4, -4, -4],
+  })
+);
 
 var debugVertices = [];
 
@@ -97,6 +116,16 @@ class OpenState extends State {
 
     if (state?.rmb?.val === 1 && state?.mpos?.frame === time.frame) {
       const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
+      horizontalRot.rot.rotateY((5 * delta.x) / Math.PI);
+      vertRot.rot.rotateX(5 * delta.y);
+      horizontalRot.setRotation(horizontalRot.rot);
+      vertRot.setRotation(vertRot.rot);
+      if (state?.wheel?.frame === time.frame) {
+        cameraZoomOut.pos.z += (state.wheel.val - state.wheel.prev.val) / 400;
+        cameraZoomOut.pos.z = Math.clamp(cameraZoomOut.pos.z, 1, 10);
+        cameraZoomOut.setPosition(cameraZoomOut.pos);
+      }
+
       cameraEntity.components.camera.xAngle += 10 * delta.x;
       cameraEntity.components.camera.yAngle += 10 * delta.y;
       cameraEntity.components.camera.yAngle = Math.clamp(
@@ -264,7 +293,7 @@ const draw = () => {
   sunShadowMap.renderShadowDepth();
 
   const setUniforms = (program) => {
-    applyCameraUniforms(cameraEntity.components.camera, program);
+    applyCameraUniforms(cameraEntity.components, program);
     sunShadowMap.setUniforms(program);
     time.setUniforms(program);
   };

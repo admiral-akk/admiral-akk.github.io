@@ -26,7 +26,7 @@ impl Composition {
             let brush = &mut self.brushes[i];
             let inv_other = other.clone().invert();
             brush.add_plane(&inv_other);
-            if (brush.empty()) {
+            if brush.empty() {
                 self.brushes.swap_remove(i);
             }
         }
@@ -36,7 +36,7 @@ impl Composition {
 
     pub fn sub(&mut self, other: &Composition) {
         for brush in other.brushes.iter() {
-            if (brush.empty()) {
+            if brush.empty() {
                 continue;
             }
         }

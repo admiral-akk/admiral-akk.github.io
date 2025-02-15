@@ -27,9 +27,15 @@ impl Brush {
         format!("{:?}", self)
     }
 
+    pub fn empty(&self) -> bool {
+        // If we have fewer than 4 planes, it means we
+        // no longer have a closed surface, which can only
+        // happen if there weren't any legal points in the brush.
+        self.planes.len() < 4
+    }
+
     pub fn add_plane(&mut self, plane: &Plane) {
-        if self.planes.len() < 4 {
-            // this is an empty brush
+        if self.empty() {
             return;
         }
 

@@ -1,4 +1,5 @@
 mod brush;
+mod composition;
 mod line;
 mod plane;
 mod types;

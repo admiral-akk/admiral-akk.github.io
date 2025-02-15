@@ -22,7 +22,7 @@ impl Plane {
     pub fn invert(&mut self) -> Self {
         self.normal.scale(-1.);
         self.offset *= -1.;
-        self
+        *self
     }
 
     pub fn intersection(&self, other: &Plane, opt_epsilon: Option<f32>) -> Option<Line> {

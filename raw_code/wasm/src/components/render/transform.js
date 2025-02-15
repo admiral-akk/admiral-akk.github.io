@@ -1,4 +1,4 @@
-import { vec3, mat4, quat } from "gl-matrix";
+import { vec3, mat4, quat, Vec3, Quat, Mat4 } from "gl-matrix";
 import { Component } from "../../ecs/component";
 
 const tempQuat = mat4.create();
@@ -16,16 +16,16 @@ export class Transform extends Component {
   constructor({ parent = null, pos = null, rot = null, scale = null } = {}) {
     super();
     this.updated = true;
-    this.pos = pos ?? vec3.create();
+    this.pos = pos ?? Vec3.create();
 
     // identity quaternion
-    this.rot = rot ?? quat.create();
+    this.rot = rot ?? Quat.create();
 
-    this.scale = scale ?? vec3.clone([1, 1, 1]);
+    this.scale = scale ?? Vec3.clone([1, 1, 1]);
 
     this.parent = parent;
 
-    this.matrix = mat4.create();
+    this.matrix = Mat4.create();
   }
 
   getWorldPosition() {

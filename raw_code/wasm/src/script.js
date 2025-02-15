@@ -115,12 +115,41 @@ class OpenState extends State {
   handleInput(manager) {
     const { state } = input;
 
+    const move = Vec3.create();
+
+    if (state?.w?.val) {
+      console.log(state?.w);
+      move[2] += 1;
+    }
+
+    if (state?.s?.val) {
+      move[2] -= 1;
+    }
+    if (state?.a?.val) {
+      move[0] += 1;
+    }
+    if (state?.d?.val) {
+      move[0] -= 1;
+    }
+
+    const invRot = Quat.clone(horizontalRotT.rot).invert();
+
+    Vec3.transformQuat(move, move, invRot);
+    Vec3.add(cameraBaseT.pos, cameraBaseT.pos, move);
+
+    cameraBaseT.setPosition(cameraBaseT.pos);
+
+    horizontalRotT.rot.rotateY(
+      (0.05 * ((state?.q?.val ?? 0) - (state?.e?.val ?? 0))) / Math.PI
+    );
+    horizontalRotT.setRotation(horizontalRotT.rot);
+
     if (state?.rmb?.val === 1 && state?.mpos?.frame === time.frame) {
       const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
-      horizontalRot.rot.rotateY((5 * delta.x) / Math.PI);
-      vertRot.rot.rotateX(5 * delta.y);
-      horizontalRot.setRotation(horizontalRot.rot);
-      vertRot.setRotation(vertRot.rot);
+      horizontalRotT.rot.rotateY((5 * delta.x) / Math.PI);
+      verticalRotT.rot.rotateX(5 * delta.y);
+      horizontalRotT.setRotation(horizontalRotT.rot);
+      verticalRotT.setRotation(verticalRotT.rot);
       if (state?.wheel?.frame === time.frame) {
         cameraZoomOut.pos.z += (state.wheel.val - state.wheel.prev.val) / 400;
         cameraZoomOut.pos.z = Math.clamp(cameraZoomOut.pos.z, 1, 10);

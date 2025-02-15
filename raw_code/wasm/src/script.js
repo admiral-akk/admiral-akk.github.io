@@ -56,31 +56,32 @@ const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
-const cameraBaseT = new Transform({ pos: [0, 0, 0] });
-const cameraBase = new Entity(cameraBaseT);
+const cameraBaseT = new Transform({ pos: [0, -1, 0] });
 
-const yRot = new Transform({
+const horizontalRotT = new Transform({
   parent: cameraBaseT,
-  rot: Quat.create().rotateX(Math.PI / 4 - 0.2),
+  rot: Quat.create().rotateY(-Math.PI / 4 + 0),
 });
-const yRotEntity = new Entity(yRot);
 
-const xRot = new Transform({
-  parent: yRot,
-  rot: Quat.create().rotateY(-Math.PI / 4 + 0.1),
+const verticalRotT = new Transform({
+  parent: horizontalRotT,
+  rot: Quat.create().rotateX(Math.PI / 4 - 0.4),
 });
-const xRotEntity = new Entity(xRot);
 
 const zoomT = new Transform({
-  parent: xRot,
-  pos: [0, -2, 0],
+  parent: verticalRotT,
+  pos: [0, 0, -4],
 });
+
+const cameraBase = new Entity(cameraBaseT);
+const cameraZoomOut3 = new Entity(horizontalRotT);
+const cameraZoomOut2 = new Entity(verticalRotT);
 const cameraZoomOut = new Entity(zoomT);
+
 const cameraEntity = new Entity(
   new Camera(gl),
   new Transform({
     parent: zoomT,
-    pos: [-4, -4, -4],
   })
 );
 

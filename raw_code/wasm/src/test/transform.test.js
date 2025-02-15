@@ -138,3 +138,51 @@ test("transform - translate + rotation + scale", () => {
     expected,
   });
 });
+
+test("transform parents - translate -> rotation", () => {
+  const parent = new Transform({
+    pos: [-2, -3, -2],
+  });
+  const transform = new Transform({
+    parent,
+    rot: Quat.create().rotateY(Math.PI),
+  });
+
+  const local = Vec3.clone([1, 1, 1]);
+
+  const mat = transform.getWorldMatrix();
+
+  const actual = Vec3.create();
+  Vec3.transformMat4(actual, local, mat);
+
+  const expected = Vec3.clone([-3, -2, -3]);
+
+  expectedApprox(Vec3.distance(actual, expected), 0, {
+    actual,
+    expected,
+  });
+});
+
+test("transform parents - rotation -> translate", () => {
+  const parent = new Transform({
+    rot: Quat.create().rotateY(Math.PI),
+  });
+  const transform = new Transform({
+    pos: [-2, -3, -2],
+    parent,
+  });
+
+  const local = Vec3.clone([1, 1, 1]);
+
+  const mat = transform.getWorldMatrix();
+
+  const actual = Vec3.create();
+  Vec3.transformMat4(actual, local, mat);
+
+  const expected = Vec3.clone([1, -2, 1]);
+
+  expectedApprox(Vec3.distance(actual, expected), 0, {
+    actual,
+    expected,
+  });
+});

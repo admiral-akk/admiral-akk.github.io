@@ -1,5 +1,17 @@
+use crate::serialize::*;
 use crate::types::*;
 use wasm_bindgen::prelude::*;
+
+impl Serialize<3> for Vec3 {
+    fn get(&self, index: u32) -> f32 {
+        match index {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            _ => panic!(),
+        }
+    }
+}
 
 #[wasm_bindgen]
 impl Vec3 {

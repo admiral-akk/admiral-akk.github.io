@@ -1,8 +1,10 @@
 mod brush;
 mod composition;
 mod line;
+mod mesh;
 mod mesh_generator;
 mod plane;
+mod serialize;
 mod types;
 mod utils;
 mod vec3;

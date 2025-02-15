@@ -20,7 +20,7 @@ impl TerrainGenerator {
         }
     }
 
-    fn generate_mesh(&self) -> Float32Array {
+    pub fn generate_mesh(&self) -> Float32Array {
         // Allocate a Vec in Rust with some data
         let data = vec![
             10.0, 0.0, 10.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 10.0, 0.0, -10.0, 0.5, 0.5, 0.5, 0.5,

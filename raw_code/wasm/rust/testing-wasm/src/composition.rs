@@ -32,7 +32,7 @@ impl Composition {
         }
     }
 
-    fn sub_brush(&mut self, other: &Brush) {}
+    fn sub_brush(&mut self, _other: &Brush) {}
 
     pub fn sub(&mut self, other: &Composition) {
         for brush in other.brushes.iter() {

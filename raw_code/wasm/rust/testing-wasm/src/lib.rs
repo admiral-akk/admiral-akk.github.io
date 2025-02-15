@@ -1,6 +1,7 @@
 mod brush;
 mod composition;
 mod line;
+mod mesh_generator;
 mod plane;
 mod types;
 mod utils;

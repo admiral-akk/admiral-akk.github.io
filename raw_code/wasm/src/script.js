@@ -35,7 +35,7 @@ import { BrushMesh } from "./engine/mesh/brushMesh.js";
 import Stats from "stats.js";
 
 import * as wasm from "./wasm/testing_wasm.js";
-import { Vec3 as wasmVec3 } from "./wasm/testing_wasm.js";
+import { Vec3 as wasmVec3, TerrainGenerator } from "./wasm/testing_wasm.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -228,21 +228,27 @@ const generateBox = () => {
 
 const createThing = () => {
   const color = [0.45, 0.25, 0];
-  const color2 = [0.45, 0.25, 0.4];
   const brushMesh = new BrushMesh(Brush.regularPrism(1, 3, 1, { color }));
   brushMesh.rotation = new Quat().rotateZ(Math.PI / 2);
-  const brushMesh2 = new BrushMesh(
-    Brush.regularPrism(0.75, 3, 1.4, { color2 })
-  );
-  brushMesh2.rotation = new Quat().rotateZ(Math.PI / 2).rotateX(Math.PI / 3);
-
-  brushMesh.add(brushMesh2);
 
   const modelTriangle = brushMesh.triangles();
   const modelArray = [];
   modelTriangle.forEach((tri) => Triangle.pushVertices(tri, modelArray));
   return new Entity(new Transform(), new Mesh(modelArray));
 };
+
+// 20 x 20 grey floor
+const floor = [
+  10, 0, 10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 10, 0, -10, 0.5, 0.5, 0.5, 0.5, 0.5,
+  0.5, -10, 0, 10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 10, 0, -10, 0.5, 0.5, 0.5, 0.5,
+  0.5, 0.5, -10, 0, -10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -10, 0, 10, 0.5, 0.5,
+  0.5, 0.5, 0.5, 0.5,
+];
+
+const t = new TerrainGenerator();
+console.log(t);
+
+new Entity(new Transform(), new Mesh(t.generate_mesh()));
 
 createThing();
 const draw = () => {

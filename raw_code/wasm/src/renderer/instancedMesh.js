@@ -294,7 +294,7 @@ class InstancedMesh {
     gl.drawArraysInstanced(
       gl.TRIANGLES,
       0,
-      this.modelArray.length / 6,
+      this.modelArray.length / 9, // 3 for pos, 3 for normal, 3 for color
       this.meshToIndex.size()
     );
     gl.bindVertexArray(null);

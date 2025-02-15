@@ -21,4 +21,6 @@ export function applyCameraUniforms(camera, program) {
   const projectionLoc = gl.getUniformLocation(program, "uProjection");
   gl.uniformMatrix4fv(viewLoc, false, view);
   gl.uniformMatrix4fv(projectionLoc, false, projection);
+  gl.uniform1f(gl.getUniformLocation(program, "uNear"), 0.01);
+  gl.uniform1f(gl.getUniformLocation(program, "uFar"), 20);
 }

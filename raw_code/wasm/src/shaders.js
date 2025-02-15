@@ -57,6 +57,8 @@ uniform sampler2D uSampler1;
 uniform sampler2D uShadowMapSampler;
 uniform ivec4 uClickedCoord;
 uniform vec3 uLightDir;
+uniform float uFar;
+uniform float uNear;
 
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
@@ -137,6 +139,8 @@ uniform sampler2D uDepth;
 uniform sampler2D uColor;
 uniform vec3 uBackgroundColor;
 uniform vec2 uPointerPos;
+uniform float uFar;
+uniform float uNear;
 
 in vec2 vTexCoord;
 
@@ -144,17 +148,13 @@ out vec4 fragColor;
 
 float linearDepth(float depthSample)
 {
-float f = 10.0; //far plane
-float n = 0.01; //near plane
-  return (2.0 * n) / (f + n - depthSample * (f - n));
+  return (2.0 * uNear) / (uFar + uNear - depthSample * (uFar - uNear));
 }
 void main()
 {
-float far = 10.0; //far plane
-float near =  0.01; //near plane
 float depthTexVal = (1. - texture(uDepth, vTexCoord).x) ;
-float depth = near + (1. - texture(uDepth, vTexCoord).x) * (far - near);
-float nonLinearDepth = 1. / (depthTexVal * (1. / far + 1. / near) + 1. / near);
+float depth = uNear + (1. - texture(uDepth, vTexCoord).x) * (uFar - uNear);
+float nonLinearDepth = 1. / (depthTexVal * (1. / uFar + 1. / uNear) + 1. / uNear);
   fragColor =  vec4(depth, 0., 0., 1.);
   fragColor =  vec4(depth - 9., 0., 0., 1.);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);

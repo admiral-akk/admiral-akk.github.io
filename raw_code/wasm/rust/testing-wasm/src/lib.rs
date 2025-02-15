@@ -2,12 +2,14 @@ mod brush;
 mod composition;
 mod line;
 mod mesh;
-mod mesh_generator;
 mod plane;
 mod serialize;
 mod types;
 mod utils;
 mod vec3;
+mod terrain {
+    pub mod terrain_generator;
+}
 
 use wasm_bindgen::prelude::*;
 

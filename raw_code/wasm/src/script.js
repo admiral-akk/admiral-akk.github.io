@@ -238,17 +238,16 @@ const createThing = () => {
 };
 
 // 20 x 20 grey floor
-const floor = [
-  10, 0, 10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 10, 0, -10, 0.5, 0.5, 0.5, 0.5, 0.5,
-  0.5, -10, 0, 10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 10, 0, -10, 0.5, 0.5, 0.5, 0.5,
-  0.5, 0.5, -10, 0, -10, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -10, 0, 10, 0.5, 0.5,
-  0.5, 0.5, 0.5, 0.5,
-];
-
 const t = new TerrainGenerator();
-console.log(t);
 
-new Entity(new Transform(), new Mesh(t.generate_mesh()));
+for (let x = -1; x < 2; x++) {
+  for (let y = -1; y < 2; y++) {
+    new Entity(
+      new Transform({ pos: Vec3.clone([x * 20, 0, y * 20]) }),
+      new Mesh(t.generate_mesh(x, y))
+    );
+  }
+}
 
 createThing();
 const draw = () => {

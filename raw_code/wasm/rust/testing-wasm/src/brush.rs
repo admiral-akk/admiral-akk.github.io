@@ -7,6 +7,12 @@ pub struct Brush {
     planes: Vec<Plane>,
 }
 
+impl Brush {
+    pub fn get_planes(&self) -> Vec<Plane> {
+        self.planes.clone()
+    }
+}
+
 #[wasm_bindgen]
 impl Brush {
     #[wasm_bindgen(constructor)]
@@ -22,7 +28,6 @@ impl Brush {
             ],
         }
     }
-
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
     }

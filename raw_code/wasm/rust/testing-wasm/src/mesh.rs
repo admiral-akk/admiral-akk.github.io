@@ -2,6 +2,7 @@ use crate::serialize::*;
 use crate::types::*;
 use js_sys::Float32Array;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color {
     r: f32,
     g: f32,
@@ -24,6 +25,7 @@ impl Serialize<3> for Color {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
     pos: Vec3,
     normal: Vec3,
@@ -49,6 +51,7 @@ impl Serialize<POINT_SIZE> for Point {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeshTriangle {
     points: [Point; 3],
 }
@@ -67,6 +70,7 @@ impl MeshTriangle {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Mesh {
     triangles: Vec<MeshTriangle>,
 }

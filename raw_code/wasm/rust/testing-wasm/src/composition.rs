@@ -32,13 +32,18 @@ impl Composition {
         }
     }
 
-    fn sub_brush(&mut self, _other: &Brush) {}
+    fn sub_brush(&mut self, other: &Brush) {
+        for plane in other.get_planes().iter() {
+            self.sub_plane(&plane.clone())
+        }
+    }
 
     pub fn sub(&mut self, other: &Composition) {
         for brush in other.brushes.iter() {
             if brush.empty() {
                 continue;
             }
+            self.sub_brush(brush)
         }
     }
 }

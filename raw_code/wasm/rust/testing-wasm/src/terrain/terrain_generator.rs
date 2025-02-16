@@ -7,44 +7,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub struct TerrainGenerator {
     blocks: u32,
-    seed: u32,
     noise: RidgedMulti<Simplex>,
-}
-
-fn ridge(h1: f32, offset: f32) -> f32 {
-    let h = offset - h1.abs();
-
-    if h < 0.5 {
-        4.0 * h * h * h
-    } else {
-        (h - 1.0) * (2.0 * h - 2.0) * (2.0 * h - 2.0) + 1.0
-    }
-}
-
-fn noise(x: f32, y: f32) -> f32 {
-    (x).sin() * (y).cos()
-}
-
-fn ridgedMF(x: f32, y: f32) -> f32 {
-    let mut sum = 0.0;
-    let mut amp = 0.5;
-    let mut prev = 1.0;
-    let mut freq = 2.;
-    let gain = 0.5;
-    let octaves = 6;
-    let lacunarity = 2.0;
-    let ridge_offset = 1.0;
-    for i in 0..octaves {
-        let h = noise(x, y);
-        let n = ridge(h, ridge_offset);
-
-        sum += n * amp * prev;
-        prev = n;
-        freq *= lacunarity;
-        amp *= gain;
-    }
-
-    sum
 }
 
 #[wasm_bindgen]
@@ -66,7 +29,6 @@ impl TerrainGenerator {
                 Some(blocks) => blocks,
                 None => 3,
             },
-            seed,
             noise,
         }
     }
@@ -83,7 +45,6 @@ impl TerrainGenerator {
 
     pub fn generate_mesh(&self, x: i32, y: i32) -> Float32Array {
         let mut floor = Mesh::new();
-        let normal = Vec3::new(0.0, 1.0, 0.0);
         let color = Color::new(((x as f32) + 10.0) / 20.0, ((y as f32) + 10.0) / 20.0, 0.0);
 
         let x_offset = x as f32 * 20.;
@@ -95,8 +56,6 @@ impl TerrainGenerator {
             for y_val in 0..blocks {
                 let y1 = 20.0 * (y_val as f32) / (blocks as f32) - 10.0;
                 let y2 = 20.0 * ((1 + y_val) as f32) / (blocks as f32) - 10.0;
-
-                let height = 0.0;
 
                 let v1 = self.generate_vec(x2, y2, x_offset, y_offset);
                 let v2 = self.generate_vec(x1, y2, x_offset, y_offset);

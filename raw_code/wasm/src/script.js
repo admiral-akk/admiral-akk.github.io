@@ -150,6 +150,15 @@ class OpenState extends State {
       horizontalRotT.setRotation(horizontalRotT.rot);
       verticalRotT.setRotation(verticalRotT.rot);
     }
+    if (
+      state?.wheel?.frame === time.frame &&
+      state?.wheel?.prev?.val !== state?.wheel?.val
+    ) {
+      const deltaY = state.wheel.val - state.wheel.prev.val;
+      zoomT.pos[2] -= 0.05 * deltaY;
+      zoomT.pos[2] = Math.clamp(zoomT.pos[2], -25, -4);
+      zoomT.setPosition(zoomT.pos);
+    }
   }
 }
 

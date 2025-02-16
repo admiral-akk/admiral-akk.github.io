@@ -12,13 +12,10 @@ export class Camera extends Component {
     this.origin = vec3.create();
     this.target = vec3.create();
 
-    const fov = Math.PI / 3;
-    const aspect = gl.canvas.width / gl.canvas.height;
-    const near = 0.01;
-    const far = 20;
+    this.near = 0.01;
+    this.far = 80.0;
 
     this.projection = mat4.create();
-    mat4.perspective(this.projection, fov, aspect, near, far);
   }
 
   getOffset() {

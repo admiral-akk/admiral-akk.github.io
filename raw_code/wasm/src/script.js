@@ -40,10 +40,6 @@ import { Vec3 as wasmVec3, TerrainGenerator } from "./wasm/testing_wasm.js";
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
 
-console.log(v.add(other).to_string());
-console.log(v.to_string());
-console.log(other.to_string());
-
 const dataManager = new DataManager(
   new DefaultCompressor(),
   new DefaultPreprocessor()
@@ -70,7 +66,7 @@ const verticalRotT = new Transform({
 
 const zoomT = new Transform({
   parent: verticalRotT,
-  pos: [0, 0, -6],
+  pos: [0, 0, -10],
 });
 
 const cameraBase = new Entity(cameraBaseT);
@@ -118,7 +114,6 @@ class OpenState extends State {
     const move = Vec3.create();
 
     if (state?.w?.val) {
-      console.log(state?.w);
       move[2] += 1;
     }
 
@@ -144,35 +139,16 @@ class OpenState extends State {
     );
     horizontalRotT.setRotation(horizontalRotT.rot);
 
-    if (state?.rmb?.val === 1 && state?.mpos?.frame === time.frame) {
-      const delta = Vec2.clone(state.mpos.val).sub(state.mpos.prev.val);
+    if (
+      state?.rmb?.val === 1 &&
+      state?.mpos?.frame === time.frame &&
+      state?.mpos?.prev?.val
+    ) {
+      const delta = Vec2.clone(state.mpos.val).sub(state?.mpos?.prev.val);
       horizontalRotT.rot.rotateY((5 * delta.x) / Math.PI);
       verticalRotT.rot.rotateX(5 * delta.y);
       horizontalRotT.setRotation(horizontalRotT.rot);
       verticalRotT.setRotation(verticalRotT.rot);
-      if (state?.wheel?.frame === time.frame) {
-        cameraZoomOut.pos.z += (state.wheel.val - state.wheel.prev.val) / 400;
-        cameraZoomOut.pos.z = Math.clamp(cameraZoomOut.pos.z, 1, 10);
-        cameraZoomOut.setPosition(cameraZoomOut.pos);
-      }
-
-      cameraEntity.components.camera.xAngle += 10 * delta.x;
-      cameraEntity.components.camera.yAngle += 10 * delta.y;
-      cameraEntity.components.camera.yAngle = Math.clamp(
-        cameraEntity.components.camera.yAngle,
-        (-1 * Math.PI) / 3,
-        (1 * Math.PI) / 3
-      );
-    }
-
-    if (state?.wheel?.frame === time.frame) {
-      cameraEntity.components.camera.distance +=
-        (state.wheel.val - state.wheel.prev.val) / 400;
-      cameraEntity.components.camera.distance = Math.clamp(
-        cameraEntity.components.camera.distance,
-        1,
-        10
-      );
     }
   }
 }
@@ -297,7 +273,7 @@ const createThing = () => {
 };
 
 // 20 x 20 grey floor
-const t = new TerrainGenerator();
+const t = new TerrainGenerator(100);
 
 for (let x = -1; x < 2; x++) {
   for (let y = -1; y < 2; y++) {
@@ -308,7 +284,7 @@ for (let x = -1; x < 2; x++) {
   }
 }
 
-createThing();
+//createThing();
 const draw = () => {
   stats.begin();
   inputManager.update();

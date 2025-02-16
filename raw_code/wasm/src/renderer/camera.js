@@ -15,14 +15,14 @@ export function applyCameraUniforms({ camera, transform }, program) {
     projection,
     Math.PI / 3,
     gl.canvas.width / gl.canvas.height,
-    0.01,
-    20
+    camera.near,
+    camera.far
   );
 
   const viewLoc = gl.getUniformLocation(program, "uView");
   const projectionLoc = gl.getUniformLocation(program, "uProjection");
   gl.uniformMatrix4fv(viewLoc, false, mat);
   gl.uniformMatrix4fv(projectionLoc, false, projection);
-  gl.uniform1f(gl.getUniformLocation(program, "uNear"), 0.01);
-  gl.uniform1f(gl.getUniformLocation(program, "uFar"), 20);
+  gl.uniform1f(gl.getUniformLocation(program, "uNear"), camera.near);
+  gl.uniform1f(gl.getUniformLocation(program, "uFar"), camera.far);
 }

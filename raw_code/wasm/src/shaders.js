@@ -87,6 +87,8 @@ void main() {
 
   if (normLDot < 0.01) {
     shadowed = 1.;
+  } else if (shadowed < 1.) {
+    shadowed = normLDot; 
   }
 
   if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {

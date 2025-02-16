@@ -4,7 +4,6 @@ import { getInstancedMesh } from "../../renderer/instancedMesh";
 export class Mesh extends Component {
   constructor(modelArray) {
     super();
-    console.log(modelArray);
     this.instancedMesh = getInstancedMesh(modelArray);
     this.visible = true;
     this.updated = true;

@@ -108,9 +108,9 @@ impl TerrainGenerator {
 
                 let n1 = v21.clone().cross(&v31).normalize();
 
-                let color1 = if (n1.y > -0.5) {
+                let color1 = if n1.y > -0.5 {
                     Color::new(0.5, 0.5, 0.5)
-                } else if (v1.y + v2.y + v3.y > -4.) {
+                } else if v1.y + v2.y + v3.y > -4. {
                     Color::new(0.9, 0.9, 0.9)
                 } else {
                     color.clone()
@@ -125,9 +125,9 @@ impl TerrainGenerator {
 
                 let n2 = v34.clone().cross(&v24).normalize();
 
-                let color2 = if (n2.y > -0.5) {
+                let color2 = if n2.y > -0.5 {
                     Color::new(0.5, 0.5, 0.5)
-                } else if (v4.y + v2.y + v3.y > -4.) {
+                } else if v4.y + v2.y + v3.y > -4. {
                     Color::new(0.9, 0.9, 0.9)
                 } else {
                     color.clone()

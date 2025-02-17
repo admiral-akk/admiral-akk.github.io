@@ -189,6 +189,21 @@ class Sun {
     average.scale(1 / 8);
     const radius = Vec3.distance(average, corners[5]);
 
+    // clamp average to texel size
+    //
+
+    const lookAt = Mat4.create();
+    const sunPos = Vec3.clone(this.sunState.direction).scale(-1);
+    const texelSize = this.depthTexSize / (2 * radius);
+
+    Mat4.lookAt(lookAt, sunPos, [0, 0, 0], [0, 1, 0]);
+    Mat4.scale(lookAt, lookAt, [texelSize, texelSize, texelSize]);
+    const lookAtInv = Mat4.clone(lookAt).invert();
+    Vec3.transformMat4(average, average, lookAt);
+    average[0] = Math.floor(average[0]);
+    average[1] = Math.floor(average[1]);
+    Vec3.transformMat4(average, average, lookAtInv);
+
     // create a box that contains
 
     gl.useProgram(this.program);

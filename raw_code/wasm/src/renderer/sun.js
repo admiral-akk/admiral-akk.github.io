@@ -137,11 +137,11 @@ class Sun {
     );
   }
 
-  renderShadowDepth({ camera, transform }) {
+  renderShadowDepth({ camera }) {
     // camera projection matrix
     const { gl } = this;
 
-    const corners = camera.getFrustumCorners(this.gl, transform);
+    const corners = camera.getFrustumCorners(this.gl);
 
     const average = Vec3.create();
     for (let i = 0; i < corners.length; i++) {
@@ -177,12 +177,6 @@ class Sun {
     mat4.lookAt(view, pos, average, [0, 1, 0]);
 
     this.view = view;
-
-    // Add a calculation based on the camera position?
-
-    const orthoWidth = radius;
-    const orthoHeight = radius;
-    const orthoDepth = 2 * radius;
 
     const projection = mat4.create();
 

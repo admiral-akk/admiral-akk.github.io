@@ -1,9 +1,27 @@
-import { vec3 } from "gl-matrix";
+import { Vec3, vec3 } from "gl-matrix";
 
 vec3.abs = function (out, a) {
   out[0] = Math.abs(a[0]);
   out[1] = Math.abs(a[1]);
   out[2] = Math.abs(a[2]);
+};
+
+Vec3.prototype.min = function (other) {
+  this[0] = Math.min(this[0], other[0]);
+  this[1] = Math.min(this[1], other[1]);
+  this[2] = Math.min(this[2], other[2]);
+  return this;
+};
+
+Vec3.prototype.max = function (other) {
+  this[0] = Math.max(this[0], other[0]);
+  this[1] = Math.max(this[1], other[1]);
+  this[2] = Math.max(this[2], other[2]);
+  return this;
+};
+
+Vec3.prototype.geq = function (other) {
+  return this[0] >= other[0] && this[1] >= other[1] && this[2] >= other[2];
 };
 
 Math.clamp = function (val, min, max) {

@@ -11,8 +11,6 @@ import { Entity } from "./ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
 import { NoiseTexture } from "./renderer/noiseTextures.js";
 import { Sun } from "./renderer/sun.js";
-import { Brush } from "./engine/mesh/brush.js";
-import { Plane } from "./engine/mesh/plane.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
@@ -29,13 +27,10 @@ import {
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
-import { vec3, quat, Vec3, Vec2, Quat } from "gl-matrix";
-import { Triangle } from "./engine/mesh/triangle.js";
-import { BrushMesh } from "./engine/mesh/brushMesh.js";
+import { Vec3, Vec2, Quat } from "gl-matrix";
 import Stats from "stats.js";
-
-import * as wasm from "./wasm/testing_wasm.js";
 import { Vec3 as wasmVec3, TerrainGenerator } from "./wasm/testing_wasm.js";
+import { FrustumCulling } from "./systems/render/frustumCulling.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -229,57 +224,7 @@ const renderDebug = () => {
   }
 };
 
-const generatePyramid = () => {
-  const resourceSize = 1;
-  const color = [0.45, 0.25, 0];
-  const color2 = [0.45, 0.25, 0.4];
-
-  const directions = [new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)];
-
-  const planes = [];
-
-  planes.push(new Plane(new Vec3(0, 1, 0), 0, { color }));
-  planes.push(new Plane(new Vec3(1, -1, 0), -1, { color }));
-  planes.push(new Plane(new Vec3(-1, -1, 0), -1, { color }));
-  planes.push(new Plane(new Vec3(0, -1, -1), -1, { color }));
-  planes.push(new Plane(new Vec3(0, -1, 1), -1, { color }));
-  //planes.push(new Plane(new Vec3(0, -1, 0), -0.4, { color }));
-  const brush = new Brush(planes);
-  return new BrushMesh(brush);
-};
-
-const generateBox = () => {
-  const resourceSize = 1;
-  const color = [0.45, 0.25, 0];
-  const color2 = [0.45, 0.25, 0.4];
-
-  const directions = [new Vec3(1, 0, 0), new Vec3(0, 1, 0), new Vec3(0, 0, 1)];
-
-  const planes = [];
-
-  for (let i = 0; i < directions.length; i++) {
-    const dir = directions[i];
-    planes.push(new Plane(dir.clone().scale(resourceSize), -1, { color }));
-    planes.push(new Plane(dir.clone().scale(-resourceSize), -1, { color }));
-  }
-
-  planes.push(
-    new Plane(Vec3.clone([1, 1, 1]).normalize(), 0, { color: color2 })
-  );
-  const brush = new Brush(planes);
-  return new BrushMesh(brush);
-};
-
-const createThing = () => {
-  const color = [0.45, 0.25, 0];
-  const brushMesh = new BrushMesh(Brush.regularPrism(1, 3, 1, { color }));
-  brushMesh.rotation = new Quat().rotateZ(Math.PI / 2);
-
-  const modelTriangle = brushMesh.triangles();
-  const modelArray = [];
-  modelTriangle.forEach((tri) => Triangle.pushVertices(tri, modelArray));
-  return new Entity(new Transform(), new Mesh(modelArray));
-};
+FrustumCulling.setActiveCamera(cameraEntity.components.camera);
 
 // 20 x 20 grey floor
 const t = new TerrainGenerator(100);

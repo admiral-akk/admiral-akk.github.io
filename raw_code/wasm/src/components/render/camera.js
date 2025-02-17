@@ -31,7 +31,8 @@ export class Camera extends Component {
     this.projection = mat4.create();
   }
 
-  getFrustumCorners(gl, transform) {
+  getFrustumCorners(gl) {
+    const { transform } = this.getEntity().components;
     const cameraProjectionMat = Mat4.create();
     const cameraViewMat = transform.getWorldMatrix();
 

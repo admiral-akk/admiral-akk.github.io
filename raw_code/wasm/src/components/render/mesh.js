@@ -11,6 +11,10 @@ export class Mesh extends Component {
     this.metadata.set([1, 1, 1, 1]);
   }
 
+  getAABB(transform) {
+    return this.instancedMesh.getAABB(this, transform);
+  }
+
   removeComponent() {
     super.removeComponent();
     this.instancedMesh.removeMesh(this);

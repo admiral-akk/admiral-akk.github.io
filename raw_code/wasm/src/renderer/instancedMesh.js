@@ -1,6 +1,7 @@
-import { vec3 } from "gl-matrix";
+import { Vec3, vec3 } from "gl-matrix";
 import { Bimap } from "../util/bimap";
 import { gl } from "../engine/renderer";
+import { AABB } from "../engine/aabb";
 
 const instancedMeshes = [];
 
@@ -49,8 +50,8 @@ class InstancedMesh {
     }
 
     this.boundingBox = [
-      [minX, minY, minZ],
-      [maxX, maxY, maxZ],
+      Vec3.clone([minX, minY, minZ]),
+      Vec3.clone([maxX, maxY, maxZ]),
     ];
     this.modelArray = modelArray;
     this.modelBuffer = modelBuffer;
@@ -253,6 +254,27 @@ class InstancedMesh {
     const offset = totalInstanceAttribSize * index;
     this.transformArray.set(newMatrix, offset);
     this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 4 * offset, newMatrix);
+  }
+
+  getAABB(mesh, transform) {
+    const index = this.meshToIndex.getKey(mesh);
+    let transformMat;
+    if (index !== undefined) {
+      const offset = totalInstanceAttribSize * index;
+      transformMat = this.transformArray.slice(offset, offset + 16);
+    } else {
+      transformMat = transform.getWorldMatrix();
+    }
+    const min = Vec3.clone(this.boundingBox[0]);
+    Vec3.transformMat4(min, min, transformMat);
+
+    const max = Vec3.clone(this.boundingBox[1]);
+    Vec3.transformMat4(max, max, transformMat);
+
+    const max1 = Vec3.clone(max).max(min);
+    const min1 = Vec3.clone(min).min(max);
+
+    return new AABB([min1, max1]);
   }
 
   updateFrustum(gl, frustumPlanes) {

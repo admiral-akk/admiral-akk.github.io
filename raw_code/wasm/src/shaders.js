@@ -63,6 +63,13 @@ uniform float uNear;
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
 
+vec2 poissonDisk[4] = vec2[](
+  vec2( -0.94201624, -0.39906216 ),
+  vec2( 0.94558609, -0.76890725 ),
+  vec2( -0.094184101, -0.92938870 ),
+  vec2( 0.34495938, 0.29387760 )
+);
+
 void main() {
 
   float distFromZero = 0.;
@@ -79,17 +86,27 @@ void main() {
   float val = 1000.*(expectedDepth - shadowDepth);
 
   fragColor = vec4(vec3( val), 1.);
+  float normLDot = clamp(dot(sunDirection, vNormal), 0.,1.);
+  float bias = 0.05*tan(acos(normLDot)); // cosTheta is dot( n,l ), clamped between 0 and 1
+  bias = clamp(bias, 0.,0.01);
 
-  float bias = -0.001;
   float shadowed = float(expectedDepth > shadowDepth + bias);
 
-  float normLDot = dot(sunDirection, vNormal);
 
   if (normLDot < 0.01) {
     shadowed = 1.;
   } else if (shadowed < 1.) {
     shadowed = normLDot; 
   }
+
+  float visibility = 1.0;
+
+    for (int i=0;i<4;i++){
+    if ( texture( uShadowMapSampler, shadowCoord.xy + poissonDisk[i]/700.0 ).r  <  shadowCoord.z-bias ){
+      visibility-=0.2;
+    }
+    }
+
 
   if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {
     shadowed = 0.;

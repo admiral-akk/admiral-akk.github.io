@@ -196,7 +196,6 @@ class Sun {
     pos.scale(-radius);
     pos.add(average);
 
-    console.log(average);
     const view = Mat4.create();
 
     mat4.lookAt(view, pos, average, [0, 1, 0]);
@@ -233,7 +232,7 @@ class Sun {
     const { width, height } = gl.canvas;
     gl.viewport(0, 0, this.depthTexSize, this.depthTexSize);
     gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.FRONT);
+    gl.cullFace(gl.BACK);
     for (let i = 0; i < instancedMeshes.length; i++) {
       instancedMeshes[i].render(gl);
     }

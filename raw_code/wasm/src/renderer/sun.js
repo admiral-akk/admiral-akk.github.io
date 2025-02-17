@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "gl-matrix";
+import { Mat4, mat4, Vec3, vec3, Vec4 } from "gl-matrix";
 import { instancedMeshes } from "./instancedMesh";
 import { createProgram } from "./program";
 
@@ -43,7 +43,7 @@ class Sun {
     this.program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
     // https://webgl2fundamentals.org/webgl/lessons/webgl-shadows.html
     const depthTexture = gl.createTexture();
-    this.depthTexSize = 1024;
+    this.depthTexSize = 2048;
     gl.bindTexture(gl.TEXTURE_2D, depthTexture);
     gl.texImage2D(
       gl.TEXTURE_2D, // target
@@ -137,30 +137,81 @@ class Sun {
     );
   }
 
-  renderShadowDepth() {
+  renderShadowDepth({ camera, transform }) {
+    // camera projection matrix
     const { gl } = this;
-    gl.useProgram(this.program);
-    const pos = vec3.clone(this.sunState.direction);
-    vec3.scale(pos, pos, -1);
-    const view = mat4.create();
 
-    mat4.lookAt(view, pos, [0, 0, 0], [0, 1, 0]);
+    const cameraProjectionMat = Mat4.create();
+    const cameraViewMat = transform.getWorldMatrix();
+
+    Mat4.perspective(
+      cameraProjectionMat,
+      Math.PI / 3,
+      gl.canvas.width / gl.canvas.height,
+      camera.near,
+      camera.far
+    );
+    Mat4.multiply(cameraViewMat, cameraProjectionMat, cameraViewMat);
+    Mat4.invert(cameraViewMat, cameraViewMat);
+
+    // Define the near and far plane distances
+    const near = camera.near; // Near clipping plane distance
+    const far = camera.far; // Far clipping plane distance
+    const fov = Math.PI / 3; // Field of view (in radians)
+    const aspect = gl.canvas.width / gl.canvas.height; // Aspect ratio (width / height)
+
+    // Compute the near and far plane corners in camera space
+    const nearHeight = Math.tan(fov / 2) * near;
+    const nearWidth = nearHeight * aspect;
+
+    const farHeight = Math.tan(fov / 2) * far;
+    const farWidth = farHeight * aspect;
+
+    // Near plane corners in camera space (relative to the camera)
+    const corners = [
+      Vec4.clone([-1, -1, -1, 1]), // bottom-left
+      Vec4.clone([1, -1, -1, 1]), // bottom-right
+      Vec4.clone([1, 1, -1, 1]), // top-right
+      Vec4.clone([-1, 1, -1, 1]), // top-left
+      Vec4.clone([-1, -1, 1, 1]), // bottom-left
+      Vec4.clone([1, -1, 1, 1]), // bottom-right
+      Vec4.clone([1, 1, 1, 1]), // top-right
+      Vec4.clone([-1, 1, 1, 1]), // top-left
+    ];
+
+    const average = Vec3.create();
+    for (let i = 0; i < corners.length; i++) {
+      Vec4.transformMat4(corners[i], corners[i], cameraViewMat);
+      corners[i].scale(1 / corners[i][3]);
+      average.add(corners[i]);
+    }
+
+    average.scale(1 / 8);
+    const radius = Vec3.distance(average, corners[5]);
+
+    // create a box that contains
+
+    gl.useProgram(this.program);
+    const pos = Vec3.clone(this.sunState.direction);
+    pos.scale(-radius);
+    pos.add(average);
+
+    console.log(average);
+    const view = Mat4.create();
+
+    mat4.lookAt(view, pos, average, [0, 1, 0]);
 
     this.view = view;
-    const orthoWidth = 10;
-    const orthoHeight = 10;
-    const orthoDepth = 10;
+
+    // Add a calculation based on the camera position?
+
+    const orthoWidth = radius;
+    const orthoHeight = radius;
+    const orthoDepth = 2 * radius;
+
     const projection = mat4.create();
 
-    mat4.ortho(
-      projection,
-      -orthoWidth,
-      orthoWidth,
-      -orthoHeight,
-      orthoHeight,
-      0,
-      orthoDepth
-    );
+    mat4.ortho(projection, -radius, radius, -radius, radius, 0, 2 * radius);
     this.projection = projection;
 
     this.matrix = mat4.create();

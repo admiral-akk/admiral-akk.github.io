@@ -305,7 +305,7 @@ const draw = () => {
   // step through system
   applySystems();
 
-  sunShadowMap.renderShadowDepth();
+  sunShadowMap.renderShadowDepth(cameraEntity.components);
 
   const setUniforms = (program) => {
     applyCameraUniforms(cameraEntity.components, program);

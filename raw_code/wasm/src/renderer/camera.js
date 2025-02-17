@@ -3,12 +3,7 @@ import { gl } from "../engine/renderer";
 
 const temp = vec3.create();
 export function applyCameraUniforms({ camera, transform }, program) {
-  const view = mat4.create();
   const projection = mat4.create();
-  vec3.add(temp, camera.origin, camera.getOffset());
-
-  mat4.lookAt(view, temp, camera.origin, [0, 1, 0]);
-
   const mat = transform.getWorldMatrix();
 
   mat4.perspective(

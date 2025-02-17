@@ -1,4 +1,4 @@
-import { vec3, mat4, quat, Vec3, Quat, Mat4 } from "gl-matrix";
+import { vec3, mat4, quat, Vec3, Quat, Mat4, Vec4 } from "gl-matrix";
 import { Component } from "../../ecs/component";
 
 const tempQuat = mat4.create();
@@ -29,8 +29,8 @@ export class Transform extends Component {
   }
 
   getWorldPosition() {
-    const pos = vec3.create();
-    vec3.transformMat4(pos, pos, this.getWorldMatrix());
+    const pos = Vec4.clone([0, 0, 0, 1]);
+    Vec4.transformMat4(pos, pos, this.getWorldMatrix());
     return pos;
   }
 

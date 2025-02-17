@@ -26,7 +26,7 @@ export class Camera extends Component {
     this.target = vec3.create();
 
     this.near = 0.01;
-    this.far = 80.0;
+    this.far = 20.0;
 
     this.projection = mat4.create();
   }

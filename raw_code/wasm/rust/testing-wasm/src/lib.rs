@@ -8,7 +8,10 @@ mod types;
 mod utils;
 mod vec3;
 mod terrain {
+    pub mod chunk;
+    pub mod layer_proc_gen;
     pub mod terrain_generator;
+    pub mod tree_generator;
 }
 
 use wasm_bindgen::prelude::*;

@@ -53,6 +53,7 @@ class InstancedMesh {
       Vec3.clone([minX, minY, minZ]),
       Vec3.clone([maxX, maxY, maxZ]),
     ];
+    console.log(this.boundingBox);
     this.modelArray = modelArray;
     this.modelBuffer = modelBuffer;
     this.transformBuffer = transformBuffer;

@@ -34,21 +34,18 @@ impl TerrainGenerator {
     }
 
     fn generate_vec(&self, x: f32, y: f32, x_offset: f32, y_offset: f32) -> Vec3 {
-        Vec3::new(
-            x,
-            4. * self
-                .noise
-                .get([(x + x_offset) as f64, (y + y_offset) as f64]) as f32,
-            y,
-        )
+        let height = self
+            .noise
+            .get([(x + x_offset) as f64, (y + y_offset) as f64]) as f32;
+
+        Vec3::new(x, 4. * height, y)
     }
 
     pub fn generate_mesh(&self, x: i32, y: i32) -> Float32Array {
         let mut floor = Mesh::new();
-        let color = Color::new(((x as f32) + 10.0) / 20.0, ((y as f32) + 10.0) / 20.0, 0.0);
-
         let x_offset = x as f32 * 20.;
         let y_offset = y as f32 * 20.;
+        let color = Color::new(0.5, 0.5, 0.);
         let blocks = self.blocks;
         for x_val in 0..blocks {
             let x1 = 20.0 * (x_val as f32) / (blocks as f32) - 10.0;

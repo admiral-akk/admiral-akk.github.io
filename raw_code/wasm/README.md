@@ -37,3 +37,4 @@ Learning Resources
 - Cascading Shadow Mapping: https://alextardif.com/shadowmapping.html
 - Compression in JS: https://evanhahn.com/javascript-compression-streams-api-with-strings/
 - Generating Noise via Shaders: https://thebookofshaders.com/10/
+- Layer Proc Gen: https://blog.runevision.com/2025/01/2024-retrospective.html

@@ -29,7 +29,11 @@ import { applyCameraUniforms } from "./renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
 import { Vec3, Vec2, Quat } from "gl-matrix";
 import Stats from "stats.js";
-import { Vec3 as wasmVec3, TerrainGenerator } from "./wasm/testing_wasm.js";
+import {
+  Vec3 as wasmVec3,
+  TerrainGenerator,
+  TreeGenerator,
+} from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
 import { Position } from "./systems/util/position.js";
 import { GenerateChunks } from "./systems/render/generateChunks.js";
@@ -229,7 +233,20 @@ const renderDebug = () => {
 FrustumCulling.setActiveCamera(cameraEntity.components.camera);
 
 // 20 x 20 grey floor
-const t = new TerrainGenerator(10);
+const t = new TerrainGenerator(40);
+const tree = new TreeGenerator();
+
+const treeMesh = tree.generate_mesh();
+
+for (let x = -4; x <= 4; x++) {
+  for (let y = -4; y <= 4; y++) {
+    new Entity(
+      new Transform({ pos: Vec3.clone([x, 2, y]) }),
+      new Mesh(treeMesh)
+    );
+  }
+}
+
 GenerateChunks.setTerrainGenerator(t);
 
 //createThing();

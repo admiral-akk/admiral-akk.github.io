@@ -109,9 +109,7 @@ void main() {
 
   //fragColor = vec4(vec3(normLDot ), 1.);
 
-  float far = 10.0; //far plane
-  float near =  0.01; //near plane
-  depth = 1. - vTransPos.z / (far  - near);
+  depth = 1. - vTransPos.z / (uFar  - uNear);
 
 }`;
 
@@ -168,7 +166,7 @@ float nonLinearDepth = 1. / (depthTexVal * (1. / uFar + 1. / uNear) + 1. / uNear
   fragColor =  vec4(depth - 9., 0., 0., 1.);
   fragColor =  vec4(texture(uColor, vTexCoord).rgb, 1.);
 
-  //fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
+  fragColor = mix(fragColor, vec4(uBackgroundColor, 1.), pow(smoothstep(0.45, 1.,depthTexVal), 0.95));
   if (length(vTexCoord - uPointerPos) < 0.01) {
     fragColor = vec4(1.,0.,0.,1.);
   }

@@ -45,7 +45,7 @@ class Renderer {
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
     gl.renderbufferStorage(
       gl.RENDERBUFFER,
-      gl.DEPTH_COMPONENT16,
+      gl.DEPTH_STENCIL,
       gl.canvas.width,
       gl.canvas.height
     );

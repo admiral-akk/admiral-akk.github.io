@@ -195,7 +195,7 @@ const renderPostProcess = () => {
     new Float32Array([123 / 255, 217 / 255, 246 / 255])
   );
 
-  const pointerPos = input.state?.mpos?.val ?? [0.5, 0.5];
+  const pointerPos = input.state?.mpos_clamped?.val ?? [0.5, 0.5];
   gl.uniform2fv(
     gl.getUniformLocation(quadProgram, "uPointerPos"),
 

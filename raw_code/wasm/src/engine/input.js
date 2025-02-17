@@ -23,6 +23,28 @@ class InputListener {
       this.state[key].frame = time.frame;
       this.state[key].val = val;
     }
+
+    if (key === "mpos") {
+      if (!("mpos_clamped" in this.state)) {
+        this.updateValue("mpos_clamped", this.state["mpos"].val);
+      }
+
+      // calculate delta and apply it.
+      const prev = this.state[key].prev;
+      const curr = this.state[key];
+      if (prev.val) {
+        const delta = [curr.val[0] - prev.val[0], curr.val[1] - prev.val[1]];
+
+        const currClamped = [
+          this.state["mpos_clamped"].val[0],
+          this.state["mpos_clamped"].val[1],
+        ];
+        currClamped[0] = Math.clamp(currClamped[0] + delta[0], 0, 1);
+        currClamped[1] = Math.clamp(currClamped[1] + delta[1], 0, 1);
+
+        this.updateValue("mpos_clamped", currClamped);
+      }
+    }
   }
 
   constructor() {
@@ -55,8 +77,8 @@ class InputListener {
       var [x, y] = this.state["mpos"].val;
       // we can fake motion at the edge
       this.updateValue("mpos", [
-        Math.clamp(x + ev.movementX / width, 0, 1),
-        Math.clamp(y + ev.movementY / height, 0, 1),
+        x + ev.movementX / width,
+        y + ev.movementY / height,
       ]);
 
       if (ev.type === "mousedown" || ev.type === "mouseup") {

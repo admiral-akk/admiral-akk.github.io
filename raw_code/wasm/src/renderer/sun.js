@@ -141,48 +141,10 @@ class Sun {
     // camera projection matrix
     const { gl } = this;
 
-    const cameraProjectionMat = Mat4.create();
-    const cameraViewMat = transform.getWorldMatrix();
-
-    Mat4.perspective(
-      cameraProjectionMat,
-      Math.PI / 3,
-      gl.canvas.width / gl.canvas.height,
-      camera.near,
-      camera.far
-    );
-    Mat4.multiply(cameraViewMat, cameraProjectionMat, cameraViewMat);
-    Mat4.invert(cameraViewMat, cameraViewMat);
-
-    // Define the near and far plane distances
-    const near = camera.near; // Near clipping plane distance
-    const far = camera.far; // Far clipping plane distance
-    const fov = Math.PI / 3; // Field of view (in radians)
-    const aspect = gl.canvas.width / gl.canvas.height; // Aspect ratio (width / height)
-
-    // Compute the near and far plane corners in camera space
-    const nearHeight = Math.tan(fov / 2) * near;
-    const nearWidth = nearHeight * aspect;
-
-    const farHeight = Math.tan(fov / 2) * far;
-    const farWidth = farHeight * aspect;
-
-    // Near plane corners in camera space (relative to the camera)
-    const corners = [
-      Vec4.clone([-1, -1, -1, 1]), // bottom-left
-      Vec4.clone([1, -1, -1, 1]), // bottom-right
-      Vec4.clone([1, 1, -1, 1]), // top-right
-      Vec4.clone([-1, 1, -1, 1]), // top-left
-      Vec4.clone([-1, -1, 1, 1]), // bottom-left
-      Vec4.clone([1, -1, 1, 1]), // bottom-right
-      Vec4.clone([1, 1, 1, 1]), // top-right
-      Vec4.clone([-1, 1, 1, 1]), // top-left
-    ];
+    const corners = camera.getFrustumCorners(this.gl, transform);
 
     const average = Vec3.create();
     for (let i = 0; i < corners.length; i++) {
-      Vec4.transformMat4(corners[i], corners[i], cameraViewMat);
-      corners[i].scale(1 / corners[i][3]);
       average.add(corners[i]);
     }
 
@@ -190,7 +152,6 @@ class Sun {
     const radius = Vec3.distance(average, corners[5]);
 
     // clamp average to texel size
-    //
 
     const lookAt = Mat4.create();
     const sunPos = Vec3.clone(this.sunState.direction).scale(-1);

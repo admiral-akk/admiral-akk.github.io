@@ -78,41 +78,31 @@ void main() {
 
   vec3 lightColor = ambientStrength * ambientColor + lightNorm * sunStrength * sunColor;
 
-  fragColor = vec4(vColor, 1.);
   vec4 shadowCoord = vShadowCoord / vShadowCoord.w ;
   float shadowDepth = texture(uShadowMapSampler,  shadowCoord.xy ).r;
   float expectedDepth = shadowCoord.z  ;
 
-  float val = 1000.*(expectedDepth - shadowDepth);
-
-  fragColor = vec4(vec3( val), 1.);
   float normLDot = clamp(dot(sunDirection, vNormal), 0.,1.);
-  float bias = 0.05*tan(acos(normLDot)); // cosTheta is dot( n,l ), clamped between 0 and 1
+  float bias = 0.01*tan(acos(normLDot)); // cosTheta is dot( n,l ), clamped between 0 and 1
   bias = clamp(bias, 0.,0.01);
 
   float shadowed = float(expectedDepth > shadowDepth + bias);
 
 
-  if (normLDot < 0.01) {
-    shadowed = 1.;
-  } else if (shadowed < 1.) {
-    shadowed = normLDot; 
-  }
-
-  float visibility = 1.0;
-
+  float visibility = normLDot;
     for (int i=0;i<4;i++){
-    if ( texture( uShadowMapSampler, shadowCoord.xy + poissonDisk[i]/700.0 ).r  <  shadowCoord.z-bias ){
-      visibility-=0.2;
+    if ( texture( uShadowMapSampler, shadowCoord.xy + poissonDisk[i]/2700.0 ).r  <  shadowCoord.z-bias ){
+      visibility-=0.25;
     }
     }
+    visibility = clamp(visibility, 0., 1.);
 
 
   if (shadowCoord.x < -0. || shadowCoord.x > 1. || shadowCoord.y < -0. || shadowCoord.y > 1.) {
-    shadowed = 0.;
+    visibility = 0.;
   }
 
-  fragColor = vec4(vColor * (1. - 0.5 * shadowed), 1.);
+  fragColor = vec4(vColor * (1. - 0.5 * (1. - visibility)), 1.);
 
   fragColor *= vInstancedColor;
   

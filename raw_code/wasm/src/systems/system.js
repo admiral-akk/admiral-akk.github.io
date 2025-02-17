@@ -3,6 +3,7 @@ import { MoveCamera } from "./render/moveCamera.js";
 import { ApplyAnimations } from "./render/applyAnimations.js";
 import { CollectVisibleMeshInstances } from "./render/collectVisibleMeshes.js";
 import { FrustumCulling } from "./render/frustumCulling.js";
+import { GenerateChunks } from "./render/generateChunks.js";
 
 export const meshInstances = new CollectVisibleMeshInstances();
 
@@ -11,6 +12,7 @@ const gameSystems = [];
 const renderSystems = [
   new MoveCamera(),
   new ApplyAnimations(),
+  new GenerateChunks(),
   new UpdateMeshTransform(),
   new FrustumCulling(),
   meshInstances,

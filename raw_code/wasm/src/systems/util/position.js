@@ -1,6 +1,13 @@
 import { vec2 } from "gl-matrix";
+import { Component } from "../../ecs/component";
 
-export class Position {
+export class Position extends Component {
+  constructor(x, y) {
+    super();
+    this.x = x;
+    this.y = y;
+  }
+
   static adjacent([x, y]) {
     const offset = x % 2 === 0 ? 0 : -1;
     return [

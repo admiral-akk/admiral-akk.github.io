@@ -31,6 +31,8 @@ import { Vec3, Vec2, Quat } from "gl-matrix";
 import Stats from "stats.js";
 import { Vec3 as wasmVec3, TerrainGenerator } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
+import { Position } from "./systems/util/position.js";
+import { GenerateChunks } from "./systems/render/generateChunks.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -227,16 +229,8 @@ const renderDebug = () => {
 FrustumCulling.setActiveCamera(cameraEntity.components.camera);
 
 // 20 x 20 grey floor
-const t = new TerrainGenerator(100);
-
-for (let x = -1; x < 2; x++) {
-  for (let y = -1; y < 2; y++) {
-    new Entity(
-      new Transform({ pos: Vec3.clone([x * 20, 0, y * 20]) }),
-      new Mesh(t.generate_mesh(x, y))
-    );
-  }
-}
+const t = new TerrainGenerator(10);
+GenerateChunks.setTerrainGenerator(t);
 
 //createThing();
 const draw = () => {

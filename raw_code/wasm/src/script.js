@@ -145,7 +145,25 @@ class OpenState extends State {
       horizontalRotT.rot.rotateY((5 * delta.x) / Math.PI);
       verticalRotT.rot.rotateX(5 * delta.y);
       horizontalRotT.setRotation(horizontalRotT.rot);
+
+      verticalRotT.rot[0] = Math.abs(verticalRotT.rot[0]);
+      if (verticalRotT.rot[0] > verticalRotT.rot[3]) {
+        const tmp = verticalRotT.rot[0];
+        verticalRotT.rot[0] = verticalRotT.rot[3];
+        verticalRotT.rot[3] = tmp;
+      }
+
+      const xVec = Vec3.clone([1, 0, 0]);
+
+      const angle = Quat.getAxisAngle(xVec, verticalRotT.rot);
+      Quat.setAxisAngle(
+        verticalRotT.rot,
+        xVec,
+        Math.clamp(angle, Math.PI / 10, (3 * Math.PI) / 7)
+      );
+
       verticalRotT.setRotation(verticalRotT.rot);
+      console.log(verticalRotT.rot);
     }
     if (
       state?.wheel?.frame === time.frame &&

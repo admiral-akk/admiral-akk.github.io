@@ -20,7 +20,6 @@ impl TreeGenerator {
 
     pub fn generate_mesh(&self) -> Float32Array {
         let point_count = 7;
-        let trunk_width = 0.1;
         let brown = Color::new(137.0 / 255.0, 81.0 / 255.0, 41.0 / 255.0);
         let green = Color::new(0.0, 128.0 / 255.0, 0.0);
         let height_width = vec![

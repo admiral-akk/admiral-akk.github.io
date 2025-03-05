@@ -1,4 +1,5 @@
 use crate::mesh::*;
+use crate::terrain::poisson_disc_sampler::*;
 use crate::types::*;
 use js_sys::Float32Array;
 use noise::*;
@@ -8,6 +9,7 @@ use wasm_bindgen::prelude::*;
 pub struct TerrainGenerator {
     blocks: u32,
     noise: RidgedMulti<Simplex>,
+    blue_noise: PoissonDiscSampler,
 }
 
 #[wasm_bindgen]
@@ -24,12 +26,15 @@ impl TerrainGenerator {
             .set_lacunarity(2.0)
             .set_persistence(2.0)
             .set_attenuation(2.0);
+        let mut blue_noise = PoissonDiscSampler::new(20.0, 20.0, 0.4);
+        blue_noise.init();
         Self {
             blocks: match blocks {
                 Some(blocks) => blocks,
                 None => 3,
             },
             noise,
+            blue_noise,
         }
     }
 
@@ -39,6 +44,22 @@ impl TerrainGenerator {
             .get([(x + x_offset) as f64, (y + y_offset) as f64]) as f32;
 
         Vec3::new(x, 4. * height, y)
+    }
+
+    pub fn generate_tree_pos(&self, x: i32, y: i32) -> Float32Array {
+        let array = Float32Array::new_with_length(self.blue_noise.samples.len() as u32 * 3);
+
+        let x_offset = x as f32 * 20.;
+        let y_offset = y as f32 * 20.;
+        for i in 0..(self.blue_noise.samples.len() as u32) {
+            let (x, y) = self.blue_noise.samples[i as usize];
+
+            let v1 = self.generate_vec(x, y, x_offset, y_offset);
+            array.set_index(3 * i, x);
+            array.set_index(3 * i + 1, v1.y);
+            array.set_index(3 * i + 2, y);
+        }
+        array
     }
 
     pub fn generate_mesh(&self, x: i32, y: i32) -> Float32Array {

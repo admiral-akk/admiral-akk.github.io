@@ -236,18 +236,8 @@ FrustumCulling.setActiveCamera(cameraEntity.components.camera);
 const t = new TerrainGenerator(40);
 const tree = new TreeGenerator();
 
-const treeMesh = tree.generate_mesh();
-
-for (let x = -4; x <= 4; x++) {
-  for (let y = -4; y <= 4; y++) {
-    new Entity(
-      new Transform({ pos: Vec3.clone([x, 2, y]) }),
-      new Mesh(treeMesh)
-    );
-  }
-}
-
 GenerateChunks.setTerrainGenerator(t);
+GenerateChunks.setTreeGenerator(tree);
 
 //createThing();
 const draw = () => {

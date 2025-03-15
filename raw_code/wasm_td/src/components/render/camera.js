@@ -15,9 +15,10 @@ const NDC_corners = [
 ];
 
 export class Camera extends Component {
-  constructor(gl) {
+  constructor({ base, horizontalRotation, verticalRotation, pan }) {
     super();
 
+    this.transforms = { base, horizontalRotation, verticalRotation, pan };
     this.distance = 6;
     this.xAngle = 0;
     this.yAngle = Math.PI / 4;

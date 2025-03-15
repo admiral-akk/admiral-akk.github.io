@@ -39,12 +39,12 @@ import {
   CubeGenerator,
 } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
-import { Position } from "./systems/util/position.js";
 import { GenerateChunks } from "./systems/render/generateChunks.js";
 import { window } from "./engine/window.js";
 import { BoxCollider } from "./components/collider.js";
 import { getCollision } from "./raycaster.js";
 import { Clickable } from "./components/client/clickable.js";
+import { MoveCamera } from "./commands/moveCamera.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -84,7 +84,12 @@ const cameraZoomOut2 = new Entity(verticalRotT);
 const cameraZoomOut = new Entity(zoomT);
 
 const cameraEntity = new Entity(
-  new Camera(gl),
+  new Camera({
+    base: cameraBaseT,
+    horizontalRotation: horizontalRotT,
+    verticalRotation: verticalRotT,
+    pan: zoomT,
+  }),
   new Transform({
     parent: zoomT,
   })
@@ -142,12 +147,9 @@ class OpenState extends State {
       move[0] -= 1;
     }
 
-    const invRot = Quat.clone(horizontalRotT.rot).invert();
-
-    Vec3.transformQuat(move, move, invRot);
-    Vec3.add(cameraBaseT.pos, cameraBaseT.pos, move);
-
-    cameraBaseT.setPosition(cameraBaseT.pos);
+    if (move[0] !== 0 || move[2] !== 0) {
+      manager.commands.push(new MoveCamera(move));
+    }
 
     horizontalRotT.rot.rotateY(
       (0.05 * ((state?.q?.val ?? 0) - (state?.e?.val ?? 0))) / Math.PI
@@ -188,11 +190,7 @@ const inputManager = new InputManager();
 const applyActions = () => {
   const actions = inputManager.commands;
   for (let i = 0; i < actions.length; i++) {
-    const action = actions[i];
-    switch (action.type) {
-      default:
-        break;
-    }
+    actions[i].apply();
   }
   actions.length = 0;
 };
@@ -256,11 +254,16 @@ const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
   new wasmVec3(1, 0, 0)
 );
+const blueCube = cubeGen.generate_mesh(
+  new wasmVec3(Math.sqrt(200), 1, Math.sqrt(200)),
+  new wasmVec3(0, 0, 0.5)
+);
 
-new Entity(new Mesh(redCube), new Transform());
+new Entity(new Mesh(redCube), new Transform({ pos: new Vec3(0, 1, 0) }));
 const collider = new Entity(
-  new Transform({ pos: new Vec3(0, -1, 0) }),
-  new BoxCollider([10, 1, 10]),
+  new Transform({ pos: new Vec3(0, 0, 0) }),
+  new BoxCollider([5, 0.5, 5]),
+  new Mesh(blueCube),
   new Clickable()
 );
 

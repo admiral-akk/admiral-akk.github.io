@@ -13,7 +13,15 @@ export class Coordinate extends Component {
   }
 
   setPos(newPos) {
+    const key = `${this.pos[0]},${this.pos[1]}`;
+    coordToEntities.get(key).delete(this.getEntity());
     this.pos = newPos;
+    const newKey = `${this.pos[0]},${this.pos[1]}`;
+    if (!coordToEntities.has(newKey)) {
+      coordToEntities.set(newKey, []);
+    }
+    const arr = coordToEntities.get(newKey);
+    arr.push(this.getEntity());
   }
 
   addComponent(entity) {

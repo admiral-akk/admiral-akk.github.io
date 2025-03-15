@@ -37,16 +37,16 @@ class GenerateChunks extends System {
     const chunks = Array.from(getEntitiesWith(...[Mesh, Position]));
 
     const maxViewX = Math.ceil(
-      (camera.far + frustumAABB.min.x) / chunkSize + 2
+      (camera.far + frustumAABB.min.x) / chunkSize + 3
     );
     const maxViewY = Math.ceil(
-      (camera.far + frustumAABB.max.z) / chunkSize + 2
+      (camera.far + frustumAABB.max.z) / chunkSize + 3
     );
     const minViewX = Math.floor(
-      (-camera.far + frustumAABB.min.x) / chunkSize - 2
+      (-camera.far + frustumAABB.min.x) / chunkSize - 3
     );
     const minViewY = Math.floor(
-      (-camera.far + frustumAABB.min.z) / chunkSize - 2
+      (-camera.far + frustumAABB.min.z) / chunkSize - 3
     );
 
     for (let i = chunks.length - 1; i >= 0; i--) {

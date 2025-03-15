@@ -131,3 +131,6 @@ dist
 
 # ignore package lock
 package-lock.json
+
+# DS store
+.DS_Store

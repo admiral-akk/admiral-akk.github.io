@@ -260,8 +260,8 @@ const draw = () => {
 
   const setUniforms = (program) => {
     applyCameraUniforms(cameraEntity.components, program);
-    sunShadowMap.setUniforms(program);
-    time.setUniforms(program);
+    sunShadowMap.setUniforms(gl, program);
+    time.setUniforms(gl, program);
   };
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

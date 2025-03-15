@@ -1,4 +1,4 @@
-import { Mat4, mat4, Vec3, vec3, Vec4 } from "gl-matrix";
+import { Mat4, mat4, Vec3, vec3 } from "gl-matrix";
 import { instancedMeshes } from "./instancedMesh";
 import { createProgram } from "./program";
 
@@ -86,8 +86,8 @@ class Sun {
     };
   }
 
-  setUniforms(program) {
-    const { gl, sunState } = this;
+  setUniforms(gl, program) {
+    const { sunState } = this;
 
     const normDir = vec3.clone(sunState.direction);
     vec3.normalize(normDir, normDir);

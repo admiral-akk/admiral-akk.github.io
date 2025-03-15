@@ -1,7 +1,6 @@
-import { mat4, vec3 } from "gl-matrix";
+import { mat4 } from "gl-matrix";
 import { gl } from "../renderer";
 
-const temp = vec3.create();
 export function applyCameraUniforms({ camera, transform }, program) {
   const projection = mat4.create();
   const mat = transform.getWorldMatrix();

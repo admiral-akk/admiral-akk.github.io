@@ -69,7 +69,6 @@ class GenerateChunks extends System {
           return position.x === x && position.y === y;
         });
         if (!exists) {
-          //console.log("generating", x, y);
           let terrain_mesh = activeTerrainGenerator.generate_mesh(x, y);
           let tree_pos = activeTerrainGenerator.generate_tree_pos(x, y);
 

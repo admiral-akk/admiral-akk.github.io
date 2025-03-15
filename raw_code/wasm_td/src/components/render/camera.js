@@ -32,7 +32,7 @@ export class Camera extends Component {
     this.corners = [];
   }
 
-  updateFrustumCorners(gl) {
+  getViewProjectionMatrix(gl) {
     const { transform } = this.getEntity().components;
     const cameraProjectionMat = Mat4.create();
     const cameraViewMat = transform.getWorldMatrix();
@@ -45,6 +45,12 @@ export class Camera extends Component {
       this.far
     );
     Mat4.multiply(cameraViewMat, cameraProjectionMat, cameraViewMat);
+
+    return cameraViewMat;
+  }
+
+  updateFrustumCorners(gl) {
+    const cameraViewMat = this.getViewProjectionMatrix(gl);
     Mat4.invert(cameraViewMat, cameraViewMat);
 
     const corners = [];

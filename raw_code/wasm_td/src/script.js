@@ -36,11 +36,15 @@ import {
   Vec3 as wasmVec3,
   TerrainGenerator,
   TreeGenerator,
+  CubeGenerator,
 } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
 import { Position } from "./systems/util/position.js";
 import { GenerateChunks } from "./systems/render/generateChunks.js";
 import { window } from "./engine/window.js";
+import { BoxCollider } from "./components/collider.js";
+import { getCollision } from "./raycaster.js";
+import { Clickable } from "./components/client/clickable.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -85,6 +89,12 @@ const cameraEntity = new Entity(
     parent: zoomT,
   })
 );
+
+console.log("camera pos", cameraBase.components.transform.getWorldMatrix());
+console.log("camera pos", cameraZoomOut3.components.transform.getWorldMatrix());
+console.log("camera pos", cameraZoomOut2.components.transform.getWorldMatrix());
+console.log("camera pos", cameraZoomOut.components.transform.getWorldMatrix());
+console.log("camera pos", cameraEntity.components.transform.getWorldMatrix());
 
 var debugVertices = [];
 
@@ -240,7 +250,22 @@ FrustumCulling.setActiveCamera(cameraEntity.components.camera);
 // 20 x 20 grey floor
 const t = new TerrainGenerator(40);
 const tree = new TreeGenerator();
+const cubeGen = new CubeGenerator();
 
+const redCube = cubeGen.generate_mesh(
+  new wasmVec3(1, 1, 1),
+  new wasmVec3(1, 0, 0)
+);
+
+new Entity(new Mesh(redCube), new Transform());
+const collider = new Entity(
+  new Transform({ pos: new Vec3(0, -1, 0) }),
+  new BoxCollider([10, 1, 10]),
+  new Clickable()
+);
+
+console.log("collider", collider.components.transform.getLocalMatrix());
+console.log("collider", collider.components.transform.getWorldMatrix());
 GenerateChunks.setTerrainGenerator(t);
 GenerateChunks.setTreeGenerator(tree);
 
@@ -250,6 +275,14 @@ const draw = () => {
   inputManager.update();
   time.tick();
 
+  const collision = getCollision(
+    input.state,
+    cameraZoomOut.components.transform,
+    cameraEntity.components.camera
+  );
+  if (collision) {
+    console.log("Collision", collision[1][0]);
+  }
   // handle user input
   applyActions();
 

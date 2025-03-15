@@ -21,7 +21,6 @@ class FrustumCulling extends System {
     // go through each mesh, calculate it's AABB and see if it intersects with
     // the camera frustum
     const meshAABB = mesh.getAABB(transform);
-    // console.log(frustumAABB[0], frustumAABB[1]);
 
     const intersection = meshAABB.intersects(frustumAABB);
     // // check intersection

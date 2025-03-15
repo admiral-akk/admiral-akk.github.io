@@ -1,7 +1,12 @@
-// https://stackoverflow.com/a/56348846
-const getWorldRayFromCamera = (cameraEntity, viewPos) => {
-  const { camera, transform } = cameraEntity.components;
+import { mat4, vec3, vec4 } from "gl-matrix";
+import { Collider } from "./components/collider";
+import { Transform } from "./components/render/transform";
+import { Clickable } from "./components/client/clickable";
+import { getEntitiesWith } from "./engine/ecs/entity";
+import { gl } from "./engine/renderer";
 
+// https://stackoverflow.com/a/56348846
+const getWorldRayFromCamera = ({ transform, camera }, viewPos) => {
   const viewX = 2 * (viewPos[0] - 0.5);
 
   // invert y
@@ -9,10 +14,8 @@ const getWorldRayFromCamera = (cameraEntity, viewPos) => {
 
   const near = vec4.clone([viewX, viewY, -1, 1]);
   const far = vec4.clone([viewX, viewY, 1, 1]);
-  const view = transform.getWorldMatrix();
-  const projection = mat4.clone(camera.projection);
+  const projection = camera.getViewProjectionMatrix(gl);
 
-  mat4.multiply(projection, projection, view);
   mat4.invert(projection, projection);
 
   vec4.transformMat4(near, near, projection);
@@ -26,7 +29,8 @@ const getWorldRayFromCamera = (cameraEntity, viewPos) => {
 
   vec3.normalize(dir, dir);
 
-  return [vec3.clone(transform.pos), dir];
+  const worldPos = transform.getWorldPosition();
+  return [worldPos, dir];
 };
 
 const getRayCollision = (start, dir) => {
@@ -49,10 +53,13 @@ const getRayCollision = (start, dir) => {
   return best;
 };
 
-const getCollision = (state) => {
+export const getCollision = (state, transform, camera) => {
+  if (!state?.mpos_clamped?.val) {
+    return null;
+  }
   const [worldPos, worldDir] = getWorldRayFromCamera(
-    cameraEntity,
-    state.mpos.val
+    { transform, camera },
+    state.mpos_clamped.val
   );
 
   return getRayCollision(worldPos, worldDir);

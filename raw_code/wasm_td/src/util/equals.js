@@ -42,12 +42,9 @@ export function equals(a, b) {
         case "quat":
           return quat.equals(a, b);
         default:
-          console.log(a, b);
-          console.log(constNameA, constNameB);
           throw new Error(`equals not supported for ${typeA}`);
       }
     default:
-      console.log(a, b);
       throw new Error(`equals not supported for ${typeA}`);
   }
 }

@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { Component } from "../ecs/component";
+import { Component } from "../engine/ecs/component";
 
 export class Collider extends Component {
   constructor() {
@@ -37,7 +37,7 @@ const checkPlaneCollision = (start, dir, planePoint, planeNormal) => {
 
   const normDist = vec3.dot(planeNormal, tempPos);
 
-  // the start is behind the plan
+  // the start is behind the plane
   if (normDist > -eps) {
     return null;
   }
@@ -50,7 +50,7 @@ const checkPlaneCollision = (start, dir, planePoint, planeNormal) => {
 const tempTranslation = vec3.create();
 
 export class BoxCollider extends Collider {
-  constructor(size = [Math.sqrt(3) / 2, 0.25, Math.sqrt(3) / 2]) {
+  constructor(size) {
     super();
     // assume every collider is a standard size and symmetric about origin
     // TODO: allow for custom size.
@@ -71,20 +71,21 @@ export class BoxCollider extends Collider {
       vec3.scaleAndAdd(tempTranslation, tempTranslation, normal, offset);
 
       const result = checkPlaneCollision(origin, dir, tempTranslation, normal);
+
       if (result !== null) {
         // check if the plane hit is within bounds
         vec3.sub(tempTranslation, tempTranslation, result[0]);
 
         vec3.abs(tempTranslation, tempTranslation);
         vec3.div(tempTranslation, tempTranslation, this.dims);
-        const m = Math.max(
-          tempTranslation[0],
-          tempTranslation[1],
-          tempTranslation[2]
-        );
+
+        const withinBounds =
+          Math.abs(tempTranslation.x) <= 1 &&
+          Math.abs(tempTranslation.y) <= 1 &&
+          Math.abs(tempTranslation.z) <= 1;
 
         // check best result
-        if (m <= 1) {
+        if (withinBounds) {
           if (bestResult !== null) {
             const lastHit = bestResult[0];
             const newHit = result[0];

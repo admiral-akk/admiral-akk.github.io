@@ -4,11 +4,11 @@ import { Component } from "../../engine/ecs/component";
 const tempQuat = mat4.create();
 
 const recursiveWorld = (transform, acc) => {
-  if (transform.parent === null) {
-    mat4.copy(acc, transform.getLocalMatrix());
-  } else {
+  if (transform.parent !== null) {
     recursiveWorld(transform.parent, acc);
     mat4.multiply(acc, transform.getLocalMatrix(), acc);
+  } else {
+    mat4.copy(acc, transform.getLocalMatrix());
   }
 };
 
@@ -30,28 +30,21 @@ export class Transform extends Component {
 
   getWorldPosition() {
     const pos = Vec4.clone([0, 0, 0, 1]);
-    Vec4.transformMat4(pos, pos, this.getWorldMatrix());
+    const mat = this.getWorldMatrix();
+    mat4.invert(mat, mat);
+    Vec4.transformMat4(pos, pos, mat);
     return pos;
   }
 
   getWorldMatrix() {
-    if (this.parent === null) {
-      return this.getLocalMatrix();
-    }
-
     const worldMat = mat4.create();
 
-    recursiveWorld(this.parent, worldMat);
-    mat4.multiply(worldMat, worldMat, this.getLocalMatrix());
+    recursiveWorld(this, worldMat);
 
     return worldMat;
   }
 
   getLocalMatrix() {
-    if (!this.updated) {
-      return this.matrix;
-    }
-
     mat4.identity(this.matrix);
 
     mat4.translate(this.matrix, this.matrix, this.pos);

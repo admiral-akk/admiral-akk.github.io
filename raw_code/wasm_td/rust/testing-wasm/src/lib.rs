@@ -6,9 +6,10 @@ mod plane;
 mod serialize;
 mod types;
 mod utils;
-mod vec3;
+pub mod vec3;
 mod terrain {
     pub mod chunk;
+    pub mod cube_gen;
     pub mod layer_proc_gen;
     pub mod poisson_disc_sampler;
     pub mod terrain_generator;

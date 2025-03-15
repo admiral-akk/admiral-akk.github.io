@@ -84,9 +84,7 @@ class DataManager {
 
   async saveData(jsonData) {
     const str = await this.preprocessor.jsonToString(jsonData);
-    console.log("URL param processed", str);
     const base64 = await this.compressor.compressStrToBase64(str);
-    console.log("URL param length", base64.length);
     const base64UrlStr = base64
       .replace(/\+/g, "-")
       .replace(/\//g, "_")

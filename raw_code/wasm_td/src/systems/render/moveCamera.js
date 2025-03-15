@@ -1,6 +1,6 @@
 import { Camera } from "../../components/render/camera.js";
 import { Transform } from "../../components/render/transform.js";
-import { System } from "../../ecs/system.js";
+import { System } from "../../engine/ecs/system.js";
 import { vec3, mat4, quat } from "gl-matrix";
 import { gl } from "../../engine/renderer.js";
 

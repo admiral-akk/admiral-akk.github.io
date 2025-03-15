@@ -9,6 +9,7 @@ gl.getExtension("WEBGL_depth_texture");
 class Renderer {
   constructor() {
     this.generateBuffers();
+    window.listeners.push(this);
   }
 
   updateSize() {

@@ -1,11 +1,11 @@
 import { Camera } from "../../components/render/camera.js";
 import { Transform } from "../../components/render/transform.js";
-import { System } from "../../ecs/system.js";
+import { System } from "../../engine/ecs/system.js";
 import { gl } from "../../engine/renderer.js";
 import { AABB } from "../../engine/aabb.js";
 import { Mesh } from "../../components/render/mesh.js";
 import { Position } from "../util/position.js";
-import { Entity, getEntitiesWith } from "../../ecs/entity.js";
+import { Entity, getEntitiesWith } from "../../engine/ecs/entity.js";
 import { Vec3 } from "gl-matrix";
 import { Chunk } from "../../components/game/chunk.js";
 

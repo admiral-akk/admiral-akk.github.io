@@ -1,4 +1,4 @@
-import { Component } from "../../ecs/component";
+import { Component } from "../../engine/ecs/component";
 import { getInstancedMesh } from "../../engine/renderer/instancedMesh";
 
 export class Mesh extends Component {

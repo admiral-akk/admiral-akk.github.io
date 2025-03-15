@@ -1,5 +1,5 @@
 import { Mat4, mat4, vec3, Vec4 } from "gl-matrix";
-import { Component } from "../../ecs/component";
+import { Component } from "../../engine/ecs/component";
 
 const NDC_corners = [
   // close

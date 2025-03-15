@@ -1,5 +1,5 @@
 import { vec2 } from "gl-matrix";
-import { Component } from "../../ecs/component";
+import { Component } from "../../engine/ecs/component";
 
 export class Position extends Component {
   constructor(x, y) {

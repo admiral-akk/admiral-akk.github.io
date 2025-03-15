@@ -1,4 +1,4 @@
-import { System } from "../../ecs/system.js";
+import { System } from "../../engine/ecs/system.js";
 import { Mesh } from "../../components/render/mesh.js";
 
 export class CollectVisibleMeshInstances extends System {

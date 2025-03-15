@@ -1,6 +1,6 @@
 import { Mesh } from "../../components/render/mesh";
 import { Transform } from "../../components/render/transform";
-import { System } from "../../ecs/system";
+import { System } from "../../engine/ecs/system";
 import { AABB } from "../../engine/aabb";
 import { gl } from "../../engine/renderer";
 

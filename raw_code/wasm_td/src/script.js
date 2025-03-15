@@ -10,7 +10,7 @@ import {
   createPostProcessProgram,
 } from "./engine/renderer/program.js";
 import { Renderer } from "./engine/renderer.js";
-import { Entity } from "./ecs/entity.js";
+import { Entity } from "./engine/ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
 import { NoiseTexture } from "./engine/renderer/noiseTextures.js";
 import { Sun } from "./engine/renderer/sun.js";
@@ -18,7 +18,7 @@ import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
 import { input } from "./engine/input.js";
-import { Component } from "./ecs/component.js";
+import { Component } from "./engine/ecs/component.js";
 import {
   fragmentShaderSource,
   quadFragmentShaderSource,

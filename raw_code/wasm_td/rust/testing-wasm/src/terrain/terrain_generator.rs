@@ -43,7 +43,7 @@ impl TerrainGenerator {
             .noise
             .get([(x + x_offset) as f64, (y + y_offset) as f64]) as f32;
 
-        Vec3::new(x, 4. * height, y)
+        Vec3::new(x, 0.0, y)
     }
 
     pub fn generate_tree_pos(&self, x: i32, y: i32) -> Float32Array {

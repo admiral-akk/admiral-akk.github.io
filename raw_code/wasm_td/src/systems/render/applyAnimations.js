@@ -1,5 +1,5 @@
 import { Animated } from "../../components/render/animations";
-import { System } from "../../ecs/system";
+import { System } from "../../engine/ecs/system";
 import { time } from "../../engine/time";
 
 export class ApplyAnimations extends System {

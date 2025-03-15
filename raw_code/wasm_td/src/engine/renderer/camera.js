@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { gl } from "../engine/renderer";
+import { gl } from "../renderer";
 
 const temp = vec3.create();
 export function applyCameraUniforms({ camera, transform }, program) {

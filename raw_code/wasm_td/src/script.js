@@ -5,12 +5,15 @@ import {
   DefaultPreprocessor,
 } from "./util/compression.js";
 import { Camera } from "./components/render/camera.js";
-import { createProgram, createPostProcessProgram } from "./renderer/program.js";
-import { Renderer } from "./renderer/renderer.js";
-import { Entity, getEntitiesWith } from "./ecs/entity.js";
+import {
+  createProgram,
+  createPostProcessProgram,
+} from "./engine/renderer/program.js";
+import { Renderer } from "./engine/renderer.js";
+import { Entity } from "./ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
-import { NoiseTexture } from "./renderer/noiseTextures.js";
-import { Sun } from "./renderer/sun.js";
+import { NoiseTexture } from "./engine/renderer/noiseTextures.js";
+import { Sun } from "./engine/renderer/sun.js";
 import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
@@ -25,7 +28,7 @@ import {
   wireFrameVertex,
 } from "./shaders.js";
 import { applySystems, meshInstances } from "./systems/system.js";
-import { applyCameraUniforms } from "./renderer/camera.js";
+import { applyCameraUniforms } from "./engine/renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
 import { Vec3, Vec2, Quat } from "gl-matrix";
 import Stats from "stats.js";

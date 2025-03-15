@@ -1,7 +1,7 @@
 import { Vec3, vec3 } from "gl-matrix";
-import { Bimap } from "../util/bimap";
-import { gl } from "../engine/renderer";
-import { AABB } from "../engine/aabb";
+import { Bimap } from "../../util/bimap";
+import { gl } from "../renderer";
+import { AABB } from "../aabb";
 
 const instancedMeshes = [];
 

@@ -1,5 +1,5 @@
 import { Component } from "../../ecs/component";
-import { getInstancedMesh } from "../../renderer/instancedMesh";
+import { getInstancedMesh } from "../../engine/renderer/instancedMesh";
 
 export class Mesh extends Component {
   constructor(modelArray) {

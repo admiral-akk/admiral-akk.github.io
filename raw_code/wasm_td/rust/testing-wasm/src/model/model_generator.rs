@@ -43,8 +43,8 @@ pub struct ModelTransform {
 pub struct CurveModelParams {
     // width, height respectively.
     pub curve: Vec<[f32; 2]>,
-    // color to bake in
-    pub color: [f32; 3],
+    // color to bake in, based on height
+    pub color_curve: Vec<(f32, [f32; 3])>,
     // number of points to rotate about the center.
     pub points: u32,
     // whether to close the top of the mesh
@@ -56,6 +56,48 @@ pub struct CurveModelParams {
 #[derive(Serialize, Deserialize)]
 enum ModelParams {
     CurveModel(CurveModelParams),
+}
+
+fn sample_color_curve(color_curve: &Vec<(f32, [f32; 3])>, point: &Vec3) -> Color {
+    // find the two adjacent indices.
+
+    if color_curve.is_empty() {
+        return Color::new(255.0 / 255.0, 105.0 / 255.0, 180.0 / 255.0);
+    }
+
+    match color_curve.len() {
+        0 => Color::new(255.0 / 255.0, 105.0 / 255.0, 180.0 / 255.0),
+        1 => {
+            let (height, color) = color_curve[0];
+            Color::new(color[0], color[1], color[2])
+        }
+        _ => {
+            let mut idx = match color_curve
+                .binary_search_by(|(k, _v)| k.partial_cmp(&point.y).unwrap().reverse())
+            {
+                Err(idx) => idx,
+                Ok(idx) => idx,
+            };
+
+            if idx < 1 {
+                idx = 1;
+            }
+            if idx > color_curve.len() - 1 {
+                idx = color_curve.len() - 1;
+            }
+
+            let (height1, color1) = color_curve[idx - 1];
+            let (height2, color2) = color_curve[idx];
+
+            let weight = (point.y - height1) / (height2 - height1);
+
+            Color::new(
+                (1.0 - weight) * color1[0] + weight * color2[0],
+                (1.0 - weight) * color1[1] + weight * color2[1],
+                (1.0 - weight) * color1[2] + weight * color2[2],
+            )
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -75,7 +117,7 @@ impl ModelGenerator {
         self.get_mesh_internal(name).mesh_size()
     }
 
-    fn generate_curve_model(&self, params: CurveModelParams) -> Mesh {
+    fn generate_curve_model(&self, mut params: CurveModelParams) -> Mesh {
         let mut triangles = Vec::new();
 
         let points = params.points;
@@ -128,18 +170,23 @@ impl ModelGenerator {
 
         let mut mesh = Mesh::new();
 
-        let color_val = Color::new(params.color[0], params.color[1], params.color[2]);
+        params
+            .color_curve
+            .sort_unstable_by(|(a, _v), (b, _y)| a.partial_cmp(b).unwrap().reverse());
 
         for i in 0..triangles.len() {
             let [v1, v2, v3] = triangles[i];
 
+            let c1 = sample_color_curve(&params.color_curve, &v1);
+            let c2 = sample_color_curve(&params.color_curve, &v2);
+            let c3 = sample_color_curve(&params.color_curve, &v3);
             let v21 = v2.clone().sub(&v1);
             let v31 = v3.clone().sub(&v1);
 
             let n1 = v31.clone().cross(&v21).normalize();
-            let p1 = Point::new(v1, n1, color_val);
-            let p2 = Point::new(v2, n1, color_val);
-            let p3 = Point::new(v3, n1, color_val);
+            let p1 = Point::new(v1, n1, c1);
+            let p2 = Point::new(v2, n1, c2);
+            let p3 = Point::new(v3, n1, c3);
             mesh.add(MeshTriangle::new([p1, p2, p3]));
         }
 

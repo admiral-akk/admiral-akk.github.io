@@ -142,7 +142,10 @@ modelGen.generate_model("red_cube", {
       [1.5, -1.5],
       [1.5, 1.5],
     ],
-    color: [0.5, 0, 0],
+    color_curve: [
+      [-1.5, [0.15, 0, 0]],
+      [1.5, [0.7, 0, 0]],
+    ],
     points: 4,
     close_top: true,
     close_bot: true,

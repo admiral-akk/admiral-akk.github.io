@@ -4,7 +4,6 @@ import { System } from "../../engine/ecs/system.js";
 import { gl } from "../../engine/renderer.js";
 import { AABB } from "../../engine/aabb.js";
 import { Mesh } from "../../components/render/mesh.js";
-import { Position } from "../util/position.js";
 import { Entity, getEntitiesWith } from "../../engine/ecs/entity.js";
 import { Vec3 } from "gl-matrix";
 import { Chunk } from "../../components/game/chunk.js";
@@ -34,7 +33,7 @@ class GenerateChunks extends System {
     const maxY = Math.ceil(frustumAABB.max[2] / chunkSize);
     const minX = Math.floor(frustumAABB.min[0] / chunkSize);
     const minY = Math.floor(frustumAABB.min[2] / chunkSize);
-    const chunks = Array.from(getEntitiesWith(...[Mesh, Position]));
+    const chunks = Array.from(getEntitiesWith(...[Mesh, Chunk]));
 
     const maxViewX = Math.ceil(
       (camera.far + frustumAABB.min.x) / chunkSize + 3
@@ -50,23 +49,22 @@ class GenerateChunks extends System {
     );
 
     for (let i = chunks.length - 1; i >= 0; i--) {
-      const chunk = chunks[i];
-      const position = chunk.components.position;
+      const chunk = chunks[i].components.chunk;
       if (
-        position.x > maxViewX ||
-        position.x < minViewX ||
-        position.y > maxViewY ||
-        position.y < minViewY
+        chunk.x > maxViewX ||
+        chunk.x < minViewX ||
+        chunk.y > maxViewY ||
+        chunk.y < minViewY
       ) {
-        chunk.deleteEntity();
+        chunks[i].deleteEntity();
         chunks.splice(i, 1);
       }
     }
     for (let x = minX; x <= maxX; x++) {
       for (let y = minY; y <= maxY; y++) {
         const exists = chunks.some((v) => {
-          const position = v.components.position;
-          return position.x === x && position.y === y;
+          const chunk = v.components.chunk;
+          return chunk.x === x && chunk.y === y;
         });
         if (!exists) {
           let terrain_mesh = activeTerrainGenerator.generate_mesh(x, y);
@@ -92,8 +90,7 @@ class GenerateChunks extends System {
           new Entity(
             new Transform({ pos: Vec3.clone(offset) }),
             new Mesh(terrain_mesh),
-            new Position(x, y),
-            new Chunk(trees)
+            new Chunk(x, y, trees)
           );
         }
       }

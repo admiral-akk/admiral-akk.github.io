@@ -14,7 +14,6 @@ import { Entity } from "./engine/ecs/entity.js";
 import { Transform } from "./components/render/transform.js";
 import { NoiseTexture } from "./engine/renderer/noiseTextures.js";
 import { Sun } from "./engine/renderer/sun.js";
-import { State, StateMachine } from "./util/stateMachine.js";
 import { time } from "./engine/time.js";
 import { gl } from "./engine/renderer.js";
 import { input } from "./engine/input.js";
@@ -45,6 +44,8 @@ import { BoxCollider } from "./components/collider.js";
 import { getCollision } from "./raycaster.js";
 import { Clickable } from "./components/client/clickable.js";
 import { MoveCamera } from "./commands/moveCamera.js";
+import { InputManager } from "./input/inputManager.js";
+import { RiggedCamera } from "./entities/riggedCamera.js";
 
 const v = new wasmVec3(1, 2, 3);
 const other = new wasmVec3(4, 5, 6);
@@ -61,123 +62,9 @@ const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 const quadProgram = createPostProcessProgram(gl, quadFragmentShaderSource);
 const renderTexture = createPostProcessProgram(gl, renderTextureSource);
 
-const cameraBaseT = new Transform({ pos: [0, 0, 0] });
-
-const horizontalRotT = new Transform({
-  parent: cameraBaseT,
-  rot: Quat.create().rotateY(-Math.PI / 4),
-});
-
-const verticalRotT = new Transform({
-  parent: horizontalRotT,
-  rot: Quat.create().rotateX(Math.PI / 4),
-});
-
-const zoomT = new Transform({
-  parent: verticalRotT,
-  pos: [0, 0, -10],
-});
-
-const cameraBase = new Entity(cameraBaseT);
-const cameraZoomOut3 = new Entity(horizontalRotT);
-const cameraZoomOut2 = new Entity(verticalRotT);
-const cameraZoomOut = new Entity(zoomT);
-
-const cameraEntity = new Entity(
-  new Camera({
-    base: cameraBaseT,
-    horizontalRotation: horizontalRotT,
-    verticalRotation: verticalRotT,
-    pan: zoomT,
-  }),
-  new Transform({
-    parent: zoomT,
-  })
-);
-
-console.log("camera pos", cameraBase.components.transform.getWorldMatrix());
-console.log("camera pos", cameraZoomOut3.components.transform.getWorldMatrix());
-console.log("camera pos", cameraZoomOut2.components.transform.getWorldMatrix());
-console.log("camera pos", cameraZoomOut.components.transform.getWorldMatrix());
-console.log("camera pos", cameraEntity.components.transform.getWorldMatrix());
+const cameraEntity = new RiggedCamera();
 
 var debugVertices = [];
-
-// input manager - client, determines commands
-// commands figure out how to apply themselves
-// then the state game actions happen
-// then we apply a render
-
-// TODO: add a notion of "commands"
-
-// decides what commands a user will issue, if any
-//
-// commands might be illegal in the game state.
-class InputManager extends StateMachine {
-  constructor() {
-    super();
-    this.pushState(new OpenState());
-    this.commands = [];
-  }
-
-  update() {
-    const { state } = input;
-
-    this.currentState().handleInput(this);
-  }
-}
-
-class OpenState extends State {
-  handleInput(manager) {
-    const { state } = input;
-
-    const move = Vec3.create();
-
-    if (state?.w?.val) {
-      move[2] += 1;
-    }
-
-    if (state?.s?.val) {
-      move[2] -= 1;
-    }
-    if (state?.a?.val) {
-      move[0] += 1;
-    }
-    if (state?.d?.val) {
-      move[0] -= 1;
-    }
-
-    if (move[0] !== 0 || move[2] !== 0) {
-      manager.commands.push(new MoveCamera(move));
-    }
-
-    horizontalRotT.rot.rotateY(
-      (0.05 * ((state?.q?.val ?? 0) - (state?.e?.val ?? 0))) / Math.PI
-    );
-    horizontalRotT.setRotation(horizontalRotT.rot);
-
-    if (
-      state?.rmb?.val === 1 &&
-      state?.mpos?.frame === time.frame &&
-      state?.mpos?.prev?.val
-    ) {
-      const delta = Vec2.clone(state.mpos.val).sub(state?.mpos?.prev.val);
-      horizontalRotT.rot.rotateY((5 * delta.x) / Math.PI);
-      verticalRotT.rot.rotateX(5 * delta.y);
-      horizontalRotT.setRotation(horizontalRotT.rot);
-      verticalRotT.setRotation(verticalRotT.rot);
-    }
-    if (
-      state?.wheel?.frame === time.frame &&
-      state?.wheel?.prev?.val !== state?.wheel?.val
-    ) {
-      const deltaY = state.wheel.val - state.wheel.prev.val;
-      zoomT.pos[2] -= 0.05 * deltaY;
-      zoomT.pos[2] = Math.clamp(zoomT.pos[2], -25, -4);
-      zoomT.setPosition(zoomT.pos);
-    }
-  }
-}
 
 const inputManager = new InputManager();
 
@@ -275,12 +162,12 @@ GenerateChunks.setTreeGenerator(tree);
 //createThing();
 const draw = () => {
   stats.begin();
-  inputManager.update();
+  inputManager.update(input);
   time.tick();
 
   const collision = getCollision(
     input.state,
-    cameraZoomOut.components.transform,
+    cameraEntity.components.transform,
     cameraEntity.components.camera
   );
   if (collision) {

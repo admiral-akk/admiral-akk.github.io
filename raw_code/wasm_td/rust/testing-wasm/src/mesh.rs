@@ -27,9 +27,9 @@ impl Serialize<3> for Color {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
-    pos: Vec3,
-    normal: Vec3,
-    color: Color,
+    pub pos: Vec3,
+    pub normal: Vec3,
+    pub color: Color,
 }
 
 impl Point {
@@ -53,7 +53,7 @@ impl Serialize<POINT_SIZE> for Point {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeshTriangle {
-    points: [Point; 3],
+    pub points: [Point; 3],
 }
 
 const TRIANGLE_SIZE: u32 = 3 * POINT_SIZE;
@@ -72,7 +72,7 @@ impl MeshTriangle {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Mesh {
-    triangles: Vec<MeshTriangle>,
+    pub triangles: Vec<MeshTriangle>,
 }
 
 impl Mesh {

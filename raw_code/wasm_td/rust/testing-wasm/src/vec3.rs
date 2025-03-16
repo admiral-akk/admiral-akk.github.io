@@ -76,6 +76,13 @@ impl Vec3 {
         *self
     }
 
+    pub fn mul(&mut self, other: &Vec3) -> Self {
+        self.x *= other.x;
+        self.y *= other.y;
+        self.z *= other.z;
+        *self
+    }
+
     pub fn scale(&mut self, scalar: f32) -> Self {
         self.x *= scalar;
         self.y *= scalar;

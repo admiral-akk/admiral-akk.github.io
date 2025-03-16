@@ -34,7 +34,7 @@ pub struct ModelTransform {
     // Scales the vertices along x, y, z.
     pub scale: Option<[f32; 3]>,
     // Rotates the mesh along the axes in order.
-    pub rotation: Vec<ModelRotation>,
+    pub rotation: Option<Vec<ModelRotation>>,
     // Offsets the vertices by the provided translation.
     pub translation: Option<[f32; 3]>,
 }
@@ -54,8 +54,73 @@ pub struct CurveModelParams {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct CompositeModelParams {
+    // name of the model to compose
+    pub name: String,
+    // transformations to apply
+    pub transform: ModelTransform,
+}
+
+fn transform_normal(v: &Vec3, transform: &ModelTransform) -> Vec3 {
+    let mut v1 = v.clone();
+
+    v1 = match transform.scale {
+        None => v1,
+        Some(scale) => v1,
+    };
+
+    // translation doesn't affect the normal
+    match &transform.rotation {
+        None => v1,
+        Some(rotations) => {
+            for rotation in rotations.iter() {}
+            v1
+        }
+    }
+}
+
+fn transform_vert(v: &Vec3, transform: &ModelTransform) -> Vec3 {
+    let mut v1 = v.clone();
+
+    v1 = match transform.scale {
+        None => v1,
+        Some(scale) => v1.mul(&Vec3::new(scale[0], scale[1], scale[2])),
+    };
+
+    v1 = match &transform.rotation {
+        None => v1,
+        Some(rotations) => {
+            for rotation in rotations.iter() {}
+            v1
+        }
+    };
+    match transform.translation {
+        None => v1,
+        Some(translation) => v1.add(&Vec3::new(translation[0], translation[1], translation[2])),
+    }
+}
+
+fn transform_point(p: &Point, transform: &ModelTransform) -> Point {
+    Point::new(
+        transform_vert(&p.pos, transform),
+        transform_normal(&p.normal, &transform),
+        p.color,
+    )
+}
+
+fn transform_triangle(tri: &MeshTriangle, transform: &ModelTransform) -> MeshTriangle {
+    let [p1, p2, p3] = tri.points;
+    MeshTriangle::new([
+        transform_point(&p1, transform),
+        transform_point(&p2, transform),
+        transform_point(&p3, transform),
+    ])
+}
+
+#[derive(Serialize, Deserialize)]
 enum ModelParams {
     CurveModel(CurveModelParams),
+    CompositeModel(Vec<CompositeModelParams>),
 }
 
 fn sample_color_curve(color_curve: &Vec<(f32, [f32; 3])>, point: &Vec3) -> Color {
@@ -193,11 +258,24 @@ impl ModelGenerator {
         mesh
     }
 
+    fn generate_composite_model(&self, params: Vec<CompositeModelParams>) -> Mesh {
+        let mut mesh = Mesh::new();
+
+        for param in params.iter() {
+            let existing_mesh = self.get_mesh_internal(&param.name);
+            for triangle in existing_mesh.triangles.iter() {
+                mesh.add(transform_triangle(&triangle, &param.transform))
+            }
+        }
+        mesh
+    }
+
     // generates and stores the mesh, returning the expected size of the the mesh.
     pub fn generate_model(&mut self, name: &str, params: JsValue) -> usize {
         let params: ModelParams = serde_wasm_bindgen::from_value(params).unwrap();
         let mesh = match params {
             ModelParams::CurveModel(params) => self.generate_curve_model(params),
+            ModelParams::CompositeModel(params) => self.generate_composite_model(params),
         };
         self.meshes.insert(name.into(), mesh);
         self.mesh_size(name)

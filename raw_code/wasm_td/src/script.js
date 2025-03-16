@@ -152,7 +152,20 @@ modelGen.generate_model("red_cube", {
   },
 });
 
-const redCube2 = modelGen.get_mesh("red_cube");
+modelGen.generate_model("composite_red_cube", {
+  CompositeModel: [
+    { name: "red_cube", transform: {} },
+    {
+      name: "red_cube",
+      transform: {
+        scale: [0.5, 0.5, 0.5],
+        translation: [0, 2, 0],
+      },
+    },
+  ],
+});
+
+const redCube2 = modelGen.get_mesh("composite_red_cube");
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
   new wasmVec3(1, 0, 0)

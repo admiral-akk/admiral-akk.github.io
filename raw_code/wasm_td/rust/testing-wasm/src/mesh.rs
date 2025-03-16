@@ -82,8 +82,23 @@ impl Mesh {
         }
     }
 
+    pub fn mesh_size(&self) -> usize {
+        self.triangles.len() * TRIANGLE_SIZE as usize
+    }
+
     pub fn add(&mut self, triangle: MeshTriangle) {
         self.triangles.push(triangle)
+    }
+
+    pub fn fill_array(&self, arr: &Float32Array, start: Option<usize>) {
+        let start = match start {
+            Some(start) => start,
+            None => 0_usize,
+        };
+
+        for i in 0..self.triangles.len() {
+            self.triangles[i].insert(&arr, (TRIANGLE_SIZE as usize * i) as u32 + start as u32)
+        }
     }
 
     pub fn to_array(&self) -> Float32Array {

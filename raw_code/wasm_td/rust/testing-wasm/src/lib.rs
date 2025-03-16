@@ -7,6 +7,9 @@ mod serialize;
 mod types;
 mod utils;
 pub mod vec3;
+mod model {
+    pub mod model_generator;
+}
 mod terrain {
     pub mod chunk;
     pub mod cube_gen;

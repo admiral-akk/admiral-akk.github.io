@@ -28,17 +28,17 @@ import {
 import { applySystems, meshInstances } from "./systems/system.js";
 import { applyCameraUniforms } from "./engine/renderer/camera.js";
 import { Mesh } from "./components/render/mesh.js";
-import { Vec3, Vec2, Quat } from "gl-matrix";
+import { Vec3 } from "gl-matrix";
 import Stats from "stats.js";
 import {
   Vec3 as wasmVec3,
   TerrainGenerator,
   TreeGenerator,
+  ModelGenerator,
   CubeGenerator,
 } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
 import { GenerateChunks } from "./systems/render/generateChunks.js";
-import { window } from "./engine/window.js";
 import { BoxCollider } from "./components/collider.js";
 import { getCollision } from "./raycaster.js";
 import { Clickable } from "./components/client/clickable.js";
@@ -81,7 +81,6 @@ const applyActions = () => {
 };
 
 const renderer = new Renderer(gl);
-window.listeners.push(renderer);
 const noise = new NoiseTexture(gl);
 const sunShadowMap = new Sun(gl);
 
@@ -135,6 +134,22 @@ const t = new TerrainGenerator(40);
 const tree = new TreeGenerator();
 const cubeGen = new CubeGenerator();
 
+const modelGen = new ModelGenerator();
+
+modelGen.generate_model("red_cube", {
+  CurveModel: {
+    curve: [
+      [1.5, -1.5],
+      [1.5, 1.5],
+    ],
+    color: [0.5, 0, 0],
+    points: 4,
+    close_top: true,
+    close_bot: true,
+  },
+});
+
+const redCube2 = modelGen.get_mesh("red_cube");
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
   new wasmVec3(1, 0, 0)
@@ -144,7 +159,7 @@ const blueCube = cubeGen.generate_mesh(
   new wasmVec3(0, 0, 0.5)
 );
 
-new Entity(new Mesh(redCube), new Transform({ pos: new Vec3(0, 1, 0) }));
+new Entity(new Mesh(redCube2), new Transform({ pos: new Vec3(0, 1, 0) }));
 const collider = new Entity(
   new Transform({ pos: new Vec3(0, 0, 0) }),
   new BoxCollider([5, 0.5, 5]),

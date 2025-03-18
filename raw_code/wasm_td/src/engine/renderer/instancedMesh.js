@@ -5,7 +5,7 @@ import { AABB } from "../aabb";
 
 const instancedMeshes = [];
 
-const totalModelAttribSize = 12;
+const totalModelAttribSize = 8;
 const totalInstanceAttribSize = 32;
 
 class InstancedMesh {
@@ -67,9 +67,9 @@ class InstancedMesh {
     gl.bindVertexArray(vao);
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.modelBuffer);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, totalModelAttribSize * 3, 0);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, totalModelAttribSize * 3, 12);
-    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, totalModelAttribSize * 3, 24);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, totalModelAttribSize * 4, 0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, totalModelAttribSize * 4, 12);
+    gl.vertexAttribPointer(2, 2, gl.FLOAT, false, totalModelAttribSize * 4, 24);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.transformBuffer);
 
     gl.vertexAttribPointer(
@@ -330,7 +330,7 @@ class InstancedMesh {
     gl.drawArraysInstanced(
       gl.TRIANGLES,
       0,
-      this.modelArrayLength / 9, // 3 for pos, 3 for normal, 3 for color
+      this.modelArrayLength / 8, // 3 for pos, 3 for normal, 3 for color
       this.meshToIndex.size()
     );
     gl.bindVertexArray(null);

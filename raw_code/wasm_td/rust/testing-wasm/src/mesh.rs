@@ -14,12 +14,11 @@ impl Color {
         Self { r, g, b }
     }
 }
-impl Serialize<3> for Color {
+impl Serialize<2> for Color {
     fn get(&self, index: u32) -> f32 {
         match index {
             0 => self.r,
             1 => self.g,
-            2 => self.b,
             _ => panic!(),
         }
     }
@@ -38,14 +37,14 @@ impl Point {
     }
 }
 
-const POINT_SIZE: u32 = 9;
+const POINT_SIZE: u32 = 8;
 
 impl Serialize<POINT_SIZE> for Point {
     fn get(&self, index: u32) -> f32 {
         match index {
             0..3 => self.pos.get(index),
             3..6 => self.normal.get(index % 3),
-            6..9 => self.color.get(index % 3),
+            6..8 => self.color.get(index % 3),
             _ => panic!(),
         }
     }

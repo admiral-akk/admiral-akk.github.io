@@ -9,12 +9,8 @@ uniform mat4 uShadowVP;
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec3 aColor;
+layout(location = 2) in vec2 aUv;
 layout(location = 3) in mat4 aModel;
-layout(location = 7) in vec4 aInstancedMetadata1;
-layout(location = 8) in vec4 aInstancedMetadata2;
-layout(location = 9) in vec4 aInstancedMetadata3;
-layout(location = 10) in vec4 aInstancedMetadata4;
 
 out vec3 vColor;
 out vec4 vPos;
@@ -22,16 +18,17 @@ out vec4 vTransPos;
 out vec4 vInstancedColor;
 out vec3 vNormal;
 out vec4 vShadowCoord;
+out vec2 vUv;
 
 void main() {
     vPos = aModel * vec4(aPosition,1.);
 
     gl_Position = uProjection * uView * vPos;
     vShadowCoord = (uShadowVP * vPos);
-    vColor = aColor;
+    vColor = vec3(0.5,0.5,0.5);
     vNormal = aNormal;
     vTransPos = gl_Position;
-    vInstancedColor = aInstancedMetadata1;
+    vUv = aUv;
 }`;
 
 export const fragmentShaderSource = `#version 300 es
@@ -52,9 +49,11 @@ in vec4 vTransPos;
 in vec3 vNormal;
 in vec4 vShadowCoord;
 in vec4 vInstancedColor;
+in vec2 vUv;
 
 uniform sampler2D uSampler1;
 uniform sampler2D uShadowMapSampler;
+uniform sampler2D uCustomTexture;
 uniform ivec4 uClickedCoord;
 uniform vec3 uLightDir;
 uniform float uFar;
@@ -110,6 +109,7 @@ void main() {
   //fragColor = vec4(vec3(normLDot ), 1.);
 
   depth = 1. - vTransPos.z / (uFar  - uNear);
+  fragColor = texture(uCustomTexture, vUv);
 
 }`;
 

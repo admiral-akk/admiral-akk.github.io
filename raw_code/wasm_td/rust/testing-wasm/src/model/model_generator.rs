@@ -11,6 +11,170 @@ fn generateVec3(angle: f32, radius: f32, height: f32) -> Vec3 {
     Vec3::new(angle.cos() * radius, height, angle.sin() * radius)
 }
 
+struct ModelPoint {
+    pos: [f32; 3],
+    uv: [f32; 2],
+}
+
+struct ModelTriangle {
+    points: [ModelPoint; 3],
+    normal: [f32; 3],
+}
+
+struct ModelMesh {
+    triangles: Vec<ModelTriangle>,
+}
+
+pub trait Vector3: Sized + Clone {
+    fn x(&self) -> f32;
+    fn y(&self) -> f32;
+    fn z(&self) -> f32;
+    fn set_x(&mut self, val: f32);
+    fn set_y(&mut self, val: f32);
+    fn set_z(&mut self, val: f32);
+
+    fn new(v: [f32; 3]) -> Self;
+
+    fn length(&self) -> f32 {
+        self.length_sq().sqrt()
+    }
+
+    fn scale(&mut self, scalar: f32) -> &mut Self {
+        self.set_x(self.x() * scalar);
+        self.set_y(self.y() * scalar);
+        self.set_z(self.z() * scalar);
+        self
+    }
+
+    fn normalize(&mut self) -> &mut Self {
+        self.scale(1.0 / self.length())
+    }
+
+    fn length_sq(&self) -> f32 {
+        (&self).dot(self)
+    }
+
+    fn add<T: Vector3>(&mut self, other: &T) -> &mut Self {
+        self.set_x(self.x() + other.x());
+        self.set_y(self.y() + other.y());
+        self.set_z(self.z() + other.z());
+        self
+    }
+
+    fn sub<T: Vector3>(&mut self, other: &T) -> &mut Self {
+        self.set_x(self.x() - other.x());
+        self.set_y(self.y() - other.y());
+        self.set_z(self.z() - other.z());
+        self
+    }
+
+    fn cross<T: Vector3>(&self, other: &T) -> Self {
+        let x = self.y() * other.z() - self.z() * other.y();
+        let y = self.z() * other.x() - self.x() * other.z();
+        let z = self.x() * other.y() - self.y() * other.x();
+        Self::new([x, y, z])
+    }
+
+    fn dot<T: Vector3>(&self, other: &T) -> f32 {
+        self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
+    }
+}
+
+impl Vector3 for [f32; 3] {
+    #[inline(always)]
+    fn set_x(&mut self, val: f32) {
+        self[0] = val;
+    }
+
+    #[inline(always)]
+    fn set_y(&mut self, val: f32) {
+        self[1] = val;
+    }
+
+    #[inline(always)]
+    fn set_z(&mut self, val: f32) {
+        self[2] = val;
+    }
+
+    #[inline(always)]
+    fn x(&self) -> f32 {
+        self[0]
+    }
+
+    #[inline(always)]
+    fn y(&self) -> f32 {
+        self[1]
+    }
+
+    #[inline(always)]
+    fn z(&self) -> f32 {
+        self[2]
+    }
+
+    #[inline(always)]
+    fn new(v: [f32; 3]) -> Self {
+        v
+    }
+}
+
+impl ModelPoint {
+    pub fn new(pos: [f32; 3], uv: [f32; 2]) -> Self {
+        ModelPoint { pos, uv }
+    }
+}
+
+impl ModelTriangle {
+    pub fn new(points: [ModelPoint; 3]) -> Option<Self> {
+        let v21 = *points[1].pos.clone().sub(&points[0].pos);
+        let v31 = *points[2].pos.clone().sub(&points[0].pos);
+        let mut cross = v31.cross(&v21);
+
+        if cross.length_sq() > 0.0001 {
+            Some(ModelTriangle {
+                points,
+                normal: *cross.normalize(),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl ModelMesh {
+    pub fn new() -> ModelMesh {
+        ModelMesh {
+            triangles: Vec::new(),
+        }
+    }
+
+    pub fn addTriangle(&mut self, points: [ModelPoint; 3]) {
+        if let Some(triangle) = ModelTriangle::new(points) {
+            self.triangles.push(triangle);
+        }
+    }
+
+    pub fn to_mesh(&self) -> Mesh {
+        let mut mesh = Mesh::new();
+
+        for i in 0..self.triangles.len() {
+            let [p1, p2, p3] = &self.triangles[i].points;
+            let n = &self.triangles[i].normal;
+
+            let c1 = Color::new(p1.uv[0], p1.uv[1], 0.0);
+            let c2 = Color::new(p2.uv[0], p2.uv[1], 0.0);
+            let c3 = Color::new(p3.uv[0], p3.uv[1], 0.0);
+
+            let n1 = Vec3::new(n[0], n[1], n[2]);
+            let p1 = Point::new(Vec3::new(p1.pos[0], p1.pos[1], p1.pos[2]), n1, c1);
+            let p2 = Point::new(Vec3::new(p2.pos[0], p2.pos[1], p2.pos[2]), n1, c1);
+            let p3 = Point::new(Vec3::new(p3.pos[0], p3.pos[1], p3.pos[2]), n1, c1);
+            mesh.add(MeshTriangle::new([p1, p2, p3]));
+        }
+
+        mesh
+    }
+}
+
 #[wasm_bindgen]
 pub struct ModelGenerator {
     meshes: HashMap<String, Mesh>,
@@ -37,6 +201,8 @@ pub struct ModelTransform {
     pub rotation: Option<Vec<ModelRotation>>,
     // Offsets the vertices by the provided translation.
     pub translation: Option<[f32; 3]>,
+    //  Offsets the uvs by the set value
+    pub uv_offset: Option<[f32; 2]>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -71,7 +237,7 @@ pub struct CompositeModelParams {
 // for now just assume none of the faces extrude.
 #[derive(Serialize, Deserialize)]
 struct ExtrudeModelParams {
-    // the base of the model
+    // the base of the model, [x, z]
     base: Vec<[f32; 2]>,
     // the series of transforms to apply
     transforms: Vec<ModelTransform>,

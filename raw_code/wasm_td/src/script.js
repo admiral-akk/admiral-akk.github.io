@@ -184,7 +184,6 @@ modelGen.generate_model("red_cube2", {
   },
 });
 const redCube2 = modelGen.get_mesh("red_cube2");
-console.log(redCube2);
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
   new wasmVec3(1, 0, 0)
@@ -201,6 +200,34 @@ const collider = new Entity(
   new Mesh(blueCube),
   new Clickable()
 );
+
+const texture = gl.createTexture();
+{
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 2;
+  const height = 2;
+  const border = 0;
+  const srcFormat = gl.RGBA;
+  const srcType = gl.UNSIGNED_BYTE;
+  const pixel = new Uint8Array([
+    0, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 255, 0, 0, 255, 255,
+  ]); // opaque blue
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    level,
+    internalFormat,
+    width,
+    height,
+    border,
+    srcFormat,
+    srcType,
+    pixel
+  );
+  gl.generateMipmap(gl.TEXTURE_2D);
+}
 
 GenerateChunks.setTerrainGenerator(t);
 GenerateChunks.setTreeGenerator(tree);
@@ -227,6 +254,11 @@ const draw = () => {
     applyCameraUniforms(cameraEntity.components, program);
     sunShadowMap.setUniforms(gl, program);
     time.setUniforms(gl, program);
+
+    const shadowLoc = 4;
+    gl.activeTexture(gl.TEXTURE0 + shadowLoc);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(program, "uCustomTexture"), shadowLoc);
   };
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

@@ -233,7 +233,9 @@ impl GenerateModel for ExtrudeModelParams {
                 let v3 = next[j];
                 let v4 = next[(j + 1) % next.len()];
                 triangles.push([v1, v3, v2]);
-                triangles.push([v2, v3, v4]);
+                if v3.dist_sq(&v4) > 0.0001 {
+                    triangles.push([v2, v3, v4]);
+                }
             }
             //
             for j in 0..curr.len() {
@@ -259,11 +261,14 @@ impl GenerateModel for ExtrudeModelParams {
             let v21 = v2.clone().sub(&v1);
             let v31 = v3.clone().sub(&v1);
 
-            let n1 = v31.clone().cross(&v21).normalize();
-            let p1 = Point::new(v1, n1, c1);
-            let p2 = Point::new(v2, n1, c2);
-            let p3 = Point::new(v3, n1, c3);
-            mesh.add(MeshTriangle::new([p1, p2, p3]));
+            let cross = v31.clone().cross(&v21);
+            if cross.length() > 0.0001 {
+                let n1 = v31.clone().cross(&v21).normalize();
+                let p1 = Point::new(v1, n1, c1);
+                let p2 = Point::new(v2, n1, c2);
+                let p3 = Point::new(v3, n1, c3);
+                mesh.add(MeshTriangle::new([p1, p2, p3]));
+            }
         }
 
         mesh

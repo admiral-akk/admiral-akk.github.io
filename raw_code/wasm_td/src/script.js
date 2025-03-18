@@ -177,7 +177,10 @@ modelGen.generate_model("red_cube2", {
     ],
     close_bot: true,
     close_top: true,
-    transforms: [{ translation: [0, 1, 0] }],
+    transforms: [
+      { translation: [0, 1, 0] },
+      { translation: [0, 0.2, 0], scale: [0, 1, 1] },
+    ],
   },
 });
 const redCube2 = modelGen.get_mesh("red_cube2");

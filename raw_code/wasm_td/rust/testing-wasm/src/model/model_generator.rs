@@ -11,16 +11,19 @@ fn generateVec3(angle: f32, radius: f32, height: f32) -> Vec3 {
     Vec3::new(angle.cos() * radius, height, angle.sin() * radius)
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct ModelPoint {
     pos: [f32; 3],
     uv: [f32; 2],
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct ModelTriangle {
     points: [ModelPoint; 3],
     normal: [f32; 3],
 }
 
+#[derive(Clone, Debug, PartialEq)]
 struct ModelMesh {
     triangles: Vec<ModelTriangle>,
 }
@@ -68,6 +71,13 @@ pub trait Vector3: Sized + Clone {
         self
     }
 
+    fn mul<T: Vector3>(&mut self, other: &T) -> &mut Self {
+        self.set_x(self.x() * other.x());
+        self.set_y(self.y() * other.y());
+        self.set_z(self.z() * other.z());
+        self
+    }
+
     fn cross<T: Vector3>(&self, other: &T) -> Self {
         let x = self.y() * other.z() - self.z() * other.y();
         let y = self.z() * other.x() - self.x() * other.z();
@@ -79,7 +89,6 @@ pub trait Vector3: Sized + Clone {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
     }
 }
-
 impl Vector3 for [f32; 3] {
     #[inline(always)]
     fn set_x(&mut self, val: f32) {
@@ -123,6 +132,28 @@ impl ModelPoint {
     }
 }
 
+trait Transformable {
+    fn apply_transform(&self, transform: &ModelTransform) -> Self;
+}
+
+impl Transformable for ModelPoint {
+    fn apply_transform(&self, transform: &ModelTransform) -> Self {
+        let mut v1 = self.clone();
+
+        if let Some(offset) = transform.uv_offset {
+            v1.uv = [v1.uv[0] + offset[0], v1.uv[1] + offset[1]];
+        }
+        if let Some(scale) = transform.scale {
+            v1.pos.mul(&scale);
+        };
+        if let Some(rotation) = &transform.rotation {};
+        if let Some(translation) = transform.translation {
+            v1.pos.add(&translation);
+        };
+        v1
+    }
+}
+
 impl ModelTriangle {
     pub fn new(points: [ModelPoint; 3]) -> Option<Self> {
         let v21 = *points[1].pos.clone().sub(&points[0].pos);
@@ -147,7 +178,7 @@ impl ModelMesh {
         }
     }
 
-    pub fn addTriangle(&mut self, points: [ModelPoint; 3]) {
+    pub fn add_triangle(&mut self, points: [ModelPoint; 3]) {
         if let Some(triangle) = ModelTriangle::new(points) {
             self.triangles.push(triangle);
         }
@@ -373,24 +404,24 @@ impl GenerateModel for CompositeModelParams {
 
 impl GenerateModel for ExtrudeModelParams {
     fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh {
-        let mut triangles = Vec::new();
+        let mut new_mesh = ModelMesh::new();
 
         let mut curr: Vec<_> = self
             .base
             .iter()
-            .map(|[x, z]| Vec3::new(*x, 0.0, *z))
+            .map(|[x, z]| ModelPoint::new([*x, 0.0, *z], [0.0, 0.0]))
             .collect();
         let mut next = curr.clone();
 
         if self.close_bot {
             for j in 1..(curr.len() - 1) {
-                triangles.push([curr[0], curr[j], curr[j + 1]]);
+                new_mesh.add_triangle([curr[0], curr[j], curr[j + 1]]);
             }
         }
 
         for i in 0..self.transforms.len() {
             for j in 0..next.len() {
-                next[j] = transform_vert(&next[j], &self.transforms[i]);
+                next[j] = next[j].apply_transform(&self.transforms[i]);
             }
 
             for j in 0..curr.len() {
@@ -398,46 +429,21 @@ impl GenerateModel for ExtrudeModelParams {
                 let v2 = curr[(j + 1) % curr.len()];
                 let v3 = next[j];
                 let v4 = next[(j + 1) % next.len()];
-                triangles.push([v1, v3, v2]);
-                if v3.dist_sq(&v4) > 0.0001 {
-                    triangles.push([v2, v3, v4]);
-                }
+                new_mesh.add_triangle([v1, v3, v2]);
+                new_mesh.add_triangle([v2, v3, v4]);
             }
-            //
             for j in 0..curr.len() {
-                curr[j] = transform_vert(&curr[j], &self.transforms[i]);
+                curr[j] = curr[j].apply_transform(&self.transforms[i]);
             }
         }
 
         if self.close_top {
             for j in 1..(curr.len() - 1) {
-                triangles.push([curr[0], curr[j + 1], curr[j]]);
+                new_mesh.add_triangle([curr[0], curr[j + 1], curr[j]]);
             }
         }
 
-        let mut mesh = Mesh::new();
-
-        for i in 0..triangles.len() {
-            let [v1, v2, v3] = triangles[i];
-
-            let c1 = Color::new(0.5, 0.0, 0.5);
-            let c2 = Color::new(0.5, 0.0, 0.5);
-            let c3 = Color::new(0.5, 0.0, 0.5);
-
-            let v21 = v2.clone().sub(&v1);
-            let v31 = v3.clone().sub(&v1);
-
-            let cross = v31.clone().cross(&v21);
-            if cross.length() > 0.0001 {
-                let n1 = v31.clone().cross(&v21).normalize();
-                let p1 = Point::new(v1, n1, c1);
-                let p2 = Point::new(v2, n1, c2);
-                let p3 = Point::new(v3, n1, c3);
-                mesh.add(MeshTriangle::new([p1, p2, p3]));
-            }
-        }
-
-        mesh
+        new_mesh.to_mesh()
     }
 }
 

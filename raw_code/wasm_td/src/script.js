@@ -170,20 +170,21 @@ modelGen.generate_model("composite_red_cube", {
 modelGen.generate_model("red_cube2", {
   ExtrudeModel: {
     base: [
-      [-0.5, -0.5],
-      [0.5, -0.5],
-      [0.5, 0.5],
-      [-0.5, 0.5],
+      [-0.5, -0.5, 0, 0],
+      [0.5, -0.5, 0, 0],
+      [0.5, 0.5, 0, 0],
+      [-0.5, 0.5, 0, 0],
     ],
     close_bot: true,
     close_top: true,
     transforms: [
-      { translation: [0, 1, 0] },
-      { translation: [0, 0.2, 0], scale: [0, 1, 1] },
+      { translation: [0, 1, 0], uv_offset: [0.5, 0.5] },
+      { translation: [0, 0.2, 0], scale: [0, 1, 1], uv_offset: [0.5, 0.5] },
     ],
   },
 });
 const redCube2 = modelGen.get_mesh("red_cube2");
+console.log(redCube2);
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
   new wasmVec3(1, 0, 0)

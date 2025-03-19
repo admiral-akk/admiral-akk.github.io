@@ -110,6 +110,7 @@ void main() {
 
   depth = 1. - vTransPos.z / (uFar  - uNear);
   fragColor = texture(uCustomTexture, vUv);
+  fragColor = vec4(vUv,0.0,1.0);
 
 }`;
 

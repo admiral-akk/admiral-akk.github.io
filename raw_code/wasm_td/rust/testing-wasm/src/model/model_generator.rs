@@ -141,7 +141,8 @@ impl Transformable for ModelPoint {
         let mut v1 = self.clone();
 
         if let Some(offset) = transform.uv_offset {
-            v1.uv = [v1.uv[0] + offset[0], v1.uv[1] + offset[1]];
+            v1.uv[0] += offset[0];
+            v1.uv[1] += offset[1];
         }
         if let Some(scale) = transform.scale {
             v1.pos.mul(&scale);
@@ -151,6 +152,36 @@ impl Transformable for ModelPoint {
             v1.pos.add(&translation);
         };
         v1
+    }
+}
+
+impl Transformable for ModelTriangle {
+    fn apply_transform(&self, transform: &ModelTransform) -> Self {
+        let points = [
+            self.points[0].apply_transform(&transform),
+            self.points[1].apply_transform(&transform),
+            self.points[2].apply_transform(&transform),
+        ];
+
+        let v21 = *points[1].pos.clone().sub(&points[0].pos);
+        let v31 = *points[2].pos.clone().sub(&points[0].pos);
+
+        ModelTriangle {
+            points,
+            // this could be invalid if the triangle no longer exists.
+            normal: *v31.cross(&v21).normalize(),
+        }
+    }
+}
+impl Transformable for ModelMesh {
+    fn apply_transform(&self, transform: &ModelTransform) -> Self {
+        ModelMesh {
+            triangles: self
+                .triangles
+                .iter()
+                .map(|tri| tri.apply_transform(&transform))
+                .collect(),
+        }
     }
 }
 
@@ -197,8 +228,8 @@ impl ModelMesh {
 
             let n1 = Vec3::new(n[0], n[1], n[2]);
             let p1 = Point::new(Vec3::new(p1.pos[0], p1.pos[1], p1.pos[2]), n1, c1);
-            let p2 = Point::new(Vec3::new(p2.pos[0], p2.pos[1], p2.pos[2]), n1, c1);
-            let p3 = Point::new(Vec3::new(p3.pos[0], p3.pos[1], p3.pos[2]), n1, c1);
+            let p2 = Point::new(Vec3::new(p2.pos[0], p2.pos[1], p2.pos[2]), n1, c2);
+            let p3 = Point::new(Vec3::new(p3.pos[0], p3.pos[1], p3.pos[2]), n1, c3);
             mesh.add(MeshTriangle::new([p1, p2, p3]));
         }
 
@@ -268,8 +299,8 @@ pub struct CompositeModelParams {
 // for now just assume none of the faces extrude.
 #[derive(Serialize, Deserialize)]
 struct ExtrudeModelParams {
-    // the base of the model, [x, z]
-    base: Vec<[f32; 2]>,
+    // the base of the model, [x, z, uvX, uvY]
+    base: Vec<[f32; 4]>,
     // the series of transforms to apply
     transforms: Vec<ModelTransform>,
     // whether to close the top of the mesh
@@ -409,10 +440,9 @@ impl GenerateModel for ExtrudeModelParams {
         let mut curr: Vec<_> = self
             .base
             .iter()
-            .map(|[x, z]| ModelPoint::new([*x, 0.0, *z], [0.0, 0.0]))
+            .map(|[x, z, uv_x, uv_y]| ModelPoint::new([*x, 0.0, *z], [*uv_x, *uv_y]))
             .collect();
         let mut next = curr.clone();
-
         if self.close_bot {
             for j in 1..(curr.len() - 1) {
                 new_mesh.add_triangle([curr[0], curr[j], curr[j + 1]]);
@@ -420,9 +450,10 @@ impl GenerateModel for ExtrudeModelParams {
         }
 
         for i in 0..self.transforms.len() {
-            for j in 0..next.len() {
-                next[j] = next[j].apply_transform(&self.transforms[i]);
-            }
+            next = next
+                .iter()
+                .map(|p| p.apply_transform(&self.transforms[i]))
+                .collect();
 
             for j in 0..curr.len() {
                 let v1 = curr[j];
@@ -432,9 +463,7 @@ impl GenerateModel for ExtrudeModelParams {
                 new_mesh.add_triangle([v1, v3, v2]);
                 new_mesh.add_triangle([v2, v3, v4]);
             }
-            for j in 0..curr.len() {
-                curr[j] = curr[j].apply_transform(&self.transforms[i]);
-            }
+            curr = next.clone();
         }
 
         if self.close_top {

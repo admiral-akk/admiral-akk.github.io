@@ -137,18 +137,16 @@ const cubeGen = new CubeGenerator();
 const modelGen = new ModelGenerator();
 
 modelGen.generate_model("red_cube", {
-  CurveModel: {
-    curve: [
-      [1.5, -1.5],
-      [1.5, 1.5],
+  ExtrudeModel: {
+    base: [
+      [-1.5, -1.5, 0, 0],
+      [1.5, -1.5, 0, 0],
+      [1.5, 1.5, 0, 0],
+      [-1.5, 1.5, 0, 0],
     ],
-    color_curve: [
-      [-1.5, [0.15, 0, 0]],
-      [1.5, [0.7, 0, 0]],
-    ],
-    points: 4,
-    close_top: true,
     close_bot: true,
+    close_top: true,
+    transforms: [{ translation: [0, 3, 0], uv_offset: [0, 1] }],
   },
 });
 
@@ -183,7 +181,7 @@ modelGen.generate_model("red_cube2", {
     ],
   },
 });
-const redCube2 = modelGen.get_mesh("red_cube2");
+const redCube2 = modelGen.get_mesh("composite_red_cube");
 console.log(redCube2);
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),

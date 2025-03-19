@@ -88,6 +88,15 @@ pub trait Vector3: Sized + Clone {
     fn dot<T: Vector3>(&self, other: &T) -> f32 {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
     }
+
+    fn lerp<T: Vector3>(&self, other: &T, v: f32) -> Self {
+        let t = v.max(0.0).min(1.0);
+        Self::new([
+            self.x() * (1.0 - t) + other.x() * t,
+            self.y() * (1.0 - t) + other.y() * t,
+            self.z() * (1.0 - t) + other.z() * t,
+        ])
+    }
 }
 impl Vector3 for [f32; 3] {
     #[inline(always)]
@@ -239,7 +248,7 @@ impl ModelMesh {
 
 #[wasm_bindgen]
 pub struct ModelGenerator {
-    meshes: HashMap<String, Mesh>,
+    meshes: HashMap<String, ModelMesh>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -265,20 +274,6 @@ pub struct ModelTransform {
     pub translation: Option<[f32; 3]>,
     //  Offsets the uvs by the set value
     pub uv_offset: Option<[f32; 2]>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct CurveModelParams {
-    // width, height respectively.
-    pub curve: Vec<[f32; 2]>,
-    // color to bake in, based on height
-    pub color_curve: Vec<(f32, [f32; 3])>,
-    // number of points to rotate about the center.
-    pub points: u32,
-    // whether to close the top of the mesh
-    pub close_top: bool,
-    // whether to close the bottom of the mesh.
-    pub close_bot: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -367,7 +362,6 @@ fn transform_triangle(tri: &MeshTriangle, transform: &ModelTransform) -> MeshTri
 
 #[derive(Serialize, Deserialize)]
 enum ModelParams {
-    CurveModel(CurveModelParams),
     CompositeModel(CompositeModelParams),
     // operates on quads.
     ExtrudeModel(ExtrudeModelParams),
@@ -416,17 +410,17 @@ fn sample_color_curve(color_curve: &Vec<(f32, [f32; 3])>, point: &Vec3) -> Color
 }
 
 trait GenerateModel {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh;
+    fn generate_model(&self, model_generator: &ModelGenerator) -> ModelMesh;
 }
 
 impl GenerateModel for CompositeModelParams {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh {
-        let mut mesh = Mesh::new();
+    fn generate_model(&self, model_generator: &ModelGenerator) -> ModelMesh {
+        let mut mesh = ModelMesh::new();
 
         for reference in self.references.iter() {
             let existing_mesh = model_generator.get_mesh_internal(&reference.name);
             for triangle in existing_mesh.triangles.iter() {
-                mesh.add(transform_triangle(&triangle, &reference.transform))
+                mesh.add_triangle(triangle.apply_transform(&reference.transform).points)
             }
         }
         mesh
@@ -434,7 +428,7 @@ impl GenerateModel for CompositeModelParams {
 }
 
 impl GenerateModel for ExtrudeModelParams {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh {
+    fn generate_model(&self, model_generator: &ModelGenerator) -> ModelMesh {
         let mut new_mesh = ModelMesh::new();
 
         let mut curr: Vec<_> = self
@@ -472,92 +466,13 @@ impl GenerateModel for ExtrudeModelParams {
             }
         }
 
-        new_mesh.to_mesh()
-    }
-}
-
-impl GenerateModel for CurveModelParams {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh {
-        let mut triangles = Vec::new();
-
-        let points = self.points;
-        let curve = &self.curve;
-
-        for i in 1..(points - 1) {
-            if self.close_bot {
-                let [radius, height] = curve[0];
-                let angle1 = PI / (points as f32);
-                let angle2 = 2.0 * (i as f32 + 0.5) * PI / (points as f32);
-                let angle3 = 2.0 * (i as f32 + 1.5) * PI / (points as f32);
-
-                let v1_bot = generateVec3(angle1, radius, height);
-                let v2_bot = generateVec3(angle2, radius, height);
-                let v3_bot = generateVec3(angle3, radius, height);
-
-                triangles.push([v1_bot, v2_bot, v3_bot]);
-            }
-
-            if self.close_top {
-                let [radius, height] = curve[curve.len() - 1];
-                let angle1 = PI / (points as f32);
-                let angle2 = 2.0 * (i as f32 + 0.5) * PI / (points as f32);
-                let angle3 = 2.0 * (i as f32 + 1.5) * PI / (points as f32);
-
-                let v1_top = generateVec3(angle1, radius, height);
-                let v2_top = generateVec3(angle2, radius, height);
-                let v3_top = generateVec3(angle3, radius, height);
-                triangles.push([v2_top, v1_top, v3_top]);
-            }
-        }
-
-        // create strips
-        for i in 0..(curve.len() - 1) {
-            for j in 0..points {
-                let [radius1, height1] = curve[i];
-                let [radius2, height2] = curve[i + 1];
-                let angle1 = 2.0 * (j as f32 + 0.5) * PI / (points as f32);
-                let angle2 = 2.0 * (j as f32 + 1.5) * PI / (points as f32);
-
-                let v1_bot = generateVec3(angle1, radius1, height1);
-                let v2_bot = generateVec3(angle2, radius1, height1);
-                let v1_top = generateVec3(angle1, radius2, height2);
-                let v2_top = generateVec3(angle2, radius2, height2);
-
-                triangles.push([v2_bot, v1_bot, v1_top]);
-                triangles.push([v2_bot, v1_top, v2_top]);
-            }
-        }
-
-        let mut mesh = Mesh::new();
-
-        self.color_curve
-            .clone()
-            .sort_unstable_by(|(a, _v), (b, _y)| a.partial_cmp(b).unwrap().reverse());
-
-        for i in 0..triangles.len() {
-            let [v1, v2, v3] = triangles[i];
-
-            let c1 = sample_color_curve(&self.color_curve, &v1);
-            let c2 = sample_color_curve(&self.color_curve, &v2);
-            let c3 = sample_color_curve(&self.color_curve, &v3);
-            let v21 = v2.clone().sub(&v1);
-            let v31 = v3.clone().sub(&v1);
-
-            let n1 = v31.clone().cross(&v21).normalize();
-            let p1 = Point::new(v1, n1, c1);
-            let p2 = Point::new(v2, n1, c2);
-            let p3 = Point::new(v3, n1, c3);
-            mesh.add(MeshTriangle::new([p1, p2, p3]));
-        }
-
-        mesh
+        new_mesh
     }
 }
 
 impl GenerateModel for ModelParams {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> Mesh {
+    fn generate_model(&self, model_generator: &ModelGenerator) -> ModelMesh {
         match self {
-            ModelParams::CurveModel(params) => params.generate_model(model_generator),
             ModelParams::CompositeModel(params) => params.generate_model(model_generator),
             ModelParams::ExtrudeModel(params) => params.generate_model(model_generator),
         }
@@ -565,7 +480,7 @@ impl GenerateModel for ModelParams {
 }
 
 impl ModelGenerator {
-    pub fn get_mesh_internal(&self, name: &str) -> &Mesh {
+    pub fn get_mesh_internal(&self, name: &str) -> &ModelMesh {
         self.meshes.get(name.into()).unwrap()
     }
 }
@@ -580,7 +495,7 @@ impl ModelGenerator {
     }
 
     pub fn mesh_size(&self, name: &str) -> usize {
-        self.get_mesh_internal(name).mesh_size()
+        self.get_mesh_internal(name).to_mesh().mesh_size()
     }
 
     // generates and stores the mesh, returning the expected size of the the mesh.
@@ -592,10 +507,12 @@ impl ModelGenerator {
     }
 
     pub fn fill_array(&self, name: &str, array: &Float32Array) {
-        self.get_mesh_internal(name).fill_array(array, None);
+        self.get_mesh_internal(name)
+            .to_mesh()
+            .fill_array(array, None);
     }
 
     pub fn get_mesh(&self, name: &str) -> Float32Array {
-        self.get_mesh_internal(name).to_array()
+        self.get_mesh_internal(name).to_mesh().to_array()
     }
 }

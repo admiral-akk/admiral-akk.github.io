@@ -12,8 +12,28 @@ struct Texture {
 }
 
 impl Texture {
+    fn get(&self, x: usize, y: usize) -> &OkLabColor {
+        &self.color[x + y * self.width]
+    }
+
     fn sample(&self, uv: [f32; 2]) -> RgbColor {
-        RgbColor::from(self.color[0])
+        let x = uv[0] * ((self.width - 1) as f32);
+        let y = uv[1] * ((self.height - 1) as f32);
+
+        let x_index = x.floor() as usize;
+        let y_index = y.floor() as usize;
+
+        let x_weight = (x - x_index as f32) / ((self.width - 1) as f32);
+        let y_weight = (y - y_index as f32) / ((self.height - 1) as f32);
+
+        let top = self
+            .get(x_index + 1, y_index)
+            .lerp(self.get(x_index, y_index), x_weight);
+        let bot = self
+            .get(x_index + 1, y_index + 1)
+            .lerp(self.get(x_index, y_index + 1), x_weight);
+        //
+        RgbColor::from(bot.lerp(&top, y_weight))
     }
 
     pub fn fill_array(&self, arr: &Uint8Array, width: usize, height: usize) {}
@@ -193,7 +213,25 @@ impl TextureGenerator {
         }
     }
 
-    pub fn generate_texture(&self, name: &str, params: JsValue) {
+    pub fn fill_array(&self, name: &str, arr: &Uint8Array, width: u32, height: u32) {
+        let texture = self.get_texture_internal(name);
+        for i in 0..(arr.length() / 3) {
+            let x = i % width;
+            let y = i / width;
+            let uv = [
+                x as f32 / (width - 1) as f32,
+                y as f32 / (height - 1) as f32,
+            ];
+            let color = texture.sample(uv);
+            arr.set_index(3 * (i as u32), (color.r * 255.0) as u8);
+            arr.set_index(3 * (i as u32) + 1, (color.g * 255.0) as u8);
+            arr.set_index(3 * (i as u32) + 2, (color.b * 255.0) as u8);
+        }
+    }
+
+    pub fn generate_texture(&mut self, name: &str, params: JsValue) {
         let params: TextureParams = serde_wasm_bindgen::from_value(params).unwrap();
+        let tex = params.generate_texture(&self);
+        self.textures.insert(name.into(), tex);
     }
 }

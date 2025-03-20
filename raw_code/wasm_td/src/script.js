@@ -36,6 +36,7 @@ import {
   TreeGenerator,
   ModelGenerator,
   CubeGenerator,
+  TextureGenerator,
 } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
 import { GenerateChunks } from "./systems/render/generateChunks.js";
@@ -200,19 +201,50 @@ const collider = new Entity(
   new Clickable()
 );
 
+let textureGenerator = new TextureGenerator();
+textureGenerator.generate_texture("tex1", {
+  ColorGradient: {
+    // tl, tr, bl, br
+    colors: [
+      {
+        Rgb: {
+          r: 0.5,
+          g: 0,
+          b: 0,
+        },
+        Rgb: {
+          r: 0.5,
+          g: 0,
+          b: 0,
+        },
+        Rgb: {
+          r: 0.5,
+          g: 0,
+          b: 0,
+        },
+        Rgb: {
+          r: 0.5,
+          g: 0,
+          b: 0,
+        },
+      },
+    ],
+  },
+});
+
 const texture = gl.createTexture();
 {
   gl.bindTexture(gl.TEXTURE_2D, texture);
 
   const level = 0;
-  const internalFormat = gl.RGBA;
+  const internalFormat = gl.RGB;
   const width = 2;
   const height = 2;
   const border = 0;
-  const srcFormat = gl.RGBA;
+  const srcFormat = gl.RGB;
   const srcType = gl.UNSIGNED_BYTE;
   const pixel = new Uint8Array([
-    0, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 255, 0, 0, 255, 255,
+    0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 0, 0, 0,
   ]); // opaque blue
   gl.texImage2D(
     gl.TEXTURE_2D,

@@ -35,8 +35,6 @@ impl Texture {
         //
         RgbColor::from(bot.lerp(&top, y_weight))
     }
-
-    pub fn fill_array(&self, arr: &Uint8Array, width: usize, height: usize) {}
 }
 
 #[wasm_bindgen]

@@ -58,6 +58,7 @@ uniform ivec4 uClickedCoord;
 uniform vec3 uLightDir;
 uniform float uFar;
 uniform float uNear;
+uniform vec2 uCustomerTextureSize;
 
 layout(location=0) out vec4 fragColor; 
 layout(location=1) out float depth; 
@@ -109,8 +110,8 @@ void main() {
   //fragColor = vec4(vec3(normLDot ), 1.);
 
   depth = 1. - vTransPos.z / (uFar  - uNear);
-  vec2 newvUv = vUv * 0.5 + 0.25;
-  fragColor = texture(uCustomTexture, newvUv);
+  vec2 newvUv = (vUv * (uCustomerTextureSize - 1.0) + 0.5) / uCustomerTextureSize;
+  fragColor = texture(uCustomTexture, vUv);
 
 }`;
 

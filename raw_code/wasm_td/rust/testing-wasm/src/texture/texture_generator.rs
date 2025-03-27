@@ -26,13 +26,12 @@ impl Texture {
         let y_weight = (y - y_index as f32) / ((self.height - 1) as f32);
 
         let top = self
-            .get(x_index + 1, y_index)
-            .lerp(self.get(x_index, y_index), x_weight);
+            .get(x_index, y_index)
+            .lerp(self.get(x_index + 1, y_index), x_weight);
         let bot = self
-            .get(x_index + 1, y_index + 1)
-            .lerp(self.get(x_index, y_index + 1), x_weight);
-        //
-        RgbColor::from(bot.lerp(&top, y_weight))
+            .get(x_index, y_index + 1)
+            .lerp(self.get(x_index + 1, y_index + 1), x_weight);
+        RgbColor::from(top.lerp(&bot, y_weight))
     }
 }
 
@@ -166,21 +165,58 @@ impl From<RgbColor> for OkLabColor {
 #[derive(Serialize, Deserialize)]
 enum TextureParams {
     ColorGradient(ColorGradientParams),
+    MultiGradient(MultiGradientParams),
 }
 
 #[derive(Serialize, Deserialize)]
 struct ColorGradientParams {
-    // tl, tr, bl, br
-    colors: [Color; 4],
+    tl: Color,
+    tr: Color,
+    bl: Color,
+    br: Color,
 }
+
+#[derive(Serialize, Deserialize)]
+struct MultiGradientParams {
+    gradients: Vec<ColorGradientParams>,
+    gradient_width: u32,
+    gradient_height: u32,
+}
+
 trait TextureGen {
     fn generate_texture(&self, tex_gen: &TextureGenerator) -> Texture;
+}
+
+impl TextureGen for MultiGradientParams {
+    fn generate_texture(&self, tex_gen: &TextureGenerator) -> Texture {
+        let mut color = Vec::new();
+        for i in 0..self.gradients.len() {
+            // we make a temporary texture here to sample from.
+            let tex = self.gradients[i].generate_texture(tex_gen);
+            for y in 0..self.gradient_height {
+                for x in 0..self.gradient_width {
+                    color.push(OkLabColor::from(tex.sample([
+                        (x as f32) / (self.gradient_width - 1) as f32,
+                        (y as f32) / (self.gradient_height - 1) as f32,
+                    ])));
+                }
+            }
+        }
+        Texture {
+            color,
+            width: self.gradient_width as usize,
+            height: (self.gradient_height as usize) * self.gradients.len(),
+        }
+    }
 }
 
 impl TextureGen for ColorGradientParams {
     fn generate_texture(&self, tex_gen: &TextureGenerator) -> Texture {
         Texture {
-            color: self.colors.iter().map(|c| OkLabColor::from(*c)).collect(),
+            color: [self.bl, self.br, self.tl, self.tr]
+                .iter()
+                .map(|c| OkLabColor::from(*c))
+                .collect(),
             width: 2,
             height: 2,
         }
@@ -191,6 +227,7 @@ impl TextureGen for TextureParams {
     fn generate_texture(&self, tex_gen: &TextureGenerator) -> Texture {
         match self {
             TextureParams::ColorGradient(params) => params.generate_texture(tex_gen),
+            TextureParams::MultiGradient(params) => params.generate_texture(tex_gen),
         }
     }
 }

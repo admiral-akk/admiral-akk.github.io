@@ -140,8 +140,8 @@ const modelGen = new ModelGenerator();
 modelGen.generate_model("red_cube", {
   ExtrudeModel: {
     base: [
-      [-1.5, -1.5, 0, 0],
-      [1.5, -1.5, 0, 0],
+      [-1.5, -1.5, 1, 0],
+      [1.5, -1.5, 1, 0],
       [1.5, 1.5, 0, 0],
       [-1.5, 1.5, 0, 0],
     ],
@@ -182,7 +182,67 @@ modelGen.generate_model("red_cube2", {
     ],
   },
 });
-const redCube2 = modelGen.get_mesh("composite_red_cube");
+modelGen.generate_model("tree_base", {
+  ExtrudeModel: {
+    base: [
+      [-0.15, -0.15, 0, 1],
+      [0.15, -0.15, 0, 1],
+      [0.15, 0.15, 0, 1],
+      [-0.15, 0.15, 0, 1],
+    ],
+    close_bot: true,
+    close_top: false,
+    transforms: [{ translation: [0, 1, 0], uv_offset: [1, 0] }],
+  },
+});
+
+modelGen.generate_model("tree_triangle", {
+  ExtrudeModel: {
+    base: [
+      [-0.5, -0.5, 0, 0],
+      [0.5, -0.5, 0, 0],
+      [0.5, 0.5, 0, 0],
+      [-0.5, 0.5, 0, 0],
+    ],
+    close_bot: true,
+    close_top: true,
+    transforms: [
+      { translation: [0, 2, 0], scale: [0, 1, 0], uv_offset: [0.8, 0] },
+    ],
+  },
+});
+modelGen.generate_model("tree_pine", {
+  CompositeModel: {
+    references: [
+      { name: "tree_base", transform: {} },
+      {
+        name: "tree_triangle",
+        transform: {
+          translation: [0, 1, 0],
+        },
+      },
+      {
+        name: "tree_triangle",
+        transform: {
+          translation: [0, 1.75, 0],
+          scale: [0.8, 0.8, 0.8],
+          uv_offset: [0.1, 0],
+        },
+      },
+      {
+        name: "tree_triangle",
+        transform: {
+          translation: [0, 2.5, 0],
+          scale: [0.6, 0.6, 0.6],
+          uv_offset: [0.2, 0],
+        },
+      },
+    ],
+  },
+});
+
+const redCube2 = modelGen.get_mesh("tree_pine");
+
 console.log(redCube2);
 const redCube = cubeGen.generate_mesh(
   new wasmVec3(1, 1, 1),
@@ -204,37 +264,94 @@ const collider = new Entity(
 let textureGenerator = new TextureGenerator();
 textureGenerator.generate_texture("tex1", {
   ColorGradient: {
-    // tl, tr, bl, br
-    colors: [
+    tl: {
+      Rgb: {
+        r: 0,
+        g: 0,
+        b: 0,
+      },
+    },
+    tr: {
+      Rgb: {
+        r: 0.6,
+        g: 0,
+        b: 0,
+      },
+    },
+    bl: {
+      Rgb: {
+        r: 0,
+        g: 0,
+        b: 0,
+      },
+    },
+    br: {
+      Rgb: {
+        r: 0.45,
+        g: 0,
+        b: 0,
+      },
+    },
+  },
+});
+const width = 16;
+const height = 16;
+let color = {
+  Oklab: {
+    l: 0.5,
+    c: 0.5,
+    h: 6,
+  },
+};
+
+const darkGreen = {
+  Rgb: {
+    r: 43 / 255,
+    g: 70 / 255,
+    b: 60 / 255,
+  },
+};
+const lightGreen = {
+  Rgb: {
+    r: 177 / 255,
+    g: 209 / 255,
+    b: 130 / 255,
+  },
+};
+
+const darkBrown = {
+  Rgb: {
+    r: 105 / 255,
+    g: 75 / 255,
+    b: 55 / 255,
+  },
+};
+
+const lightBrown = {
+  Rgb: {
+    r: 165 / 255,
+    g: 99 / 255,
+    b: 60 / 255,
+  },
+};
+textureGenerator.generate_texture("tex2", {
+  MultiGradient: {
+    gradients: [
       {
-        Rgb: {
-          r: 0,
-          g: 0,
-          b: 0,
-        },
+        tl: darkGreen,
+        tr: lightGreen,
+        bl: darkGreen,
+        br: lightGreen,
       },
       {
-        Rgb: {
-          r: 0.6,
-          g: 0,
-          b: 0,
-        },
-      },
-      {
-        Rgb: {
-          r: 0,
-          g: 0,
-          b: 0,
-        },
-      },
-      {
-        Rgb: {
-          r: 0.45,
-          g: 0,
-          b: 0,
-        },
+        tl: darkBrown,
+        tr: lightBrown,
+        bl: darkBrown,
+        br: lightBrown,
       },
     ],
+    gradient_width: width,
+    gradient_height: height,
   },
 });
 
@@ -244,21 +361,19 @@ const texture = gl.createTexture();
 
   const level = 0;
   const internalFormat = gl.RGBA;
-  const width = 2;
-  const height = 2;
   const border = 0;
   const srcFormat = gl.RGBA;
   const srcType = gl.UNSIGNED_BYTE;
-  const pixel = new Uint8Array(4 * width * height); // opaque blue
+  const pixel = new Uint8Array(4 * width * 2 * height); // opaque blue
 
-  textureGenerator.fill_array("tex1", pixel, 2, 2);
+  textureGenerator.fill_array("tex2", pixel, width, 2 * height);
   console.log(pixel);
   gl.texImage2D(
     gl.TEXTURE_2D,
     level,
     internalFormat,
     width,
-    height,
+    2 * height,
     border,
     srcFormat,
     srcType,
@@ -300,6 +415,11 @@ const draw = () => {
     gl.activeTexture(gl.TEXTURE0 + shadowLoc);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.uniform1i(gl.getUniformLocation(program, "uCustomTexture"), shadowLoc);
+    gl.uniform2fv(
+      gl.getUniformLocation(program, "uCustomerTextureSize"),
+
+      new Float32Array([width, height])
+    );
   };
   gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.fbo);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

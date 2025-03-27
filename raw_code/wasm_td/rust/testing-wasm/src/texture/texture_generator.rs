@@ -1,4 +1,3 @@
-use crate::mesh::*;
 use crate::model::model_generator::Vector3;
 use js_sys::Uint8Array;
 use serde::{Deserialize, Serialize};
@@ -20,8 +19,8 @@ impl Texture {
         let x = uv[0] * ((self.width - 1) as f32);
         let y = uv[1] * ((self.height - 1) as f32);
 
-        let x_index = x.floor() as usize;
-        let y_index = y.floor() as usize;
+        let x_index = (x.floor() as usize).min(self.width - 2);
+        let y_index = (y.floor() as usize).min(self.height - 2);
 
         let x_weight = (x - x_index as f32) / ((self.width - 1) as f32);
         let y_weight = (y - y_index as f32) / ((self.height - 1) as f32);
@@ -137,8 +136,8 @@ impl From<OkLabColor> for RgbColor {
 
         return RgbColor {
             r: 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-            g: 1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-            b: 0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+            g: -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+            b: -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
         };
     }
 }
@@ -213,7 +212,7 @@ impl TextureGenerator {
 
     pub fn fill_array(&self, name: &str, arr: &Uint8Array, width: u32, height: u32) {
         let texture = self.get_texture_internal(name);
-        for i in 0..(arr.length() / 3) {
+        for i in 0..(width * height) {
             let x = i % width;
             let y = i / width;
             let uv = [
@@ -221,9 +220,10 @@ impl TextureGenerator {
                 y as f32 / (height - 1) as f32,
             ];
             let color = texture.sample(uv);
-            arr.set_index(3 * (i as u32), (color.r * 255.0) as u8);
-            arr.set_index(3 * (i as u32) + 1, (color.g * 255.0) as u8);
-            arr.set_index(3 * (i as u32) + 2, (color.b * 255.0) as u8);
+            arr.set_index(4 * (i as u32), (color.r * 255.0) as u8);
+            arr.set_index(4 * (i as u32) + 1, (color.g * 255.0) as u8);
+            arr.set_index(4 * (i as u32) + 2, (color.b * 255.0) as u8);
+            arr.set_index(4 * (i as u32) + 3, 255_u8);
         }
     }
 

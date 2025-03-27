@@ -208,22 +208,28 @@ textureGenerator.generate_texture("tex1", {
     colors: [
       {
         Rgb: {
-          r: 0.5,
+          r: 0,
           g: 0,
           b: 0,
         },
+      },
+      {
         Rgb: {
-          r: 0.5,
+          r: 0.6,
           g: 0,
           b: 0,
         },
+      },
+      {
         Rgb: {
-          r: 0.5,
+          r: 0,
           g: 0,
           b: 0,
         },
+      },
+      {
         Rgb: {
-          r: 0.5,
+          r: 0.45,
           g: 0,
           b: 0,
         },
@@ -237,15 +243,16 @@ const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
 
   const level = 0;
-  const internalFormat = gl.RGB;
+  const internalFormat = gl.RGBA;
   const width = 2;
   const height = 2;
   const border = 0;
-  const srcFormat = gl.RGB;
+  const srcFormat = gl.RGBA;
   const srcType = gl.UNSIGNED_BYTE;
-  const pixel = new Uint8Array([
-    0, 0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 0, 0, 0,
-  ]); // opaque blue
+  const pixel = new Uint8Array(4 * width * height); // opaque blue
+
+  textureGenerator.fill_array("tex1", pixel, 2, 2);
+  console.log(pixel);
   gl.texImage2D(
     gl.TEXTURE_2D,
     level,
@@ -258,6 +265,9 @@ const texture = gl.createTexture();
     pixel
   );
   gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 }
 
 GenerateChunks.setTerrainGenerator(t);

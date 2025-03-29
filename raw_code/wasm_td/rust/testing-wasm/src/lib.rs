@@ -11,6 +11,7 @@ pub mod util {
     pub mod vector3;
 }
 mod model {
+    pub mod face;
     pub mod model_generator;
 }
 mod texture {

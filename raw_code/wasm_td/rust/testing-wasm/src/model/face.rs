@@ -1,30 +1,36 @@
-use crate::mesh::*;
-use crate::types::*;
-use js_sys::Float32Array;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use wasm_bindgen::prelude::*;
-
-pub struct Face<Metadata: Sized> {
-    vertices: Vec<(usize, Metadata)>,
+pub struct Face {
+    vertices: Vec<usize>,
 }
 
-impl<Metadata> Face<Metadata> {
-    pub fn new(
-        vertices: Vec<([f32; 3], Metadata)>,
-        vertex_cache: &mut Vec<(usize, Metadata)>,
-    ) -> Self {
-        let vertices = vertices
-            .into_iter()
-            .map(|(v, metadata)| {
-                vertex_cache.push(v);
-                (vertex_cache.len() - 1, metadata)
-            })
-            .collect();
-        Face { vertices }
+impl Face {
+    pub fn new(vertices: Vec<usize>) -> Self {
+        Face { vertices: vertices }
     }
 }
 
-pub struct FaceModel<Metadata: Sized> {
+pub struct FaceModel<Metadata: Sized + Copy> {
+    faces: Vec<Face>,
     vertices: Vec<([f32; 3], Metadata)>,
+}
+
+impl<Metadata: Sized + Copy> FaceModel<Metadata> {
+    pub fn extrude(&mut self, index: usize) -> Vec<usize> {
+        let mut index_pairs = Vec::new();
+        for i in 0..self.faces[index].vertices.len() {
+            self.vertices.push(self.vertices[i].clone());
+            self.faces[index].vertices[i] = self.vertices.len() - 1;
+            index_pairs.push((i, self.vertices.len() - 1));
+        }
+        (0..index_pairs.len())
+            .map(|i| {
+                let (prev_low, prev_high) = index_pairs[i];
+
+                self.faces[index].vertices[i] = prev_high;
+                let (next_low, next_high) = index_pairs[(i + 1) % index_pairs.len()];
+                self.faces
+                    .push(Face::new(vec![prev_low, next_low, next_high, prev_high]));
+                self.faces.len() - 1
+            })
+            .collect()
+    }
 }

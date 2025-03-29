@@ -14,7 +14,11 @@ pub struct FaceModel<Metadata: Sized + Copy> {
 }
 
 impl<Metadata: Sized + Copy> FaceModel<Metadata> {
-    pub fn extrude(&mut self, index: usize) -> Vec<usize> {
+    // adds a ring of vertices at the face's current location.
+    // replaces all existing connections to the face with the ring.
+    // connects the ring to the current face.
+    // returns a list of indices corresponding to the new faces.
+    pub fn duplicate(&mut self, index: usize) -> Vec<usize> {
         let mut index_pairs = Vec::new();
         for i in 0..self.faces[index].vertices.len() {
             self.vertices.push(self.vertices[i].clone());

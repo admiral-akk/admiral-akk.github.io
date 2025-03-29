@@ -83,10 +83,10 @@ impl Transformable for ModelMesh {
 }
 
 const POINT_SIZE: u32 = 8;
-const TRIANGLE_SIZE: u32 = 3 * POINT_SIZE;
 const NORMAL_OFFSET: u32 = 3;
-const UV_OFFSET: u32 = 5;
+const UV_OFFSET: u32 = 6;
 
+const TRIANGLE_SIZE: usize = 3 * POINT_SIZE as usize;
 impl ModelTriangle {
     pub fn new(points: [ModelPoint; 3]) -> Option<Self> {
         let v21 = *points[1].pos.clone().sub(&points[0].pos);
@@ -139,7 +139,7 @@ impl ModelMesh {
         };
 
         for i in 0..self.triangles.len() {
-            self.triangles[i].fill_array(&arr, (TRIANGLE_SIZE as usize * i) as u32 + start);
+            self.triangles[i].fill_array(&arr, (TRIANGLE_SIZE * i) as u32 + start);
         }
     }
 
@@ -162,6 +162,16 @@ impl ModelMesh {
         }
 
         mesh
+    }
+
+    fn to_array(&self) -> Float32Array {
+        let len = (self.triangles.len() * TRIANGLE_SIZE) as u32;
+
+        let array = Float32Array::new_with_length(len);
+
+        self.fill_array(&array, None);
+
+        array
     }
 }
 
@@ -354,6 +364,6 @@ impl ModelGenerator {
     }
 
     pub fn get_mesh(&self, name: &str) -> Float32Array {
-        self.get_mesh_internal(name).to_mesh().to_array()
+        self.get_mesh_internal(name).to_array()
     }
 }

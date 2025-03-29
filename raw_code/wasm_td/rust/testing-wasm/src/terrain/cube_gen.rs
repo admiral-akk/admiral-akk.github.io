@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 
 const PI: f32 = 3.14159265358979323846264338327950288_f32;
 
-fn generateVec3(angle: f32, dim: &Vec3, height: f32) -> Vec3 {
+fn generate_vec3(angle: f32, dim: &Vec3, height: f32) -> Vec3 {
     Vec3::new(angle.cos() * dim.x, height, angle.sin() * dim.z)
 }
 
@@ -33,13 +33,13 @@ impl CubeGenerator {
             let angle2 = 2.0 * (i as f32 + 0.5) * PI / (points as f32);
             let angle3 = 2.0 * (i as f32 + 1.5) * PI / (points as f32);
 
-            let v1_bot = generateVec3(angle1, &dim, heights[0]);
-            let v2_bot = generateVec3(angle2, &dim, heights[0]);
-            let v3_bot = generateVec3(angle3, &dim, heights[0]);
+            let v1_bot = generate_vec3(angle1, &dim, heights[0]);
+            let v2_bot = generate_vec3(angle2, &dim, heights[0]);
+            let v3_bot = generate_vec3(angle3, &dim, heights[0]);
 
-            let v1_top = generateVec3(angle1, &dim, heights[1]);
-            let v2_top = generateVec3(angle2, &dim, heights[1]);
-            let v3_top = generateVec3(angle3, &dim, heights[1]);
+            let v1_top = generate_vec3(angle1, &dim, heights[1]);
+            let v2_top = generate_vec3(angle2, &dim, heights[1]);
+            let v3_top = generate_vec3(angle3, &dim, heights[1]);
 
             triangles.push([v1_bot, v2_bot, v3_bot]);
             triangles.push([v2_top, v1_top, v3_top]);
@@ -51,10 +51,10 @@ impl CubeGenerator {
                 let angle1 = 2.0 * (j as f32 + 0.5) * PI / (points as f32);
                 let angle2 = 2.0 * (j as f32 + 1.5) * PI / (points as f32);
 
-                let v1_bot = generateVec3(angle1, &dim, heights[i]);
-                let v2_bot = generateVec3(angle2, &dim, heights[i]);
-                let v1_top = generateVec3(angle1, &dim, heights[i + 1]);
-                let v2_top = generateVec3(angle2, &dim, heights[i + 1]);
+                let v1_bot = generate_vec3(angle1, &dim, heights[i]);
+                let v2_bot = generate_vec3(angle2, &dim, heights[i]);
+                let v1_top = generate_vec3(angle1, &dim, heights[i + 1]);
+                let v2_top = generate_vec3(angle2, &dim, heights[i + 1]);
 
                 triangles.push([v2_bot, v1_bot, v1_top]);
                 triangles.push([v2_bot, v1_top, v2_top]);

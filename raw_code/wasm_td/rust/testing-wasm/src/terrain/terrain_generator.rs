@@ -39,7 +39,7 @@ impl TerrainGenerator {
     }
 
     fn generate_vec(&self, x: f32, y: f32, x_offset: f32, y_offset: f32) -> Vec3 {
-        let height = self
+        let _height = self
             .noise
             .get([(x + x_offset) as f64, (y + y_offset) as f64]) as f32;
 

@@ -211,6 +211,7 @@ modelGen.generate_model("tree_triangle", {
     ],
   },
 });
+
 modelGen.generate_model("tree_pine", {
   CompositeModel: {
     references: [

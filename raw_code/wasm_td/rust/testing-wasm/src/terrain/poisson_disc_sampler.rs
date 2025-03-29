@@ -1,5 +1,3 @@
-use js_sys::Math;
-
 // https://observablehq.com/@techsparx/an-improvement-on-bridsons-algorithm-for-poisson-disc-samp/2
 pub struct PoissonDiscSampler {
     width: f32,
@@ -26,7 +24,7 @@ impl PoissonDiscSampler {
         let cell_size = self.radius / (2.0 as f32).sqrt();
         let grid_width = (self.width / cell_size).ceil() as usize;
         let grid_height = (self.height / cell_size).ceil() as usize;
-        let mut grid = vec![None; (grid_height * grid_width)];
+        let mut grid = vec![None; grid_height * grid_width];
         let mut queue = Vec::new();
         let x = self.width / 2.0;
         let y = self.height / 2.0;

@@ -13,7 +13,7 @@ impl TreeGenerator {
         Self {}
     }
 
-    fn generateVec3(&self, height: f32, width: f32, index: u32, point_count: u32) -> Vec3 {
+    fn generate_vec3(&self, height: f32, width: f32, index: u32, point_count: u32) -> Vec3 {
         let angle = 2.0 * std::f32::consts::PI * index as f32 / point_count as f32;
         Vec3::new(width * angle.sin(), height, width * angle.cos())
     }
@@ -40,10 +40,10 @@ impl TreeGenerator {
             let (h1, w1, color) = height_width[i];
             let (h2, w2, _) = height_width[i + 1];
             for a in 0..point_count {
-                let v1 = self.generateVec3(h1, w1, a + 1, point_count);
-                let v2 = self.generateVec3(h1, w1, a, point_count);
-                let v3 = self.generateVec3(h2, w2, a + 1, point_count);
-                let v4 = self.generateVec3(h2, w2, a, point_count);
+                let v1 = self.generate_vec3(h1, w1, a + 1, point_count);
+                let v2 = self.generate_vec3(h1, w1, a, point_count);
+                let v3 = self.generate_vec3(h2, w2, a + 1, point_count);
+                let v4 = self.generate_vec3(h2, w2, a, point_count);
 
                 let v21 = v2.clone().sub(&v1);
                 let v31 = v3.clone().sub(&v1);

@@ -211,7 +211,7 @@ impl TextureGen for MultiGradientParams {
 }
 
 impl TextureGen for ColorGradientParams {
-    fn generate_texture(&self, tex_gen: &TextureGenerator) -> Texture {
+    fn generate_texture(&self, _tex_gen: &TextureGenerator) -> Texture {
         Texture {
             color: [self.bl, self.br, self.tl, self.tr]
                 .iter()

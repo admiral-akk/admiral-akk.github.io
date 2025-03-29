@@ -5,12 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-const PI: f32 = 3.14159265358979323846264338327950288_f32;
-
-fn generateVec3(angle: f32, radius: f32, height: f32) -> Vec3 {
-    Vec3::new(angle.cos() * radius, height, angle.sin() * radius)
-}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct ModelPoint {
     pos: [f32; 3],
@@ -156,7 +150,7 @@ impl Transformable for ModelPoint {
         if let Some(scale) = transform.scale {
             v1.pos.mul(&scale);
         };
-        if let Some(rotation) = &transform.rotation {};
+        if let Some(_rotation) = &transform.rotation {};
         if let Some(translation) = transform.translation {
             v1.pos.add(&translation);
         };
@@ -253,15 +247,15 @@ pub struct ModelGenerator {
 
 #[derive(Deserialize, Serialize)]
 enum ModelRotationAxis {
-    X_AXIS,
-    Y_AXIS,
-    Z_AXIS,
+    XAxis,
+    YAxis,
+    ZAxis,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct ModelRotation {
-    pub axis: ModelRotationAxis,
-    pub angle: f32,
+    axis: ModelRotationAxis,
+    angle: f32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -288,6 +282,12 @@ pub struct CompositeModelParams {
     pub references: Vec<CompositeModelReference>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct ExtrudeTransform {
+    transform: ModelTransform,
+    side_transforms: [Vec<ExtrudeTransform>; 4],
+}
+
 // it's a bit of a graph structure, where whenever you extrude, you create N new square faces.
 // each of those faces could also extrude.
 //
@@ -304,60 +304,20 @@ struct ExtrudeModelParams {
     pub close_bot: bool,
 }
 
-fn transform_normal(v: &Vec3, transform: &ModelTransform) -> Vec3 {
-    let mut v1 = v.clone();
-
-    v1 = match transform.scale {
-        None => v1,
-        Some(scale) => v1,
-    };
-
-    // translation doesn't affect the normal
-    match &transform.rotation {
-        None => v1,
-        Some(rotations) => {
-            for rotation in rotations.iter() {}
-            v1
-        }
-    }
+#[derive(Serialize, Deserialize)]
+struct SkinTransform {
+    // the base of the model, [x, z, uvX, uvY]
+    transform: ModelTransform,
+    // the base of the model, [x, z, uvX, uvY]
+    skin_vertices: Vec<SkinTransform>,
 }
 
-fn transform_vert(v: &Vec3, transform: &ModelTransform) -> Vec3 {
-    let mut v1 = v.clone();
-
-    v1 = match transform.scale {
-        None => v1,
-        Some(scale) => v1.mul(&Vec3::new(scale[0], scale[1], scale[2])),
-    };
-
-    v1 = match &transform.rotation {
-        None => v1,
-        Some(rotations) => {
-            for rotation in rotations.iter() {}
-            v1
-        }
-    };
-    match transform.translation {
-        None => v1,
-        Some(translation) => v1.add(&Vec3::new(translation[0], translation[1], translation[2])),
-    }
-}
-
-fn transform_point(p: &Point, transform: &ModelTransform) -> Point {
-    Point::new(
-        transform_vert(&p.pos, transform),
-        transform_normal(&p.normal, &transform),
-        p.color,
-    )
-}
-
-fn transform_triangle(tri: &MeshTriangle, transform: &ModelTransform) -> MeshTriangle {
-    let [p1, p2, p3] = tri.points;
-    MeshTriangle::new([
-        transform_point(&p1, transform),
-        transform_point(&p2, transform),
-        transform_point(&p3, transform),
-    ])
+#[derive(Serialize, Deserialize)]
+struct SkinModelParams {
+    // the base of the model, [x, z, uvX, uvY]
+    base: Vec<[f32; 4]>,
+    // the series of transforms to apply
+    transform: SkinTransform,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -365,48 +325,6 @@ enum ModelParams {
     CompositeModel(CompositeModelParams),
     // operates on quads.
     ExtrudeModel(ExtrudeModelParams),
-}
-
-fn sample_color_curve(color_curve: &Vec<(f32, [f32; 3])>, point: &Vec3) -> Color {
-    // find the two adjacent indices.
-
-    if color_curve.is_empty() {
-        return Color::new(255.0 / 255.0, 105.0 / 255.0, 180.0 / 255.0);
-    }
-
-    match color_curve.len() {
-        0 => Color::new(255.0 / 255.0, 105.0 / 255.0, 180.0 / 255.0),
-        1 => {
-            let (height, color) = color_curve[0];
-            Color::new(color[0], color[1], color[2])
-        }
-        _ => {
-            let mut idx = match color_curve
-                .binary_search_by(|(k, _v)| k.partial_cmp(&point.y).unwrap().reverse())
-            {
-                Err(idx) => idx,
-                Ok(idx) => idx,
-            };
-
-            if idx < 1 {
-                idx = 1;
-            }
-            if idx > color_curve.len() - 1 {
-                idx = color_curve.len() - 1;
-            }
-
-            let (height1, color1) = color_curve[idx - 1];
-            let (height2, color2) = color_curve[idx];
-
-            let weight = (point.y - height1) / (height2 - height1);
-
-            Color::new(
-                (1.0 - weight) * color1[0] + weight * color2[0],
-                (1.0 - weight) * color1[1] + weight * color2[1],
-                (1.0 - weight) * color1[2] + weight * color2[2],
-            )
-        }
-    }
 }
 
 trait GenerateModel {
@@ -428,7 +346,7 @@ impl GenerateModel for CompositeModelParams {
 }
 
 impl GenerateModel for ExtrudeModelParams {
-    fn generate_model(&self, model_generator: &ModelGenerator) -> ModelMesh {
+    fn generate_model(&self, _model_generator: &ModelGenerator) -> ModelMesh {
         let mut new_mesh = ModelMesh::new();
 
         let mut curr: Vec<_> = self
@@ -480,7 +398,7 @@ impl GenerateModel for ModelParams {
 }
 
 impl ModelGenerator {
-    pub fn get_mesh_internal(&self, name: &str) -> &ModelMesh {
+    fn get_mesh_internal(&self, name: &str) -> &ModelMesh {
         self.meshes.get(name.into()).unwrap()
     }
 }

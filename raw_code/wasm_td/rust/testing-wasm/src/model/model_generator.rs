@@ -82,6 +82,11 @@ impl Transformable for ModelMesh {
     }
 }
 
+const POINT_SIZE: u32 = 8;
+const TRIANGLE_SIZE: u32 = 3 * POINT_SIZE;
+const NORMAL_OFFSET: u32 = 3;
+const UV_OFFSET: u32 = 5;
+
 impl ModelTriangle {
     pub fn new(points: [ModelPoint; 3]) -> Option<Self> {
         let v21 = *points[1].pos.clone().sub(&points[0].pos);
@@ -97,6 +102,21 @@ impl ModelTriangle {
             None
         }
     }
+
+    fn fill_array(&self, arr: &Float32Array, start: u32) {
+        for i in 0..3 {
+            let point_index = start + i * POINT_SIZE;
+            let normal_index = point_index + NORMAL_OFFSET;
+            let uv_index = point_index + UV_OFFSET;
+            for j in 0..3 {
+                arr.set_index(point_index + j, self.points[i as usize].pos[j as usize]);
+                arr.set_index(normal_index + j, self.normal[j as usize]);
+            }
+            for j in 0..2 {
+                arr.set_index(uv_index + j, self.points[i as usize].uv[j as usize]);
+            }
+        }
+    }
 }
 
 impl ModelMesh {
@@ -109,6 +129,17 @@ impl ModelMesh {
     pub fn add_triangle(&mut self, points: [ModelPoint; 3]) {
         if let Some(triangle) = ModelTriangle::new(points) {
             self.triangles.push(triangle);
+        }
+    }
+
+    pub fn fill_array(&self, arr: &Float32Array, start: Option<u32>) {
+        let start = match start {
+            Some(start) => start,
+            None => 0_u32,
+        };
+
+        for i in 0..self.triangles.len() {
+            self.triangles[i].fill_array(&arr, (TRIANGLE_SIZE as usize * i) as u32 + start);
         }
     }
 
@@ -319,9 +350,7 @@ impl ModelGenerator {
     }
 
     pub fn fill_array(&self, name: &str, array: &Float32Array) {
-        self.get_mesh_internal(name)
-            .to_mesh()
-            .fill_array(array, None);
+        self.get_mesh_internal(name).fill_array(array, None);
     }
 
     pub fn get_mesh(&self, name: &str) -> Float32Array {

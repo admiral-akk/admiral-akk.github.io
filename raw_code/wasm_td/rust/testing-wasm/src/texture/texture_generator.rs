@@ -1,4 +1,4 @@
-use crate::model::model_generator::Vector3;
+use crate::util::vector3::Vector3;
 use js_sys::Uint8Array;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

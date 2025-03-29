@@ -7,6 +7,9 @@ mod serialize;
 mod types;
 mod utils;
 pub mod vec3;
+pub mod util {
+    pub mod vector3;
+}
 mod model {
     pub mod model_generator;
 }

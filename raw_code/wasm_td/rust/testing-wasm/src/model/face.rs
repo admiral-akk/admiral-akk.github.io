@@ -4,7 +4,7 @@ pub struct Face {
 
 impl Face {
     pub fn new(vertices: Vec<usize>) -> Self {
-        Face { vertices: vertices }
+        Face { vertices }
     }
 }
 

@@ -242,7 +242,7 @@ modelGen.generate_model("tree_pine", {
   },
 });
 
-const redCube2 = modelGen.get_mesh("tree_pine");
+const redCube2 = modelGen.generate_box();
 
 console.log(redCube2);
 const redCube = cubeGen.generate_mesh(

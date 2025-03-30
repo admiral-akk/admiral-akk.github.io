@@ -1,4 +1,4 @@
-pub trait Vector3: Sized + Clone {
+pub trait Vector3: Sized + Clone + Copy {
     fn x(&self) -> f32;
     fn y(&self) -> f32;
     fn z(&self) -> f32;

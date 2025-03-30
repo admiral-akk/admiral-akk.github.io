@@ -1,4 +1,5 @@
 use crate::mesh::*;
+use crate::model::face::*;
 use crate::types::*;
 use crate::util::vector3::Vector3;
 use js_sys::Float32Array;
@@ -365,5 +366,25 @@ impl ModelGenerator {
 
     pub fn get_mesh(&self, name: &str) -> Float32Array {
         self.get_mesh_internal(name).to_array()
+    }
+
+    pub fn generate_box(&self) -> Float32Array {
+        let mut model = FaceModel::new(vec![
+            [-0.5, -0.5, 0.0, 0.0],
+            [0.5, -0.5, 0.0, 0.0],
+            [0.5, 0.5, 0.0, 0.0],
+            [-0.5, 0.5, 0.0, 0.0],
+        ]);
+
+        model.apply_transform(&Translate([0.0, 1.0, 0.0]), 5);
+        //   model.apply_transform(&Translate([1.0, 0.0, 0.0]), 1);
+        model.apply_transform(&UvOffset([1.0, 0.0]), 5);
+        let len = (model.size()) as u32;
+
+        let mut array = Float32Array::new_with_length(len);
+
+        model.fill_array(&mut array, None);
+
+        array
     }
 }

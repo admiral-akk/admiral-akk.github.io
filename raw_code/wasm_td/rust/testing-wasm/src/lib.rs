@@ -8,6 +8,7 @@ mod types;
 mod utils;
 pub mod vec3;
 pub mod util {
+    pub mod client_array;
     pub mod vector3;
 }
 mod model {

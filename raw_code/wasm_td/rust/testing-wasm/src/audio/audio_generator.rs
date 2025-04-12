@@ -43,11 +43,27 @@ enum Node {
         // envelope
         e: Option<EnvelopeParams>,
     },
+    Delay {
+        i: Vec<usize>,
+        // delay, must be negative
+        d: f32,
+    },
 }
 
 impl Node {
     fn value_at(&self, nodes: &Vec<Node>, time: f32) -> f32 {
         match self {
+            Node::Delay { i, d } => {
+                if time < 0.0 {
+                    0.0
+                } else {
+                    let mut total = 0.0;
+                    for idx in 0..i.len() {
+                        total += nodes[i[idx]].value_at(nodes, time - d);
+                    }
+                    total
+                }
+            }
             Node::Osc { f, t, s, o } => {
                 let multiple = 2.0 * std::f32::consts::PI * f;
                 let wave_type = t.as_ref().unwrap_or(&WaveType::Sine);

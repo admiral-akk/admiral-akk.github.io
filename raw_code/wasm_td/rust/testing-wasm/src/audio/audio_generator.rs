@@ -24,6 +24,14 @@ impl NoiseBuffers {
     fn new(samples: usize) -> Self {
         let mut noise_buffers = HashMap::new();
 
+        let mut white_noise = Vec::new();
+
+        for i in 0..samples {
+            let r = 2.0 * (getrandom::u32().unwrap() % 100000) as f32 / 100000.0 - 1.0;
+            white_noise.push(r);
+        }
+
+        noise_buffers.insert(NoiseType::White, white_noise);
         Self {
             noise_buffers,
             samples,
@@ -227,7 +235,7 @@ impl AudioGenerator {
     pub fn new() -> Self {
         console_error_panic_hook::set_once();
         Self {
-            noise_buffers: NoiseBuffers::new(1000),
+            noise_buffers: NoiseBuffers::new(100000),
         }
     }
 

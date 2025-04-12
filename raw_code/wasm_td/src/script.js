@@ -443,12 +443,13 @@ audioGen.generate(
       },
       { Delay: { i: [4], d: 0.35 } },
       { Gain: { i: [5], e: { a: 0.05, d: 1.5 } } },
+      { Noise: { t: "White" } },
     ],
-    channel_inputs: [4, 4],
+    channel_inputs: [7, 7],
     post_processing: [
       {
         DynamicRange: {
-          max: 0.5,
+          max: 0.1,
         },
       },
     ],

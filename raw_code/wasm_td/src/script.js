@@ -36,6 +36,7 @@ import {
   TreeGenerator,
   ModelGenerator,
   CubeGenerator,
+  AudioGenerator,
   TextureGenerator,
 } from "./wasm/testing_wasm.js";
 import { FrustumCulling } from "./systems/render/frustumCulling.js";
@@ -256,9 +257,9 @@ const blueCube = cubeGen.generate_mesh(
 
 new Entity(new Mesh(redCube2), new Transform({ pos: new Vec3(0, 1, 0) }));
 const collider = new Entity(
-  new Transform({ pos: new Vec3(0, 0, 0) }),
+  new Transform({ pos: new Vec3(0, -1, 0) }),
   new BoxCollider([5, 0.5, 5]),
-  new Mesh(blueCube),
+  // new Mesh(blueCube),
   new Clickable()
 );
 
@@ -386,6 +387,47 @@ const texture = gl.createTexture();
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 }
 
+const audioGen = new AudioGenerator();
+const audioCtx = new AudioContext();
+
+// Stereo
+const channels = 2;
+// Create an empty two second stereo buffer at the
+// sample rate of the AudioContext
+const frameCount = audioCtx.sampleRate * 2.0;
+
+const myArrayBuffer = audioCtx.createBuffer(
+  channels,
+  frameCount,
+  audioCtx.sampleRate
+);
+
+audioGen.generate_sin(
+  {
+    freq: 400,
+    frameCount: frameCount,
+    sampleRate: audioCtx.sampleRate,
+  },
+  myArrayBuffer.getChannelData(0),
+  myArrayBuffer.getChannelData(1)
+);
+
+console.log(myArrayBuffer.getChannelData(0));
+
+const playNoise = () => {
+  // Get an AudioBufferSourceNode.
+  // This is the AudioNode to use when we want to play an AudioBuffer
+  const source = audioCtx.createBufferSource();
+  // set the buffer in the AudioBufferSourceNode
+  source.buffer = myArrayBuffer;
+  // connect the AudioBufferSourceNode to the
+  // destination so we can hear the sound
+  source.connect(audioCtx.destination);
+  // start the source playing
+  source.start();
+};
+
+playNoise();
 GenerateChunks.setTerrainGenerator(t);
 GenerateChunks.setTreeGenerator(tree);
 

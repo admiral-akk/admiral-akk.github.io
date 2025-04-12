@@ -93,6 +93,9 @@ impl FaceModel {
         FaceModel { faces, vertices }
     }
 
+    // switch to using only cubes.
+    pub fn loop_cut(&mut self) {}
+
     // adds a ring of vertices at the face's current location.
     // replaces all existing connections to the face with the ring.
     // connects the ring to the current face.

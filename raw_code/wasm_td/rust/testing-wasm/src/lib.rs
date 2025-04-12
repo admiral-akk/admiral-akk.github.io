@@ -11,6 +11,9 @@ pub mod util {
     pub mod client_array;
     pub mod vector3;
 }
+mod audio {
+    pub mod audio_generator;
+}
 mod model {
     pub mod face;
     pub mod model_generator;

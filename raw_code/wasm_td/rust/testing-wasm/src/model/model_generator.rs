@@ -6,6 +6,7 @@ use js_sys::Float32Array;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
+extern crate console_error_panic_hook;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct ModelPoint {
@@ -343,6 +344,7 @@ impl ModelGenerator {
 impl ModelGenerator {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
+        console_error_panic_hook::set_once();
         Self {
             meshes: HashMap::new(),
         }
@@ -377,8 +379,8 @@ impl ModelGenerator {
         ]);
 
         model.apply_transform(&Translate([0.0, 1.0, 0.0]), 5);
-        //   model.apply_transform(&Translate([1.0, 0.0, 0.0]), 1);
         model.apply_transform(&UvOffset([1.0, 0.0]), 5);
+        //   model.apply_transform(&Translate([1.0, 0.0, 0.0]), 1);
         let len = (model.size()) as u32;
 
         let mut array = Float32Array::new_with_length(len);

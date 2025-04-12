@@ -12,7 +12,7 @@ const gameSystems = [];
 const renderSystems = [
   new MoveCamera(),
   new ApplyAnimations(),
-  new GenerateChunks(),
+  //  new GenerateChunks(),
   new UpdateMeshTransform(),
   new FrustumCulling(),
   meshInstances,

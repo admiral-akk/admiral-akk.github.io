@@ -1,10 +1,45 @@
 use js_sys::Float32Array;
 use serde::Deserialize;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
 
+#[derive(Eq, Hash, PartialEq, Deserialize)]
+enum NoiseType {
+    // Flat frequency spectrum when plotted as a linear
+    White,
+    // Linear in logarithmic scale; it has equal power in bands that are proportionally wide.
+    Pink,
+    // Noise with a power density which decreases 6.02 dB per octave (20 dB per decade) with increasing frequency (frequency density proportional to 1/f2) over a frequency range excluding zero
+    Brown,
+}
+
+// stores a 1 second clip of noise.
+struct NoiseBuffers {
+    noise_buffers: HashMap<NoiseType, Vec<f32>>,
+    samples: usize,
+}
+
+impl NoiseBuffers {
+    fn new(samples: usize) -> Self {
+        let mut noise_buffers = HashMap::new();
+
+        Self {
+            noise_buffers,
+            samples,
+        }
+    }
+
+    fn value_at(&self, noise: &NoiseType, t: f32) -> f32 {
+        let index = ((t.abs() % 1.0) * (self.samples as f32)).floor() as usize;
+        self.noise_buffers.get(noise).unwrap()[index]
+    }
+}
+
 #[wasm_bindgen]
-struct AudioGenerator {}
+struct AudioGenerator {
+    noise_buffers: NoiseBuffers,
+}
 
 #[derive(Deserialize)]
 enum WaveType {
@@ -25,6 +60,9 @@ struct EnvelopeParams {
 
 #[derive(Deserialize)]
 enum Node {
+    Noise {
+        t: Option<NoiseType>,
+    },
     Osc {
         // frequency
         f: f32,
@@ -45,21 +83,24 @@ enum Node {
     },
     Delay {
         i: Vec<usize>,
-        // delay, must be negative
+        // delay, must be positive
         d: f32,
     },
 }
 
 impl Node {
-    fn value_at(&self, nodes: &Vec<Node>, time: f32) -> f32 {
+    fn value_at(&self, generator: &AudioGenerator, nodes: &Vec<Node>, time: f32) -> f32 {
         match self {
+            Node::Noise { t } => generator
+                .noise_buffers
+                .value_at(t.as_ref().unwrap_or(&NoiseType::White), time),
             Node::Delay { i, d } => {
                 if time < 0.0 {
                     0.0
                 } else {
                     let mut total = 0.0;
                     for idx in 0..i.len() {
-                        total += nodes[i[idx]].value_at(nodes, time - d);
+                        total += nodes[i[idx]].value_at(generator, nodes, time - d);
                     }
                     total
                 }
@@ -104,7 +145,7 @@ impl Node {
                     };
                 let mut total = 0.0;
                 for n in 0..i.len() {
-                    total += nodes[i[n]].value_at(nodes, time);
+                    total += nodes[i[n]].value_at(generator, nodes, time);
                 }
                 gain * total
             }
@@ -154,17 +195,17 @@ struct AudioParams {
 }
 
 impl AudioParams {
-    fn fill_channels(&self, left: Float32Array, right: Float32Array) {
+    fn fill_channels(&self, generator: &AudioGenerator, left: Float32Array, right: Float32Array) {
         let frame_count = left.length();
         for i in 0..frame_count {
             let t = (i as f32) / (self.sample_rate as f32);
             left.set_index(
                 i,
-                self.nodes[self.channel_inputs[0]].value_at(&self.nodes, t),
+                self.nodes[self.channel_inputs[0]].value_at(generator, &self.nodes, t),
             );
             right.set_index(
                 i,
-                self.nodes[self.channel_inputs[1]].value_at(&self.nodes, t),
+                self.nodes[self.channel_inputs[1]].value_at(generator, &self.nodes, t),
             );
         }
 
@@ -185,12 +226,14 @@ impl AudioGenerator {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         console_error_panic_hook::set_once();
-        Self {}
+        Self {
+            noise_buffers: NoiseBuffers::new(1000),
+        }
     }
 
     pub fn generate(&self, params: JsValue, left: Float32Array, right: Float32Array) {
         let params: AudioParams = serde_wasm_bindgen::from_value(params).unwrap();
 
-        params.fill_channels(left, right);
+        params.fill_channels(self, left, right);
     }
 }

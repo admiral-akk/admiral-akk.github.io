@@ -441,7 +441,7 @@ audioGen.generate(
           i: [1, 3, 6],
         },
       },
-      { Delay: { i: [4], d: 0.6 } },
+      { Delay: { i: [4], d: 0.35 } },
       { Gain: { i: [5], e: { a: 0.05, d: 1.5 } } },
     ],
     channel_inputs: [4, 4],

@@ -1,10 +1,5 @@
-use crate::mesh::*;
-use crate::model::face::*;
-use crate::types::*;
-use crate::util::vector3::Vector3;
 use js_sys::Float32Array;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
 
@@ -24,6 +19,8 @@ struct EnvelopeParams {
     a: f32,
     // decay: time to 0
     d: f32,
+    // if true, linear. otherwise exponential
+    l: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +30,10 @@ enum Node {
         f: f32,
         // type of wave
         t: Option<WaveType>,
+        // scale
+        s: Option<f32>,
+        // offset, applied after scale
+        o: Option<f32>,
     },
     Gain {
         // inputs
@@ -47,25 +48,41 @@ enum Node {
 impl Node {
     fn value_at(&self, nodes: &Vec<Node>, time: f32) -> f32 {
         match self {
-            Node::Osc { f, t } => {
+            Node::Osc { f, t, s, o } => {
                 let multiple = 2.0 * std::f32::consts::PI * f;
                 let wave_type = t.as_ref().unwrap_or(&WaveType::Sine);
+                let scale = s.unwrap_or(1.0);
+                let offset = o.unwrap_or(0.0);
 
-                match wave_type {
+                let v = match wave_type {
                     WaveType::Sine => (time * multiple).sin(),
-                }
+                };
+
+                v * scale + offset
             }
             Node::Gain { i, g, e } => {
                 let max = g.unwrap_or(1.0);
                 let gain = max
                     * match e {
                         None => 1.0,
-                        Some(EnvelopeParams { s, a, d }) => {
+                        Some(EnvelopeParams { s, a, d, l }) => {
                             let start_time = s.unwrap_or(0.0);
-                            if time > *a {
-                                ((d - time) / (d - a))
+
+                            let t = if time > *d {
+                                return 0.;
+                            } else if time > *a {
+                                (d - time) / (d - a)
                             } else {
                                 (time - start_time) / (a - start_time)
+                            };
+
+                            if l.unwrap_or(false) {
+                                t
+                            } else {
+                                let x: f32 = 0.1;
+                                let rescale = x.exp() / (1.0 - x.exp());
+
+                                (-t * x).exp() * rescale - rescale
                             }
                         }
                     };
@@ -81,21 +98,17 @@ impl Node {
 
 #[derive(Deserialize)]
 struct AudioParams {
-    sampleRate: f32,
+    sample_rate: f32,
     nodes: Vec<Node>,
     // for each channel, which node it takes as input.
     channel_inputs: Vec<usize>,
 }
 
-struct NodeState {
-    v: Vec<f32>,
-}
-
 impl AudioParams {
     fn fill_channels(&self, left: Float32Array, right: Float32Array) {
-        let frameCount = left.length();
-        for i in 0..frameCount {
-            let t = (i as f32) / (self.sampleRate as f32);
+        let frame_count = left.length();
+        for i in 0..frame_count {
+            let t = (i as f32) / (self.sample_rate as f32);
             left.set_index(
                 i,
                 self.nodes[self.channel_inputs[0]].value_at(&self.nodes, t),

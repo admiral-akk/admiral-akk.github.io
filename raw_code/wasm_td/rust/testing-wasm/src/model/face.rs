@@ -1,20 +1,14 @@
 use crate::util::client_array::ClientArray;
 use crate::util::vector3::Vector3;
 
-trait Metadata: Sized + Copy {
-    fn len() -> usize;
-}
+pub trait Metadata: Sized + Copy {}
 
 #[derive(Copy, Clone)]
 pub struct UvMetadata {
     uv: [f32; 2],
 }
 
-impl Metadata for UvMetadata {
-    fn len() -> usize {
-        2
-    }
-}
+impl Metadata for UvMetadata {}
 
 pub struct Face {
     vertices: Vec<usize>,
@@ -91,33 +85,6 @@ impl FaceModel {
         faces.push(top);
 
         FaceModel { faces, vertices }
-    }
-
-    // switch to using only cubes.
-    pub fn loop_cut(&mut self) {}
-
-    // adds a ring of vertices at the face's current location.
-    // replaces all existing connections to the face with the ring.
-    // connects the ring to the current face.
-    // returns a list of indices corresponding to the new faces.
-    pub fn duplicate(&mut self, index: usize) -> Vec<usize> {
-        let mut index_pairs = Vec::new();
-        for i in 0..self.faces[index].vertices.len() {
-            self.vertices.push(self.vertices[i].clone());
-            self.faces[index].vertices[i] = self.vertices.len() - 1;
-            index_pairs.push((i, self.vertices.len() - 1));
-        }
-        (0..index_pairs.len())
-            .map(|i| {
-                let (prev_low, prev_high) = index_pairs[i];
-
-                self.faces[index].vertices[i] = prev_high;
-                let (next_low, next_high) = index_pairs[(i + 1) % index_pairs.len()];
-                self.faces
-                    .push(Face::new(vec![prev_low, next_low, next_high, prev_high]));
-                self.faces.len() - 1
-            })
-            .collect()
     }
 
     pub fn apply_transform<T: Transform<[f32; 3], UvMetadata>>(

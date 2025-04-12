@@ -1,4 +1,3 @@
-use crate::util::vector3::Vector3;
 use js_sys::Float32Array;
 use js_sys::Uint8Array;
 

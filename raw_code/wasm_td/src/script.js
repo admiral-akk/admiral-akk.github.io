@@ -404,7 +404,7 @@ const myArrayBuffer = audioCtx.createBuffer(
 
 audioGen.generate(
   {
-    sampleRate: audioCtx.sampleRate,
+    sample_rate: audioCtx.sampleRate,
     nodes: [
       {
         Osc: {
@@ -415,8 +415,9 @@ audioGen.generate(
         Gain: {
           i: [0],
           e: {
-            a: 1,
-            d: 2,
+            a: 0.5,
+            d: 2.0,
+            l: true,
           },
         },
       },

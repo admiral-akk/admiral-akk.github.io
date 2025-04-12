@@ -24,14 +24,49 @@ impl NoiseBuffers {
     fn new(samples: usize) -> Self {
         let mut noise_buffers = HashMap::new();
 
-        let mut white_noise = Vec::new();
+        let mut white_noise = Vec::with_capacity(samples);
+        let mut brown_noise = Vec::with_capacity(samples);
+        let mut pink_noise = Vec::with_capacity(samples);
 
+        // brown noise
+        let mut last_brown_output = 0.0;
+
+        // pink noise
+        let (mut b0, mut b1, mut b2, mut b3, mut b4, mut b5, mut b6) =
+            (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         for i in 0..samples {
-            let r = 2.0 * (getrandom::u32().unwrap() % 100000) as f32 / 100000.0 - 1.0;
-            white_noise.push(r);
+            white_noise.push(2.0 * (getrandom::u32().unwrap() % 100000) as f32 / 100000.0 - 1.0);
+
+            // brown_noise
+            {
+                // the brown noise might be correlated with the white noise
+                //
+                // if this becomes an issue, generate a fresh rand for white here.
+                brown_noise.push((last_brown_output + 0.02 * white_noise[i]) / 1.02);
+                last_brown_output = brown_noise[i];
+                brown_noise[i] *= 3.5; // (roughly) compensate for gain
+            }
+
+            // pink_noise
+            {
+                // the pink noise might be correlated with the white noise
+                //
+                // if this becomes an issue, generate a fresh rand for white here.
+                b0 = 0.99886 * b0 + white_noise[i] * 0.0555179;
+                b1 = 0.99332 * b1 + white_noise[i] * 0.0750759;
+                b2 = 0.969 * b2 + white_noise[i] * 0.153852;
+                b3 = 0.8665 * b3 + white_noise[i] * 0.3104856;
+                b4 = 0.55 * b4 + white_noise[i] * 0.5329522;
+                b5 = -0.7616 * b5 - white_noise[i] * 0.016898;
+                pink_noise.push(b0 + b1 + b2 + b3 + b4 + b5 + b6 + white_noise[i] * 0.5362);
+                pink_noise[i] *= 0.11; // (roughly) compensate for gain
+                b6 = white_noise[i] * 0.115926;
+            }
         }
 
         noise_buffers.insert(NoiseType::White, white_noise);
+        noise_buffers.insert(NoiseType::Pink, pink_noise);
+        noise_buffers.insert(NoiseType::Brown, brown_noise);
         Self {
             noise_buffers,
             samples,
@@ -39,6 +74,7 @@ impl NoiseBuffers {
     }
 
     fn value_at(&self, noise: &NoiseType, t: f32) -> f32 {
+        // might want to weight samples? or not, it's noise.
         let index = ((t.abs() % 1.0) * (self.samples as f32)).floor() as usize;
         self.noise_buffers.get(noise).unwrap()[index]
     }

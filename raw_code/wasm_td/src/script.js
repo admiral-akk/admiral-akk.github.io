@@ -408,7 +408,7 @@ audioGen.generate(
     nodes: [
       {
         Osc: {
-          f: 400,
+          f: { N: 8 },
         },
       },
       {
@@ -423,7 +423,7 @@ audioGen.generate(
       },
       {
         Osc: {
-          f: 100,
+          f: { F: 100 },
         },
       },
       {
@@ -444,8 +444,15 @@ audioGen.generate(
       { Delay: { i: [4], d: 0.35 } },
       { Gain: { i: [5], e: { a: 0.05, d: 1.5 } } },
       { Noise: { t: "Pink" } },
+      {
+        Osc: {
+          f: { F: 0.2 },
+          o: 400,
+          s: 100,
+        },
+      },
     ],
-    channel_inputs: [7, 7],
+    channel_inputs: [0, 0],
     post_processing: [
       {
         DynamicRange: {

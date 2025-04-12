@@ -103,15 +103,23 @@ struct EnvelopeParams {
 }
 
 #[derive(Deserialize)]
+enum FloatInput {
+    F(f32),
+    N(usize),
+}
+
+#[derive(Deserialize)]
 enum Node {
     Noise {
         t: Option<NoiseType>,
     },
     Osc {
         // frequency
-        f: f32,
+        f: FloatInput,
         // type of wave
         t: Option<WaveType>,
+        // the following are mostly useful for low frequency oscilators.
+        //
         // scale
         s: Option<f32>,
         // offset, applied after scale
@@ -150,6 +158,11 @@ impl Node {
                 }
             }
             Node::Osc { f, t, s, o } => {
+                let f = match f {
+                    FloatInput::F(float) => *float,
+                    FloatInput::N(idx) => nodes[*idx].value_at(generator, nodes, time),
+                };
+
                 let multiple = 2.0 * std::f32::consts::PI * f;
                 let wave_type = t.as_ref().unwrap_or(&WaveType::Sine);
                 let scale = s.unwrap_or(1.0);

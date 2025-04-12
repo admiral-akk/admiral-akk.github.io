@@ -414,6 +414,7 @@ audioGen.generate(
       {
         Gain: {
           i: [0],
+          g: 100.0,
           e: {
             a: 0.5,
             d: 2.0,
@@ -423,6 +424,13 @@ audioGen.generate(
       },
     ],
     channel_inputs: [1, 1],
+    post_processing: [
+      {
+        DynamicRange: {
+          max: 0.3,
+        },
+      },
+    ],
   },
   myArrayBuffer.getChannelData(0),
   myArrayBuffer.getChannelData(1)

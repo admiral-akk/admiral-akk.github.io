@@ -97,11 +97,44 @@ impl Node {
 }
 
 #[derive(Deserialize)]
+enum PostProcessNode {
+    DynamicRange { max: f32 },
+}
+
+impl PostProcessNode {
+    fn apply(&self, sound_clip: &Float32Array) {
+        match self {
+            PostProcessNode::DynamicRange { max } => {
+                let mut min_val: f32 = 10000000.0;
+                let mut max_val: f32 = -100000000.0;
+
+                // scan to find actual max/min.
+                for i in 0..sound_clip.length() {
+                    let v = sound_clip.at(i as i32).unwrap();
+
+                    min_val = min_val.min(v);
+                    max_val = max_val.max(v);
+                }
+
+                // rescale the wave
+                let scale = 2.0 * max / (max_val - min_val);
+
+                for i in 0..sound_clip.length() {
+                    sound_clip.set_index(i, sound_clip.at(i as i32).unwrap() * scale);
+                }
+            }
+        }
+    }
+}
+
+#[derive(Deserialize)]
 struct AudioParams {
     sample_rate: f32,
     nodes: Vec<Node>,
     // for each channel, which node it takes as input.
     channel_inputs: Vec<usize>,
+    // nodes to apply in order
+    post_processing: Option<Vec<PostProcessNode>>,
 }
 
 impl AudioParams {
@@ -117,6 +150,16 @@ impl AudioParams {
                 i,
                 self.nodes[self.channel_inputs[1]].value_at(&self.nodes, t),
             );
+        }
+
+        match &self.post_processing {
+            None => {}
+            Some(post_processing) => {
+                for i in 0..post_processing.len() {
+                    post_processing[i].apply(&left);
+                    post_processing[i].apply(&right);
+                }
+            }
         }
     }
 }

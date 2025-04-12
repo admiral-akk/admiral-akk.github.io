@@ -11,13 +11,6 @@ extern crate console_error_panic_hook;
 #[wasm_bindgen]
 struct AudioGenerator {}
 
-#[derive(Serialize, Deserialize)]
-struct SinParams {
-    freq: f32,
-    frameCount: u32,
-    sampleRate: f32,
-}
-
 #[derive(Deserialize)]
 enum WaveType {
     Sine,
@@ -127,41 +120,5 @@ impl AudioGenerator {
         let params: AudioParams = serde_wasm_bindgen::from_value(params).unwrap();
 
         params.fill_channels(left, right);
-    }
-
-    // generates and stores the mesh, returning the expected size of the the mesh.
-    pub fn generate_sin(&mut self, params: JsValue, left: Float32Array, right: Float32Array) {
-        let params: SinParams = serde_wasm_bindgen::from_value(params).unwrap();
-
-        let audio_params = AudioParams {
-            sampleRate: params.sampleRate,
-            nodes: vec![
-                Node::Osc {
-                    f: params.freq,
-                    t: None,
-                },
-                Node::Gain {
-                    i: vec![0],
-                    g: None,
-                    e: Some(EnvelopeParams {
-                        s: None,
-                        a: 1.0,
-                        d: 2.0,
-                    }),
-                },
-            ],
-            channel_inputs: vec![1, 1],
-        };
-        for i in 0..params.frameCount {
-            let t = (i as f32) / (audio_params.sampleRate as f32);
-            left.set_index(
-                i,
-                audio_params.nodes[audio_params.channel_inputs[0]].value_at(&audio_params.nodes, t),
-            );
-            right.set_index(
-                i,
-                audio_params.nodes[audio_params.channel_inputs[1]].value_at(&audio_params.nodes, t),
-            );
-        }
     }
 }

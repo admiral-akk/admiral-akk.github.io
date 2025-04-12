@@ -414,15 +414,35 @@ audioGen.generate(
       {
         Gain: {
           i: [0],
-          g: 100.0,
+          g: 0.5,
           e: {
-            a: 1.0,
-            d: 1.1,
+            a: 0.15,
+            d: 1.0,
           },
         },
       },
+      {
+        Osc: {
+          f: 100,
+        },
+      },
+      {
+        Gain: {
+          i: [2],
+          g: 0.2,
+          e: {
+            a: 0.4,
+            d: 2.0,
+          },
+        },
+      },
+      {
+        Gain: {
+          i: [1, 3],
+        },
+      },
     ],
-    channel_inputs: [1, 1],
+    channel_inputs: [4, 4],
     post_processing: [
       {
         DynamicRange: {

@@ -79,7 +79,7 @@ impl Node {
                             if l.unwrap_or(false) {
                                 t
                             } else {
-                                let x: f32 = 0.1;
+                                let x: f32 = 1.0;
                                 let rescale = x.exp() / (1.0 - x.exp());
 
                                 (-t * x).exp() * rescale - rescale
@@ -88,7 +88,7 @@ impl Node {
                     };
                 let mut total = 0.0;
                 for n in 0..i.len() {
-                    total += nodes[n].value_at(nodes, time);
+                    total += nodes[i[n]].value_at(nodes, time);
                 }
                 gain * total
             }

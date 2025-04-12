@@ -402,11 +402,26 @@ const myArrayBuffer = audioCtx.createBuffer(
   audioCtx.sampleRate
 );
 
-audioGen.generate_sin(
+audioGen.generate(
   {
-    freq: 400,
-    frameCount: frameCount,
     sampleRate: audioCtx.sampleRate,
+    nodes: [
+      {
+        Osc: {
+          f: 400,
+        },
+      },
+      {
+        Gain: {
+          i: [0],
+          e: {
+            a: 1,
+            d: 2,
+          },
+        },
+      },
+    ],
+    channel_inputs: [1, 1],
   },
   myArrayBuffer.getChannelData(0),
   myArrayBuffer.getChannelData(1)

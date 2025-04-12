@@ -34,6 +34,7 @@ impl NoiseBuffers {
         // pink noise
         let (mut b0, mut b1, mut b2, mut b3, mut b4, mut b5, mut b6) =
             (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        // https://noisehack.com/generate-noise-web-audio-api/
         for i in 0..samples {
             white_noise.push(2.0 * (getrandom::u32().unwrap() % 100000) as f32 / 100000.0 - 1.0);
 

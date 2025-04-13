@@ -3,6 +3,14 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
+extern crate web_sys;
+
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 
 #[derive(Eq, Hash, PartialEq, Deserialize)]
 enum NoiseType {
@@ -164,15 +172,17 @@ impl Node {
                 .noise_buffers
                 .value_at(t.as_ref().unwrap_or(&NoiseType::White), idx),
             Node::Delay { i, d } => {
+                let time = (idx as f32) / (generator.sample_frequency as f32) - d;
                 if time < 0.0 {
                     0.0
                 } else {
                     let mut total = 0.0;
                     for index in 0..i.len() {
-                        if time - d >= 0.0 {
-                            total +=
-                                nodes[i[index]].value_at(generator, params, (time - d) as usize);
-                        }
+                        total += nodes[i[index]].value_at(
+                            generator,
+                            params,
+                            ((generator.sample_frequency as f32) * time) as usize,
+                        );
                     }
                     total
                 }
@@ -290,7 +300,6 @@ impl PostProcessNode {
 
 #[derive(Deserialize)]
 struct AudioParams {
-    sample_rate: f32,
     nodes: Vec<Node>,
     // for each channel, which node it takes as input.
     channel_inputs: Vec<usize>,

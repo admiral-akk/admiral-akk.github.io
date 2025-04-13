@@ -531,7 +531,7 @@ let param1 = {
       },
     },
   ],
-  channel_inputs: [0, 0],
+  channel_inputs: [5, 5],
   post_processing: [
     {
       DynamicRange: {
@@ -541,8 +541,41 @@ let param1 = {
   ],
 };
 
+let simple = {
+  nodes: [
+    {
+      Osc: {
+        f: { F: 500 },
+      },
+    },
+    {
+      Gain: {
+        i: [0],
+        e: {
+          a: 0.2,
+          d: 0.4,
+        },
+      },
+    },
+    { Delay: { i: [1], d: 0.1 } },
+    {
+      Gain: {
+        i: [1, 2],
+      },
+    },
+  ],
+  channel_inputs: [2, 2],
+  post_processing: [
+    {
+      DynamicRange: {
+        max: 0.4,
+      },
+    },
+  ],
+};
+
 audioGen.generate(
-  param_i,
+  simple,
   myArrayBuffer.getChannelData(0),
   myArrayBuffer.getChannelData(1)
 );

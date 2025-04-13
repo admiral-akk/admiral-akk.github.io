@@ -83,6 +83,10 @@ impl NoiseBuffers {
 
 #[wasm_bindgen]
 struct AudioGenerator {
+    // these two params can be used to figure out how large buffers have to be
+    sample_frequency: usize,
+    max_sample_length: usize,
+    // stores pre-computed noise.
     noise_buffers: NoiseBuffers,
 }
 
@@ -289,6 +293,7 @@ struct AudioParams {
     post_processing: Option<Vec<PostProcessNode>>,
 }
 
+// need to move to passing index into generator
 impl AudioParams {
     fn fill_channels(&self, generator: &AudioGenerator, left: Float32Array, right: Float32Array) {
         let frame_count = left.length();
@@ -322,7 +327,8 @@ impl AudioGenerator {
     pub fn new(sample_frequency: usize, max_sample_length: usize) -> Self {
         console_error_panic_hook::set_once();
         Self {
-            max_samples: sample_frequency * max_sample_length,
+            sample_frequency: sample_frequency,
+            max_sample_length: max_sample_length,
             noise_buffers: NoiseBuffers::new(sample_frequency),
         }
     }

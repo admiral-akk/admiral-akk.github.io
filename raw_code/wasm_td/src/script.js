@@ -402,65 +402,147 @@ const myArrayBuffer = audioCtx.createBuffer(
   audioCtx.sampleRate
 );
 
+// try generating vowels?
+//
+// https://corpus.eduhk.hk/english_pronunciation/index.php/2-2-formants-of-vowels/
+
+let param_i = {
+  sample_rate: audioCtx.sampleRate,
+  nodes: [
+    {
+      Osc: {
+        t: "Triangle",
+        f: { F: 0 },
+        p: { N: 7 },
+      },
+    },
+    {
+      Osc: {
+        t: "Triangle",
+        f: { F: 700 },
+        p: { N: 7 },
+      },
+    },
+    {
+      Osc: {
+        t: "Triangle",
+        f: { F: 780 },
+        p: { N: 7 },
+      },
+    },
+    {
+      Gain: {
+        i: [0],
+        g: 0.1,
+        e: {
+          a: 0.25,
+          d: 1.0,
+        },
+      },
+    },
+    {
+      Gain: {
+        i: [1],
+        g: 0.05,
+        e: {
+          a: 0.05,
+          d: 1.0,
+        },
+      },
+    },
+    {
+      Gain: {
+        i: [2],
+        g: 0.05,
+        e: {
+          a: 0.05,
+          d: 1.0,
+        },
+      },
+    },
+    {
+      Gain: {
+        i: [3, 4, 5],
+      },
+    },
+    {
+      Osc: {
+        f: { F: 8 },
+        s: 0,
+      },
+    },
+  ],
+  channel_inputs: [6, 6],
+  post_processing: [
+    {
+      DynamicRange: {
+        max: 0.4,
+      },
+    },
+  ],
+};
+
+let param1 = {
+  sample_rate: audioCtx.sampleRate,
+  nodes: [
+    {
+      Osc: {
+        f: { N: 8 },
+      },
+    },
+    {
+      Gain: {
+        i: [0],
+        g: 0.5,
+        e: {
+          a: 0.15,
+          d: 1.0,
+        },
+      },
+    },
+    {
+      Osc: {
+        f: { F: 100 },
+      },
+    },
+    {
+      Gain: {
+        i: [2],
+        g: 0.4,
+        e: {
+          a: 0.2,
+          d: 1.5,
+        },
+      },
+    },
+    {
+      Gain: {
+        i: [1, 3, 6],
+      },
+    },
+    { Delay: { i: [4], d: 0.35 } },
+    { Gain: { i: [5], e: { a: 0.05, d: 1.5 } } },
+    { Noise: { t: "Pink" } },
+    {
+      Osc: {
+        f: { F: 0.2 },
+        o: 400,
+        s: 100,
+      },
+    },
+  ],
+  channel_inputs: [0, 0],
+  post_processing: [
+    {
+      DynamicRange: {
+        max: 0.1,
+      },
+    },
+  ],
+};
+
 audioGen.generate(
-  {
-    sample_rate: audioCtx.sampleRate,
-    nodes: [
-      {
-        Osc: {
-          f: { N: 8 },
-        },
-      },
-      {
-        Gain: {
-          i: [0],
-          g: 0.5,
-          e: {
-            a: 0.15,
-            d: 1.0,
-          },
-        },
-      },
-      {
-        Osc: {
-          f: { F: 100 },
-        },
-      },
-      {
-        Gain: {
-          i: [2],
-          g: 0.4,
-          e: {
-            a: 0.2,
-            d: 1.5,
-          },
-        },
-      },
-      {
-        Gain: {
-          i: [1, 3, 6],
-        },
-      },
-      { Delay: { i: [4], d: 0.35 } },
-      { Gain: { i: [5], e: { a: 0.05, d: 1.5 } } },
-      { Noise: { t: "Pink" } },
-      {
-        Osc: {
-          f: { F: 0.2 },
-          o: 400,
-          s: 100,
-        },
-      },
-    ],
-    channel_inputs: [0, 0],
-    post_processing: [
-      {
-        DynamicRange: {
-          max: 0.1,
-        },
-      },
-    ],
-  },
+  param_i,
   myArrayBuffer.getChannelData(0),
   myArrayBuffer.getChannelData(1)
 );

@@ -9,7 +9,8 @@
     "build-wasm": "RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\"' wasm-pack build ./rust/testing-wasm --out-dir ../../src/wasm",
     "test": "vitest",
     "rust-test": "cargo test --manifest-path ./rust/testing-wasm/Cargo.toml -- --nocapture",
-    "fix": "cargo fix --manifest-path ./rust/testing-wasm/Cargo.toml; git add .; git commit -m \"cargo fix\""
+    "fix": "cargo fix --manifest-path ./rust/testing-wasm/Cargo.toml; git add .; git commit -m \"cargo fix\"",
+    "wasm-watch": "watch 'npm run build-wasm' ./rust/testing-wasm/src"
   },
   "keywords": [],
   "author": "Kuba Karpierz",
@@ -18,7 +19,8 @@
     "vite": "^4.5.0",
     "vite-plugin-glsl": "^1.2.1",
     "vite-plugin-wasm": "^3.4.1",
-    "vitest": "^3.0.2"
+    "vitest": "^3.0.2",
+    "watch": "^1.0.2"
   },
   "dependencies": {
     "gl-matrix": "4.0.0-beta.2",

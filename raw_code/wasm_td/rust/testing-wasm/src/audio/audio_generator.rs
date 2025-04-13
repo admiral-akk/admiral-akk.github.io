@@ -89,18 +89,19 @@ struct AudioGenerator {
 #[derive(Deserialize)]
 enum WaveType {
     Sine,
+    Triangle,
 }
 
 #[derive(Deserialize)]
 struct EnvelopeParams {
-    // start
-    s: Option<f32>,
     // attack: time to max
     a: f32,
     // decay: time to 0
     d: f32,
     // if true, linear. otherwise exponential
     l: Option<bool>,
+    // start
+    s: Option<f32>,
 }
 
 #[derive(Deserialize)]
@@ -108,6 +109,8 @@ enum FloatInput {
     F(f32),
     N(usize),
 }
+
+// Maybe look at this for a biquad filter: https://webaudio.github.io/Audio-EQ-Cookbook/Audio-EQ-Cookbook.txt
 
 #[derive(Deserialize)]
 enum Node {
@@ -119,6 +122,8 @@ enum Node {
         f: FloatInput,
         // type of wave
         t: Option<WaveType>,
+        // phase
+        p: Option<FloatInput>,
         // the following are mostly useful for low frequency oscilators.
         //
         // scale
@@ -158,19 +163,38 @@ impl Node {
                     total
                 }
             }
-            Node::Osc { f, t, s, o } => {
+            Node::Osc { f, t, p, s, o } => {
                 let f = match f {
                     FloatInput::F(float) => *float,
                     FloatInput::N(idx) => nodes[*idx].value_at(generator, nodes, time),
+                };
+
+                let p = match p {
+                    None => 0.0,
+                    Some(FloatInput::F(float)) => *float,
+                    Some(FloatInput::N(idx)) => nodes[*idx].value_at(generator, nodes, time),
                 };
 
                 let multiple = 2.0 * std::f32::consts::PI * f;
                 let wave_type = t.as_ref().unwrap_or(&WaveType::Sine);
                 let scale = s.unwrap_or(1.0);
                 let offset = o.unwrap_or(0.0);
+                let angle = (time * multiple + p) % (2.0 * std::f32::consts::PI);
 
                 let v = match wave_type {
-                    WaveType::Sine => (time * multiple).sin(),
+                    WaveType::Sine => angle.sin(),
+                    WaveType::Triangle => {
+                        let half_angle = angle % std::f32::consts::PI;
+
+                        let value = 2.0 * half_angle.min(std::f32::consts::PI - half_angle)
+                            / std::f32::consts::PI;
+
+                        if angle > std::f32::consts::PI {
+                            -value
+                        } else {
+                            value
+                        }
+                    }
                 };
 
                 v * scale + offset

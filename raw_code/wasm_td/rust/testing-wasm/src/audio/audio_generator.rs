@@ -129,7 +129,6 @@ enum FloatInput {
 // to implement this, we need to store the historic state.
 // Maybe look at this for a biquad filter: https://webaudio.github.io/Audio-EQ-Cookbook/Audio-EQ-Cookbook.txt
 
-#[derive(Deserialize)]
 enum Node {
     Noise {
         t: Option<NoiseType>,
@@ -161,6 +160,65 @@ enum Node {
         // delay, must be positive
         d: f32,
     },
+    Biquad {
+        // params from https://en.wikipedia.org/wiki/Digital_biquad_filter
+        // we'll work out what they mean later.
+        a: [f32; 3],
+        b: [f32; 3],
+    },
+}
+
+// this lets us go from various filters to a single form
+impl From<SerializedNode> for Node {
+    fn from(node: SerializedNode) -> Node {
+        match node {
+            SerializedNode::Noise { t } => Node::Noise { t },
+            SerializedNode::Biquad { a, b } => Node::Biquad { a, b },
+            SerializedNode::Osc { f, t, p, s, o } => Node::Osc { f, t, p, s, o },
+            SerializedNode::Gain { i, g, e } => Node::Gain { i, g, e },
+            SerializedNode::Delay { i, d } => Node::Delay { i, d },
+        }
+    }
+}
+
+#[derive(Deserialize)]
+enum SerializedNode {
+    Noise {
+        t: Option<NoiseType>,
+    },
+    Osc {
+        // frequency
+        f: FloatInput,
+        // type of wave
+        t: Option<WaveType>,
+        // phase
+        p: Option<FloatInput>,
+        // the following are mostly useful for low frequency oscilators.
+        //
+        // scale
+        s: Option<f32>,
+        // offset, applied after scale
+        o: Option<f32>,
+    },
+    Gain {
+        // inputs
+        i: Vec<usize>,
+        // max gain
+        g: Option<f32>,
+        // envelope
+        e: Option<EnvelopeParams>,
+    },
+    Delay {
+        i: Vec<usize>,
+        // delay, must be positive
+        d: f32,
+    },
+    Biquad {
+        // params from https://en.wikipedia.org/wiki/Digital_biquad_filter
+        // we'll work out what they mean later.
+        a: [f32; 3],
+        b: [f32; 3],
+    },
 }
 
 struct AudioData {
@@ -177,7 +235,7 @@ impl AudioData {
     fn new(params: AudioParams) -> Self {
         let v = params.nodes.iter().map(|_n| Vec::new()).collect();
         Self {
-            nodes: params.nodes,
+            nodes: params.nodes.into_iter().map(|n| Node::from(n)).collect(),
             v,
             channel_inputs: params.channel_inputs,
             post_processing: params.post_processing,
@@ -225,6 +283,24 @@ impl AudioData {
                     }
                     total
                 }
+            }
+            Node::Biquad { a, b } => {
+                let x_n = (time_idx as f32) / (generator.sample_frequency as f32);
+                let x_1 = (time_idx as f32 - 1.0) / (generator.sample_frequency as f32);
+                let x_2 = (time_idx as f32 - 2.0) / (generator.sample_frequency as f32);
+
+                let y_1 = if time_idx >= 1 {
+                    AudioData::value_at(values, nodes, generator, node_idx, time_idx - 1)
+                } else {
+                    0.0
+                };
+                let y_2 = if time_idx >= 2 {
+                    AudioData::value_at(values, nodes, generator, node_idx, time_idx - 2)
+                } else {
+                    0.0
+                };
+
+                (b[0] * x_n + b[1] * x_1 + b[2] * x_2 - a[1] * y_1 - a[2] * y_2) / a[0]
             }
             Node::Osc { f, t, p, s, o } => {
                 let f = match f {
@@ -384,7 +460,7 @@ impl PostProcessNode {
 
 #[derive(Deserialize)]
 struct AudioParams {
-    nodes: Vec<Node>,
+    nodes: Vec<SerializedNode>,
     // for each channel, which node it takes as input.
     channel_inputs: Vec<usize>,
     // nodes to apply in order

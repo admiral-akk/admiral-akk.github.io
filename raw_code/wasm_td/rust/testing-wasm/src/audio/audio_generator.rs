@@ -191,6 +191,23 @@ impl AudioData {
         node_idx: usize,
         time_idx: usize,
     ) -> f32 {
+        if values[node_idx].len() <= time_idx {
+            // generate values up to time_idx
+            for i in values[node_idx].len()..(time_idx + 1) {
+                let v = AudioData::value_at_uncached(values, nodes, generator, node_idx, i);
+                values[node_idx].push(v);
+            }
+        }
+        values[node_idx][time_idx]
+    }
+
+    fn value_at_uncached(
+        values: &mut Vec<Vec<f32>>,
+        nodes: &Vec<Node>,
+        generator: &AudioGenerator,
+        node_idx: usize,
+        time_idx: usize,
+    ) -> f32 {
         let time = (time_idx as f32) / (generator.sample_frequency as f32);
         match &nodes[node_idx] {
             Node::Noise { t } => generator

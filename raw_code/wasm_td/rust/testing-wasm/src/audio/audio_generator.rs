@@ -161,6 +161,7 @@ enum Node {
         d: f32,
     },
     Biquad {
+        i: usize,
         // params from https://en.wikipedia.org/wiki/Digital_biquad_filter
         // we'll work out what they mean later.
         a: [f32; 3],
@@ -173,14 +174,13 @@ impl From<SerializedNode> for Node {
     fn from(node: SerializedNode) -> Node {
         match node {
             SerializedNode::Noise { t } => Node::Noise { t },
-            SerializedNode::Biquad { a, b } => Node::Biquad { a, b },
+            SerializedNode::Biquad { i, a, b } => Node::Biquad { i, a, b },
             SerializedNode::Osc { f, t, p, s, o } => Node::Osc { f, t, p, s, o },
             SerializedNode::Gain { i, g, e } => Node::Gain { i, g, e },
             SerializedNode::Delay { i, d } => Node::Delay { i, d },
         }
     }
 }
-
 #[derive(Deserialize)]
 enum SerializedNode {
     Noise {
@@ -214,6 +214,7 @@ enum SerializedNode {
         d: f32,
     },
     Biquad {
+        i: usize,
         // params from https://en.wikipedia.org/wiki/Digital_biquad_filter
         // we'll work out what they mean later.
         a: [f32; 3],
@@ -284,20 +285,24 @@ impl AudioData {
                     total
                 }
             }
-            Node::Biquad { a, b } => {
-                let x_n = (time_idx as f32) / (generator.sample_frequency as f32);
-                let x_1 = (time_idx as f32 - 1.0) / (generator.sample_frequency as f32);
-                let x_2 = (time_idx as f32 - 2.0) / (generator.sample_frequency as f32);
+            Node::Biquad { i, a, b } => {
+                let x_n = AudioData::value_at(values, nodes, generator, *i, time_idx);
 
-                let y_1 = if time_idx >= 1 {
-                    AudioData::value_at(values, nodes, generator, node_idx, time_idx - 1)
+                let (x_1, y_1) = if time_idx >= 1 {
+                    (
+                        AudioData::value_at(values, nodes, generator, i - 1, time_idx),
+                        AudioData::value_at(values, nodes, generator, node_idx, time_idx - 1),
+                    )
                 } else {
-                    0.0
+                    (0.0, 0.0)
                 };
-                let y_2 = if time_idx >= 2 {
-                    AudioData::value_at(values, nodes, generator, node_idx, time_idx - 2)
+                let (x_2, y_2) = if time_idx >= 2 {
+                    (
+                        AudioData::value_at(values, nodes, generator, i - 2, time_idx),
+                        AudioData::value_at(values, nodes, generator, node_idx, time_idx - 2),
+                    )
                 } else {
-                    0.0
+                    (0.0, 0.0)
                 };
 
                 (b[0] * x_n + b[1] * x_1 + b[2] * x_2 - a[1] * y_1 - a[2] * y_2) / a[0]

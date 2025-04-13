@@ -567,8 +567,20 @@ let simple = {
     {
       Noise: { t: "Brown" },
     },
+    {
+      Biquad: {
+        i: 4,
+        t: {
+          LPF: {
+            Q: 1,
+            f_s: 44100,
+            f_0: 1000,
+          },
+        },
+      },
+    },
   ],
-  channel_inputs: [4, 4],
+  channel_inputs: [6, 6],
   post_processing: [
     {
       DynamicRange: {

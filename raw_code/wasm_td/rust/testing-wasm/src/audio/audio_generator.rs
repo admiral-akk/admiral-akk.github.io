@@ -174,13 +174,42 @@ impl From<SerializedNode> for Node {
     fn from(node: SerializedNode) -> Node {
         match node {
             SerializedNode::Noise { t } => Node::Noise { t },
-            SerializedNode::Biquad { i, a, b } => Node::Biquad { i, a, b },
+            // https://gist.github.com/devbisme/7a4375e83f642e2a53247977315104c0
+            SerializedNode::Biquad { i, t } => {
+                let mut a = [0.0, 0.0, 0.0];
+                let mut b = [0.0, 0.0, 0.0];
+                match t {
+                    FilterType::LPF { f_s, f_0, Q } => {
+                        let w_0 = std::f32::consts::TAU * f_0 / f_s;
+                        let alpha = w_0.sin() / (2.0 * Q);
+
+                        // used: https://www.earlevel.com/main/2021/09/02/biquad-calculator-v3/
+                        // for validation
+                        //
+                        // it swaps the names for a / b relative to https://webaudio.github.io/Audio-EQ-Cookbook/Audio-EQ-Cookbook.txt
+                        // though..
+                        b[1] = 1.0 - w_0.cos();
+                        b[0] = 0.5 * b[1];
+                        b[2] = b[0];
+                        a[0] = 1.0 + alpha;
+                        a[1] = -2.0 * alpha;
+                        a[2] = 1.0 - alpha;
+                    }
+                }
+                Node::Biquad { i, a, b }
+            }
             SerializedNode::Osc { f, t, p, s, o } => Node::Osc { f, t, p, s, o },
             SerializedNode::Gain { i, g, e } => Node::Gain { i, g, e },
             SerializedNode::Delay { i, d } => Node::Delay { i, d },
         }
     }
 }
+
+#[derive(Deserialize)]
+enum FilterType {
+    LPF { f_s: f32, f_0: f32, Q: f32 },
+}
+
 #[derive(Deserialize)]
 enum SerializedNode {
     Noise {
@@ -217,8 +246,7 @@ enum SerializedNode {
         i: usize,
         // params from https://en.wikipedia.org/wiki/Digital_biquad_filter
         // we'll work out what they mean later.
-        a: [f32; 3],
-        b: [f32; 3],
+        t: FilterType,
     },
 }
 

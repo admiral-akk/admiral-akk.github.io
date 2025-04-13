@@ -74,10 +74,10 @@ impl NoiseBuffers {
         }
     }
 
-    fn value_at(&self, noise: &NoiseType, t: f32) -> f32 {
+    fn value_at(&self, noise: &NoiseType, idx: usize) -> f32 {
         // might want to weight samples? or not, it's noise.
-        let index = ((t.abs() % 1.0) * (self.samples as f32)).floor() as usize;
-        self.noise_buffers.get(noise).unwrap()[index]
+        let buffer = self.noise_buffers.get(noise).unwrap();
+        buffer[idx % buffer.len()]
     }
 }
 
@@ -156,18 +156,23 @@ enum Node {
 }
 
 impl Node {
-    fn value_at(&self, generator: &AudioGenerator, nodes: &Vec<Node>, time: f32) -> f32 {
+    fn value_at(&self, generator: &AudioGenerator, params: &AudioParams, idx: usize) -> f32 {
+        let nodes = &params.nodes;
+        let time = (idx as f32) / (generator.sample_frequency as f32);
         match self {
             Node::Noise { t } => generator
                 .noise_buffers
-                .value_at(t.as_ref().unwrap_or(&NoiseType::White), time),
+                .value_at(t.as_ref().unwrap_or(&NoiseType::White), idx),
             Node::Delay { i, d } => {
                 if time < 0.0 {
                     0.0
                 } else {
                     let mut total = 0.0;
-                    for idx in 0..i.len() {
-                        total += nodes[i[idx]].value_at(generator, nodes, time - d);
+                    for index in 0..i.len() {
+                        if time - d >= 0.0 {
+                            total +=
+                                nodes[i[index]].value_at(generator, params, (time - d) as usize);
+                        }
                     }
                     total
                 }
@@ -175,13 +180,13 @@ impl Node {
             Node::Osc { f, t, p, s, o } => {
                 let f = match f {
                     FloatInput::F(float) => *float,
-                    FloatInput::N(idx) => nodes[*idx].value_at(generator, nodes, time),
+                    FloatInput::N(index) => nodes[*index].value_at(generator, params, idx),
                 };
 
                 let p = match p {
                     None => 0.0,
                     Some(FloatInput::F(float)) => *float,
-                    Some(FloatInput::N(idx)) => nodes[*idx].value_at(generator, nodes, time),
+                    Some(FloatInput::N(index)) => nodes[*index].value_at(generator, params, idx),
                 };
 
                 let multiple = 2.0 * std::f32::consts::PI * f;
@@ -244,7 +249,7 @@ impl Node {
                     };
                 let mut total = 0.0;
                 for n in 0..i.len() {
-                    total += nodes[i[n]].value_at(generator, nodes, time);
+                    total += nodes[i[n]].value_at(generator, params, idx);
                 }
                 gain * total
             }
@@ -297,15 +302,14 @@ struct AudioParams {
 impl AudioParams {
     fn fill_channels(&self, generator: &AudioGenerator, left: Float32Array, right: Float32Array) {
         let frame_count = left.length();
-        for i in 0..frame_count {
-            let t = (i as f32) / (self.sample_rate as f32);
+        for i in 0..(frame_count as usize) {
             left.set_index(
-                i,
-                self.nodes[self.channel_inputs[0]].value_at(generator, &self.nodes, t),
+                i as u32,
+                self.nodes[self.channel_inputs[0]].value_at(generator, self, i),
             );
             right.set_index(
-                i,
-                self.nodes[self.channel_inputs[1]].value_at(generator, &self.nodes, t),
+                i as u32,
+                self.nodes[self.channel_inputs[1]].value_at(generator, self, i),
             );
         }
 

@@ -88,8 +88,10 @@ struct AudioGenerator {
 
 #[derive(Deserialize)]
 enum WaveType {
-    Sine,
-    Triangle,
+    Sin,
+    Tri,
+    Saw,
+    Sqr,
 }
 
 #[derive(Deserialize)]
@@ -176,14 +178,14 @@ impl Node {
                 };
 
                 let multiple = 2.0 * std::f32::consts::PI * f;
-                let wave_type = t.as_ref().unwrap_or(&WaveType::Sine);
+                let wave_type = t.as_ref().unwrap_or(&WaveType::Sin);
                 let scale = s.unwrap_or(1.0);
                 let offset = o.unwrap_or(0.0);
                 let angle = (time * multiple + p) % (2.0 * std::f32::consts::PI);
 
                 let v = match wave_type {
-                    WaveType::Sine => angle.sin(),
-                    WaveType::Triangle => {
+                    WaveType::Sin => angle.sin(),
+                    WaveType::Tri => {
                         let half_angle = angle % std::f32::consts::PI;
 
                         let value = 2.0 * half_angle.min(std::f32::consts::PI - half_angle)
@@ -193,6 +195,14 @@ impl Node {
                             -value
                         } else {
                             value
+                        }
+                    }
+                    WaveType::Saw => angle / (2.0 * std::f32::consts::PI),
+                    WaveType::Sqr => {
+                        if (std::f32::consts::PI - angle).is_sign_positive() {
+                            1.0
+                        } else {
+                            -1.0
                         }
                     }
                 };

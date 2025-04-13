@@ -411,21 +411,21 @@ let param_i = {
   nodes: [
     {
       Osc: {
-        t: "Triangle",
+        t: "Sqr",
         f: { F: 0 },
         p: { N: 7 },
       },
     },
     {
       Osc: {
-        t: "Triangle",
+        t: "Sqr",
         f: { F: 700 },
         p: { N: 7 },
       },
     },
     {
       Osc: {
-        t: "Triangle",
+        t: "Sqr",
         f: { F: 780 },
         p: { N: 7 },
       },

@@ -319,10 +319,11 @@ impl AudioParams {
 #[wasm_bindgen]
 impl AudioGenerator {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
+    pub fn new(sample_frequency: usize, max_sample_length: usize) -> Self {
         console_error_panic_hook::set_once();
         Self {
-            noise_buffers: NoiseBuffers::new(100000),
+            max_samples: sample_frequency * max_sample_length,
+            noise_buffers: NoiseBuffers::new(sample_frequency),
         }
     }
 

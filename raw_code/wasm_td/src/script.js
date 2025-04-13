@@ -387,8 +387,8 @@ const texture = gl.createTexture();
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 }
 
-const audioGen = new AudioGenerator();
 const audioCtx = new AudioContext();
+const audioGen = new AudioGenerator(audioCtx.sampleRate, 2);
 
 // Stereo
 const channels = 2;

@@ -318,7 +318,7 @@ impl AudioData {
 
                 let (x_1, y_1) = if time_idx >= 1 {
                     (
-                        AudioData::value_at(values, nodes, generator, i - 1, time_idx),
+                        AudioData::value_at(values, nodes, generator, *i, time_idx - 1),
                         AudioData::value_at(values, nodes, generator, node_idx, time_idx - 1),
                     )
                 } else {
@@ -326,7 +326,7 @@ impl AudioData {
                 };
                 let (x_2, y_2) = if time_idx >= 2 {
                     (
-                        AudioData::value_at(values, nodes, generator, i - 2, time_idx),
+                        AudioData::value_at(values, nodes, generator, *i, time_idx - 1),
                         AudioData::value_at(values, nodes, generator, node_idx, time_idx - 2),
                     )
                 } else {

@@ -572,7 +572,7 @@ let simple = {
         i: 4,
         t: {
           LPF: {
-            Q: 1,
+            Q: 2,
             f_s: 44100,
             f_0: 200,
           },
@@ -590,8 +590,39 @@ let simple = {
   ],
 };
 
+let simple2 = {
+  nodes: [
+    {
+      Osc: {
+        t: "Saw",
+        f: { F: 1000 },
+      },
+    },
+    {
+      Biquad: {
+        i: 0,
+        t: {
+          LPF: {
+            Q: 1,
+            f_s: 44100,
+            f_0: 400,
+          },
+        },
+      },
+    },
+  ],
+  channel_inputs: [1, 1],
+  post_processing: [
+    {
+      DynamicRange: {
+        max: 0.4,
+      },
+    },
+  ],
+};
+
 audioGen.generate(
-  simple,
+  simple2,
   myArrayBuffer.getChannelData(0),
   myArrayBuffer.getChannelData(1)
 );

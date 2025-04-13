@@ -112,6 +112,9 @@ enum FloatInput {
     N(usize),
 }
 
+// Biquad filter time!
+// https://en.wikipedia.org/wiki/Digital_biquad_filter
+// to implement this, we need to store the historic state.
 // Maybe look at this for a biquad filter: https://webaudio.github.io/Audio-EQ-Cookbook/Audio-EQ-Cookbook.txt
 
 #[derive(Deserialize)]

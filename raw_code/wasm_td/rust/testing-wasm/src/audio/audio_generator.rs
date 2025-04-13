@@ -314,7 +314,7 @@ impl AudioData {
                 }
             }
             Node::Biquad { i, a, b } => {
-                let x_n = AudioData::value_at(values, nodes, generator, *i, time_idx);
+                let x_0 = AudioData::value_at(values, nodes, generator, *i, time_idx);
 
                 let (x_1, y_1) = if time_idx >= 1 {
                     (
@@ -326,14 +326,14 @@ impl AudioData {
                 };
                 let (x_2, y_2) = if time_idx >= 2 {
                     (
-                        AudioData::value_at(values, nodes, generator, *i, time_idx - 1),
+                        AudioData::value_at(values, nodes, generator, *i, time_idx - 2),
                         AudioData::value_at(values, nodes, generator, node_idx, time_idx - 2),
                     )
                 } else {
                     (0.0, 0.0)
                 };
 
-                (b[0] * x_n + b[1] * x_1 + b[2] * x_2 - a[1] * y_1 - a[2] * y_2) / a[0]
+                (b[0] * x_0 + b[1] * x_1 + b[2] * x_2 - a[1] * y_1 - a[2] * y_2) / a[0]
             }
             Node::Osc { f, t, p, s, o } => {
                 let f = match f {

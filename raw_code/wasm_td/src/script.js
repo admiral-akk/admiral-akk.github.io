@@ -593,9 +593,8 @@ let simple = {
 let simple2 = {
   nodes: [
     {
-      Osc: {
-        t: "Saw",
-        f: { F: 1000 },
+      Noise: {
+        t: "White",
       },
     },
     {
@@ -603,19 +602,29 @@ let simple2 = {
         i: 0,
         t: {
           LPF: {
-            Q: 1,
+            Q: 2,
             f_s: 44100,
-            f_0: 400,
+            f_0: 40,
           },
         },
       },
     },
+    {
+      Gain: {
+        i: [1],
+        e: {
+          a: 0.05,
+          d: 0.5,
+        },
+        g: 1,
+      },
+    },
   ],
-  channel_inputs: [1, 1],
+  channel_inputs: [2, 2],
   post_processing: [
     {
       DynamicRange: {
-        max: 0.4,
+        max: 1,
       },
     },
   ],

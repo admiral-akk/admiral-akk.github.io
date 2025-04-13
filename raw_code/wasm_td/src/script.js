@@ -550,21 +550,25 @@ let simple = {
     },
     {
       Gain: {
-        i: [0, 2],
+        i: [0, 2, 5],
         e: {
           a: 0.2,
           d: 0.4,
         },
       },
     },
-    { Delay: { i: [1], d: 0.01 } },
+    { Delay: { i: [1, 3], d: 0.5 } },
+    { Gain: { i: [2], g: 0.5 } },
     {
       Gain: {
         i: [1, 2],
       },
     },
+    {
+      Noise: { t: "Brown" },
+    },
   ],
-  channel_inputs: [3, 3],
+  channel_inputs: [4, 4],
   post_processing: [
     {
       DynamicRange: {

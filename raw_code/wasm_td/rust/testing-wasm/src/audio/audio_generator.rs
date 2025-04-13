@@ -163,13 +163,10 @@ enum Node {
     },
 }
 
-struct NodeData {
-    node: Node,
-    v: Vec<f32>,
-}
-
 struct AudioData {
-    nodes: Vec<NodeData>,
+    nodes: Vec<Node>,
+    // computed values
+    v: Vec<Vec<f32>>,
     // for each channel, which node it takes as input.
     channel_inputs: Vec<usize>,
     // nodes to apply in order
@@ -178,71 +175,36 @@ struct AudioData {
 
 impl AudioData {
     fn new(params: AudioParams) -> Self {
+        let v = params.nodes.iter().map(|_n| Vec::new()).collect();
         Self {
-            nodes: params
-                .nodes
-                .into_iter()
-                .map(|node| NodeData {
-                    node,
-                    v: Vec::new(),
-                })
-                .collect(),
+            nodes: params.nodes,
+            v,
             channel_inputs: params.channel_inputs,
             post_processing: params.post_processing,
         }
     }
 
-    fn fill_channels(&self, generator: &AudioGenerator, left: Float32Array, right: Float32Array) {
-        let frame_count = left.length();
-        for i in 0..(frame_count as usize) {
-            left.set_index(
-                i as u32,
-                self.nodes[self.channel_inputs[0]].value_at(generator, self, i),
-            );
-            right.set_index(
-                i as u32,
-                self.nodes[self.channel_inputs[1]].value_at(generator, self, i),
-            );
-        }
-
-        match &self.post_processing {
-            None => {}
-            Some(post_processing) => {
-                for i in 0..post_processing.len() {
-                    post_processing[i].apply(&left);
-                    post_processing[i].apply(&right);
-                }
-            }
-        }
-    }
-}
-
-impl NodeData {
-    fn value_at(&self, generator: &AudioGenerator, data: &AudioData, idx: usize) -> f32 {
-        self.node.value_at(generator, data, idx)
-    }
-}
-
-impl Node {
-    fn value_at(&self, generator: &AudioGenerator, data: &AudioData, idx: usize) -> f32 {
-        let nodes = &data.nodes;
-        let time = (idx as f32) / (generator.sample_frequency as f32);
-        match self {
+    fn value_at(
+        values: &mut Vec<Vec<f32>>,
+        nodes: &Vec<Node>,
+        generator: &AudioGenerator,
+        node_idx: usize,
+        time_idx: usize,
+    ) -> f32 {
+        let time = (time_idx as f32) / (generator.sample_frequency as f32);
+        match &nodes[node_idx] {
             Node::Noise { t } => generator
                 .noise_buffers
-                .value_at(t.as_ref().unwrap_or(&NoiseType::White), idx),
+                .value_at(t.as_ref().unwrap_or(&NoiseType::White), time_idx),
             Node::Delay { i, d } => {
-                let time = (idx as f32) / (generator.sample_frequency as f32) - d;
+                let time = (time_idx as f32) / (generator.sample_frequency as f32) - d;
                 if time < 0.0 {
                     0.0
                 } else {
                     let mut total = 0.0;
+                    let time_idx = ((generator.sample_frequency as f32) * time) as usize;
                     for index in 0..i.len() {
-                        total += nodes[i[index]].value_at(
-                            generator,
-                            data,
-                            ((generator.sample_frequency as f32) * time) as usize,
-                        );
+                        total += AudioData::value_at(values, nodes, generator, i[index], time_idx);
                     }
                     total
                 }
@@ -250,13 +212,17 @@ impl Node {
             Node::Osc { f, t, p, s, o } => {
                 let f = match f {
                     FloatInput::F(float) => *float,
-                    FloatInput::N(index) => nodes[*index].value_at(generator, data, idx),
+                    FloatInput::N(index) => {
+                        AudioData::value_at(values, nodes, generator, *index, time_idx)
+                    }
                 };
 
                 let p = match p {
                     None => 0.0,
                     Some(FloatInput::F(float)) => *float,
-                    Some(FloatInput::N(index)) => nodes[*index].value_at(generator, data, idx),
+                    Some(FloatInput::N(index)) => {
+                        AudioData::value_at(values, nodes, generator, *index, time_idx)
+                    }
                 };
 
                 let multiple = 2.0 * std::f32::consts::PI * f;
@@ -319,9 +285,50 @@ impl Node {
                     };
                 let mut total = 0.0;
                 for n in 0..i.len() {
-                    total += nodes[i[n]].value_at(generator, data, idx);
+                    total += AudioData::value_at(values, nodes, generator, i[n], time_idx);
                 }
                 gain * total
+            }
+        }
+    }
+
+    fn fill_channels(
+        &mut self,
+        generator: &AudioGenerator,
+        left: Float32Array,
+        right: Float32Array,
+    ) {
+        let frame_count = left.length();
+        for i in 0..(frame_count as usize) {
+            left.set_index(
+                i as u32,
+                Self::value_at(
+                    &mut self.v,
+                    &self.nodes,
+                    generator,
+                    self.channel_inputs[0],
+                    i,
+                ),
+            );
+            right.set_index(
+                i as u32,
+                Self::value_at(
+                    &mut self.v,
+                    &self.nodes,
+                    generator,
+                    self.channel_inputs[1],
+                    i,
+                ),
+            );
+        }
+
+        match &self.post_processing {
+            None => {}
+            Some(post_processing) => {
+                for i in 0..post_processing.len() {
+                    post_processing[i].apply(&left);
+                    post_processing[i].apply(&right);
+                }
             }
         }
     }
@@ -382,7 +389,7 @@ impl AudioGenerator {
     pub fn generate(&self, params: JsValue, left: Float32Array, right: Float32Array) {
         let params: AudioParams = serde_wasm_bindgen::from_value(params).unwrap();
 
-        let data = AudioData::new(params);
+        let mut data = AudioData::new(params);
 
         data.fill_channels(self, left, right);
     }

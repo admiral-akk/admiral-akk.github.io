@@ -192,7 +192,7 @@ impl From<SerializedNode> for Node {
                         b[0] = 0.5 * b[1];
                         b[2] = b[0];
                         a[0] = 1.0 + alpha;
-                        a[1] = -2.0 * alpha;
+                        a[1] = -2.0 * w_0.cos();
                         a[2] = 1.0 - alpha;
                     }
                 }

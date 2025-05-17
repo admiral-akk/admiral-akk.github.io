@@ -1,5 +1,6 @@
 package snake
 
+import "core:fmt"
 import "core:math"
 import "core:math/linalg"
 import rl "vendor:raylib"
@@ -26,6 +27,7 @@ ball_dir: rl.Vector2
 
 start_time_offset: f64
 
+game_over: bool
 started: bool
 
 NUM_BLOCKS_X :: 10
@@ -36,6 +38,15 @@ BLOCK_WIDTH :: 28
 BLOCK_X_PADDING :: 20
 BLOCK_HEIGHT :: 10
 BLOCK_Y_PADDING :: 40
+
+score: int
+
+block_color_score := [Block_Color]int {
+	.Yellow = 2,
+	.Green  = 4,
+	.Orange = 6,
+	.Red    = 8,
+}
 
 Block_Color :: enum {
 	Yellow,
@@ -69,6 +80,8 @@ restart :: proc() {
 	ball_dir = {0, 0}
 	start_time_offset = rl.GetTime()
 	started = false
+	score = 0
+	game_over = false
 
 	for x in 0 ..< NUM_BLOCKS_X {
 		for y in 0 ..< NUM_BLOCKS_Y {
@@ -111,6 +124,10 @@ tick :: proc() {
 			ball_dir = linalg.normalize0(ball_to_paddle)
 			started = true
 		}
+	} else if game_over {
+		if rl.IsKeyPressed(.SPACE) {
+			restart()
+		}
 	} else {
 		tick_timer -= rl.GetFrameTime()
 	}
@@ -131,8 +148,8 @@ tick :: proc() {
 			ball_pos.y = BALL_RADIUS
 			ball_dir = reflect(ball_dir, rl.Vector2{0, 1})
 		}
-		if ball_pos.y + BALL_RADIUS > SCREEN_SIZE + 6 * BALL_RADIUS {
-			restart()
+		if !game_over && ball_pos.y + BALL_RADIUS > SCREEN_SIZE + 6 * BALL_RADIUS {
+			game_over = true
 		}
 
 
@@ -204,6 +221,7 @@ tick :: proc() {
 						}
 
 						blocks[x][y] = false
+						score += block_color_score[row_colors[y]]
 						break block_x_loop
 					}
 				}
@@ -253,6 +271,33 @@ render :: proc() {
 	}
 
 	rl.DrawCircleV(ball_pos, BALL_RADIUS, {200, 90, 20, 255})
+
+	score_text := fmt.ctprint(score)
+	rl.DrawText(score_text, 5, 5, 10, rl.WHITE)
+
+	if !started {
+		start_text := fmt.ctprintf("Start: SPACE")
+		start_text_width := rl.MeasureText(start_text, 15)
+		rl.DrawText(
+			start_text,
+			SCREEN_SIZE / 2 - start_text_width / 2,
+			BALL_START_Y - 30,
+			15,
+			rl.WHITE,
+		)
+	}
+
+	if game_over {
+		game_over_text := fmt.ctprintf("Score: %v. Reset: SPACE", score)
+		game_over_text_width := rl.MeasureText(game_over_text, 15)
+		rl.DrawText(
+			game_over_text,
+			SCREEN_SIZE / 2 - game_over_text_width / 2,
+			BALL_START_Y - 30,
+			15,
+			rl.WHITE,
+		)
+	}
 	rl.EndMode2D()
 	rl.EndDrawing()
 

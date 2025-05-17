@@ -6,9 +6,6 @@ import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1280
 SCREEN_SIZE :: 320
-GRID_WIDTH :: 20
-CELL_SIZE :: 16
-CANVAS_SIZE :: GRID_WIDTH * CELL_SIZE
 Vec2i :: [2]int
 TICK_RATE :: 0.02
 tick_timer: f32 = TICK_RATE
@@ -37,7 +34,7 @@ blocks: [NUM_BLOCKS_X][NUM_BLOCKS_Y]bool
 
 BLOCK_WIDTH :: 28
 BLOCK_X_PADDING :: 20
-BLOCK_HEIGHT :: 20
+BLOCK_HEIGHT :: 10
 BLOCK_Y_PADDING :: 40
 
 Block_Color :: enum {
@@ -196,6 +193,10 @@ tick :: proc() {
 
 						if block_exists(x + int(collision_normal.x), y) {
 							collision_normal.x = 0
+						}
+
+						if block_exists(x, y + int(collision_normal.y)) {
+							collision_normal.y = 0
 						}
 
 						if collision_normal != 0 {

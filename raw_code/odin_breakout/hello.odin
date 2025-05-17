@@ -27,19 +27,85 @@ BALL_START_Y :: 160
 ball_pos: rl.Vector2
 ball_dir: rl.Vector2
 
+start_time_offset: f64
+
 started: bool
+
+NUM_BLOCKS_X :: 10
+NUM_BLOCKS_Y :: 8
+blocks: [NUM_BLOCKS_X][NUM_BLOCKS_Y]bool
+
+BLOCK_WIDTH :: 28
+BLOCK_X_PADDING :: 20
+BLOCK_HEIGHT :: 20
+BLOCK_Y_PADDING :: 40
+
+Block_Color :: enum {
+	Yellow,
+	Green,
+	Orange,
+	Red,
+}
+
+row_colors := [NUM_BLOCKS_Y]Block_Color {
+	.Red,
+	.Red,
+	.Orange,
+	.Orange,
+	.Green,
+	.Green,
+	.Yellow,
+	.Yellow,
+}
+
+block_color_values := [Block_Color]rl.Color {
+	.Yellow = {253, 249, 150, 255},
+	.Green  = {180, 245, 190, 255},
+	.Orange = {170, 120, 250, 255},
+	.Red    = {250, 90, 85, 255},
+}
+
 
 restart :: proc() {
 	paddle_pos_x = 0.5 * (SCREEN_SIZE - PADDLE_WIDTH)
 	ball_pos = {0.5 * SCREEN_SIZE, BALL_START_Y}
 	ball_dir = {0, 0}
+	start_time_offset = rl.GetTime()
 	started = false
+
+	for x in 0 ..< NUM_BLOCKS_X {
+		for y in 0 ..< NUM_BLOCKS_Y {
+			blocks[x][y] = true
+		}
+	}
+}
+
+calc_block_rect :: proc(x, y: int) -> rl.Rectangle {
+	return {
+		f32(BLOCK_X_PADDING + x * BLOCK_WIDTH),
+		f32(BLOCK_Y_PADDING + y * BLOCK_HEIGHT),
+		BLOCK_WIDTH,
+		BLOCK_HEIGHT,
+	}
+
+}
+
+reflect :: proc(dir, normal: rl.Vector2) -> rl.Vector2 {
+
+	return linalg.normalize(linalg.reflect(dir, normal))
+}
+
+block_exists :: proc(x, y: int) -> bool {
+	return x >= 0 && y >= 0 && x < NUM_BLOCKS_X && y < NUM_BLOCKS_Y && blocks[x][y]
 }
 
 
 tick :: proc() {
 	if !started {
-		ball_pos = {SCREEN_SIZE * (0.5 + 0.3 * f32(math.cos(rl.GetTime()))), BALL_START_Y}
+		ball_pos = {
+			SCREEN_SIZE * (0.5 + 0.3 * f32(math.sin(rl.GetTime() - start_time_offset))),
+			BALL_START_Y,
+		}
 
 		if rl.IsKeyPressed(.SPACE) {
 			paddle_middle := rl.Vector2{paddle_pos_x + 0.5 * PADDLE_WIDTH, PADDLE_POS_Y}
@@ -58,15 +124,18 @@ tick :: proc() {
 
 		if ball_pos.x + BALL_RADIUS > SCREEN_SIZE {
 			ball_pos.x = SCREEN_SIZE - BALL_RADIUS
-			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{-1, 0}))
+			ball_dir = reflect(ball_dir, rl.Vector2{-1, 0})
 		}
 		if ball_pos.x - BALL_RADIUS < 0 {
 			ball_pos.x = BALL_RADIUS
-			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{1, 0}))
+			ball_dir = reflect(ball_dir, rl.Vector2{1, 0})
 		}
 		if ball_pos.y - BALL_RADIUS < 0 {
 			ball_pos.y = BALL_RADIUS
-			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{0, 1}))
+			ball_dir = reflect(ball_dir, rl.Vector2{0, 1})
+		}
+		if ball_pos.y + BALL_RADIUS > SCREEN_SIZE + 6 * BALL_RADIUS {
+			restart()
 		}
 
 
@@ -101,9 +170,42 @@ tick :: proc() {
 			}
 
 			if collision_normal != 0 {
-				ball_dir = linalg.normalize(
-					linalg.reflect(ball_dir, linalg.normalize((collision_normal))),
-				)
+				ball_dir = reflect(ball_dir, collision_normal)
+			}
+		}
+
+		block_x_loop: for x in 0 ..< NUM_BLOCKS_X {
+			for y in 0 ..< NUM_BLOCKS_Y {
+				if blocks[x][y] {
+					block_rect := calc_block_rect(x, y)
+
+					if rl.CheckCollisionCircleRec(ball_pos, BALL_RADIUS, block_rect) {
+
+						collision_normal: rl.Vector2
+						if previous_ball_pos.y < block_rect.y {
+							collision_normal += {0, -1}
+						} else if previous_ball_pos.y > block_rect.y + block_rect.height {
+							collision_normal += {0, 1}
+						}
+
+						if previous_ball_pos.x < block_rect.x {
+							collision_normal += {-1, 0}
+						} else if previous_ball_pos.x > block_rect.x + block_rect.width {
+							collision_normal += {1, 0}
+						}
+
+						if block_exists(x + int(collision_normal.x), y) {
+							collision_normal.x = 0
+						}
+
+						if collision_normal != 0 {
+							ball_dir = reflect(ball_dir, collision_normal)
+						}
+
+						blocks[x][y] = false
+						break block_x_loop
+					}
+				}
 			}
 		}
 
@@ -124,6 +226,30 @@ render :: proc() {
 	paddle_rect := rl.Rectangle{paddle_pos_x, PADDLE_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT}
 
 	rl.DrawRectangleRec(paddle_rect, {50, 150, 90, 255})
+
+	for x in 0 ..< NUM_BLOCKS_X {
+		for y in 0 ..< NUM_BLOCKS_Y {
+			if blocks[x][y] {
+				block_rect := calc_block_rect(x, y)
+
+				top_left := rl.Vector2{block_rect.x, block_rect.y}
+
+				top_right := rl.Vector2{block_rect.x + block_rect.width, block_rect.y}
+
+				bottom_right := rl.Vector2 {
+					block_rect.x + block_rect.width,
+					block_rect.y + block_rect.height,
+				}
+				bottom_left := rl.Vector2{block_rect.x, block_rect.y + block_rect.height}
+
+				rl.DrawRectangleRec(block_rect, block_color_values[row_colors[y]])
+				rl.DrawLineEx(top_left, top_right, 1, {255, 255, 150, 100})
+				rl.DrawLineEx(top_right, bottom_right, 1, {255, 255, 150, 100})
+				rl.DrawLineEx(bottom_right, bottom_left, 1, {255, 255, 150, 100})
+				rl.DrawLineEx(bottom_left, top_left, 1, {255, 255, 150, 100})
+			}
+		}
+	}
 
 	rl.DrawCircleV(ball_pos, BALL_RADIUS, {200, 90, 20, 255})
 	rl.EndMode2D()

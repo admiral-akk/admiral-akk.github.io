@@ -1,5 +1,7 @@
 package snake
 
+import "core:fmt"
+import "core:math"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1000
@@ -18,6 +20,10 @@ move_direction: Vec2i
 game_over: bool
 food_pos: Vec2i
 food_sprite: rl.Texture2D
+head_sprite: rl.Texture2D
+tail_sprite: rl.Texture2D
+body_sprite: rl.Texture2D
+score: int
 
 place_food :: proc() {
 	occupied: [GRID_WIDTH][GRID_WIDTH]bool
@@ -39,6 +45,8 @@ place_food :: proc() {
 		random_cell_index := rl.GetRandomValue(0, i32(len(free_cells) - 1))
 		food_pos = free_cells[random_cell_index]
 	}
+
+	score = snake_length - 3
 }
 
 restart :: proc() {
@@ -125,7 +133,7 @@ render :: proc() {
 		CELL_SIZE,
 	}
 
-	rl.DrawTexture(food_sprite, i32(food_pos.x) * CELL_SIZE, i32(food_pos.y) * CELL_SIZE, rl.WHITE)
+	rl.DrawTextureV(food_sprite, {f32(food_pos.x), f32(food_pos.y)} * CELL_SIZE, rl.WHITE)
 
 	for i in 0 ..< snake_length {
 		head_rect := rl.Rectangle {
@@ -134,9 +142,42 @@ render :: proc() {
 			CELL_SIZE,
 			CELL_SIZE,
 		}
-		rl.DrawRectangleRec(head_rect, rl.WHITE)
+		position := rl.Vector2{f32(snake[i].x), f32(snake[i].y)} * CELL_SIZE
+		sprite := head_sprite
+		if i == snake_length - 1 {
+			sprite = tail_sprite
+		} else if i > 0 {
+			sprite = body_sprite
+		}
+		dir := Vec2i{0, 1}
+		if i < snake_length - 1 {
 
+			dir = snake[i] - snake[i + 1]
+		} else {
+			dir = snake[i - 1] - snake[i]
+
+		}
+		rotation := math.atan2(f32(dir.y), f32(dir.x)) * math.DEG_PER_RAD
+
+		source_rect := rl.Rectangle{0, 0, f32(sprite.width), f32(sprite.height)}
+		target_rect := rl.Rectangle {
+			(f32(snake[i].x) + 0.5) * CELL_SIZE,
+			(f32(snake[i].y) + 0.5) * CELL_SIZE,
+			CELL_SIZE,
+			CELL_SIZE,
+		}
+		rl.DrawTexturePro(
+			sprite,
+			source_rect,
+			target_rect,
+			{CELL_SIZE, CELL_SIZE} * 0.5,
+			rotation,
+			rl.WHITE,
+		)
 	}
+
+	score_str := fmt.ctprintf("Score: %v", score)
+	rl.DrawText(score_str, 4, CANVAS_SIZE - 14, 10, rl.GRAY)
 
 	if game_over {
 		rl.DrawText("Game over!", 4, 4, 25, rl.RED)
@@ -156,11 +197,18 @@ main :: proc() {
 	restart()
 
 	food_sprite = rl.LoadTexture("assets/food.png")
+	head_sprite = rl.LoadTexture("assets/head.png")
+	body_sprite = rl.LoadTexture("assets/body.png")
+	tail_sprite = rl.LoadTexture("assets/tail.png")
 	for !rl.WindowShouldClose() {
 
 		tick()
 		render()
 	}
 
+	rl.UnloadTexture(food_sprite)
+	rl.UnloadTexture(head_sprite)
+	rl.UnloadTexture(body_sprite)
+	rl.UnloadTexture(tail_sprite)
 	rl.CloseWindow()
 }

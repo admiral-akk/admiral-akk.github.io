@@ -16,6 +16,29 @@ snake_length: int
 tick_timer: f32 = TICK_RATE
 move_direction: Vec2i
 game_over: bool
+food_pos: Vec2i
+
+place_food :: proc() {
+	occupied: [GRID_WIDTH][GRID_WIDTH]bool
+	for i in 0 ..< snake_length {
+		occupied[snake[i].x][snake[i].y] = true
+	}
+
+	free_cells := make([dynamic]Vec2i, context.temp_allocator)
+
+	for x in 0 ..< GRID_WIDTH {
+		for y in 0 ..< GRID_WIDTH {
+			if !occupied[x][y] {
+				append(&free_cells, Vec2i{x, y})
+			}
+		}
+	}
+
+	if len(free_cells) > 0 {
+		random_cell_index := rl.GetRandomValue(0, i32(len(free_cells) - 1))
+		food_pos = free_cells[random_cell_index]
+	}
+}
 
 restart :: proc() {
 
@@ -27,6 +50,8 @@ restart :: proc() {
 	move_direction = {0, 1}
 	snake_length = 3
 	game_over = false
+
+	place_food()
 }
 
 tick :: proc() {
@@ -72,6 +97,16 @@ render :: proc() {
 		zoom = f32(WINDOW_SIZE) / CANVAS_SIZE,
 	}
 	rl.BeginMode2D(camera)
+
+
+	head_rect := rl.Rectangle {
+		f32(food_pos.x) * CELL_SIZE,
+		f32(food_pos.y) * CELL_SIZE,
+		CELL_SIZE,
+		CELL_SIZE,
+	}
+	rl.DrawRectangleRec(head_rect, rl.RED)
+
 	for i in 0 ..< snake_length {
 		head_rect := rl.Rectangle {
 			f32(snake[i].x) * CELL_SIZE,
@@ -81,6 +116,11 @@ render :: proc() {
 		}
 		rl.DrawRectangleRec(head_rect, rl.WHITE)
 
+	}
+
+	if game_over {
+		rl.DrawText("Game over!", 4, 4, 25, rl.RED)
+		rl.DrawText("Press Enter to play again", 4, 30, 15, rl.BLACK)
 	}
 
 	rl.EndMode2D()

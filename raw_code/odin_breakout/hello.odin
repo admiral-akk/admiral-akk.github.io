@@ -3,6 +3,7 @@ package snake
 import "core:fmt"
 import "core:math"
 import "core:math/linalg"
+import "core:math/rand"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1280
@@ -230,6 +231,7 @@ tick :: proc() {
 
 						blocks[x][y] = false
 						score += block_color_score[row_colors[y]]
+						rl.SetSoundPitch(hit_block_sound, rand.float32_range(0.8, 1.2))
 						rl.PlaySound(hit_block_sound)
 						break block_x_loop
 					}

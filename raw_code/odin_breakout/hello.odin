@@ -73,6 +73,11 @@ block_color_values := [Block_Color]rl.Color {
 	.Red    = {250, 90, 85, 255},
 }
 
+ball_texture: rl.Texture2D
+paddle_texture: rl.Texture2D
+hit_sound: rl.Sound
+hit_paddle_sound: rl.Sound
+game_over_sound: rl.Sound
 
 restart :: proc() {
 	paddle_pos_x = 0.5 * (SCREEN_SIZE - PADDLE_WIDTH)
@@ -244,7 +249,14 @@ render :: proc() {
 
 	paddle_rect := rl.Rectangle{paddle_pos_x, PADDLE_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT}
 
-	rl.DrawRectangleRec(paddle_rect, {50, 150, 90, 255})
+	rl.DrawTexturePro(
+		paddle_texture,
+		rl.Rectangle{0, 0, f32(paddle_texture.width), f32(paddle_texture.height)},
+		paddle_rect,
+		rl.Vector2{0, 0},
+		0,
+		rl.WHITE,
+	)
 
 	for x in 0 ..< NUM_BLOCKS_X {
 		for y in 0 ..< NUM_BLOCKS_Y {
@@ -307,6 +319,10 @@ main :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
 	rl.SetTargetFPS(500)
 	rl.InitAudioDevice()
+
+	ball_texture = rl.LoadTexture("assets/ball.png")
+	paddle_texture = rl.LoadTexture("assets/paddle.png")
+
 	restart()
 
 	for !rl.WindowShouldClose() {
@@ -314,6 +330,9 @@ main :: proc() {
 		render()
 		free_all(context.temp_allocator)
 	}
+
+	rl.UnloadTexture(ball_texture)
+	rl.UnloadTexture(paddle_texture)
 
 	rl.CloseAudioDevice()
 	rl.CloseWindow()

@@ -78,6 +78,13 @@ tick :: proc() {
 
 		}
 		snake[0] += move_direction
+
+		if snake[0] == food_pos {
+			snake_length += 1
+			snake[snake_length - 1] = snake[snake_length - 2]
+			place_food()
+		}
+
 		tick_timer = TICK_RATE
 		if snake[0].x < 0 ||
 		   snake[0].y < 0 ||
@@ -128,6 +135,7 @@ render :: proc() {
 
 	rl.EndDrawing()
 
+	free_all(context.temp_allocator)
 }
 main :: proc() {
 	rl.SetConfigFlags(({.VSYNC_HINT}))

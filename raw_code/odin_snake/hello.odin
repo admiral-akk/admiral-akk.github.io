@@ -23,6 +23,8 @@ food_sprite: rl.Texture2D
 head_sprite: rl.Texture2D
 tail_sprite: rl.Texture2D
 body_sprite: rl.Texture2D
+eat_sound: rl.Sound
+crash_sound: rl.Sound
 score: int
 
 place_food :: proc() {
@@ -63,6 +65,11 @@ restart :: proc() {
 	place_food()
 }
 
+death :: proc() {
+	game_over = true
+	rl.PlaySound(crash_sound)
+}
+
 tick :: proc() {
 	new_move_dir := move_direction
 	if rl.IsKeyPressed(.UP) {
@@ -98,7 +105,7 @@ tick :: proc() {
 		// check death
 		for i in 1 ..< snake_length {
 			if snake[i] == snake[0] {
-				game_over = true
+				death()
 			}
 		}
 
@@ -106,6 +113,7 @@ tick :: proc() {
 			snake_length += 1
 			snake[snake_length - 1] = snake[snake_length - 2]
 			place_food()
+			rl.PlaySound(eat_sound)
 		}
 
 		tick_timer = TICK_RATE
@@ -113,7 +121,7 @@ tick :: proc() {
 		   snake[0].y < 0 ||
 		   snake[0].x >= GRID_WIDTH ||
 		   snake[0].y >= GRID_WIDTH {
-			game_over = true
+			death()
 		}
 	}
 }
@@ -129,23 +137,9 @@ render :: proc() {
 	rl.BeginMode2D(camera)
 
 
-	head_rect := rl.Rectangle {
-		f32(food_pos.x) * CELL_SIZE,
-		f32(food_pos.y) * CELL_SIZE,
-		CELL_SIZE,
-		CELL_SIZE,
-	}
-
 	rl.DrawTextureV(food_sprite, {f32(food_pos.x), f32(food_pos.y)} * CELL_SIZE, rl.WHITE)
 
 	for i in 0 ..< snake_length {
-		head_rect := rl.Rectangle {
-			f32(snake[i].x) * CELL_SIZE,
-			f32(snake[i].y) * CELL_SIZE,
-			CELL_SIZE,
-			CELL_SIZE,
-		}
-		position := rl.Vector2{f32(snake[i].x), f32(snake[i].y)} * CELL_SIZE
 		sprite := head_sprite
 		if i == snake_length - 1 {
 			sprite = tail_sprite
@@ -197,21 +191,31 @@ render :: proc() {
 main :: proc() {
 	rl.SetConfigFlags(({.VSYNC_HINT}))
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
+	rl.InitAudioDevice()
 	restart()
 
 	food_sprite = rl.LoadTexture("assets/food.png")
 	head_sprite = rl.LoadTexture("assets/head.png")
 	body_sprite = rl.LoadTexture("assets/body.png")
 	tail_sprite = rl.LoadTexture("assets/tail.png")
+
+	eat_sound = rl.LoadSound("assets/eat.wav")
+	crash_sound = rl.LoadSound("assets/crash.wav")
+
 	for !rl.WindowShouldClose() {
 
 		tick()
 		render()
 	}
 
+	rl.UnloadSound(eat_sound)
+	rl.UnloadSound(crash_sound)
+
 	rl.UnloadTexture(food_sprite)
 	rl.UnloadTexture(head_sprite)
 	rl.UnloadTexture(body_sprite)
 	rl.UnloadTexture(tail_sprite)
+
+	rl.CloseAudioDevice()
 	rl.CloseWindow()
 }

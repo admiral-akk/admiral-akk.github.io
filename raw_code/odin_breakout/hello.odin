@@ -282,7 +282,21 @@ render :: proc() {
 		}
 	}
 
-	rl.DrawCircleV(ball_pos, BALL_RADIUS, {200, 90, 20, 255})
+	ball_rect := rl.Rectangle {
+		ball_pos.x - BALL_RADIUS,
+		ball_pos.y - BALL_RADIUS,
+		2 * BALL_RADIUS,
+		2 * BALL_RADIUS,
+	}
+
+	rl.DrawTexturePro(
+		ball_texture,
+		rl.Rectangle{0, 0, f32(ball_texture.width), f32(ball_texture.height)},
+		ball_rect,
+		rl.Vector2{0, 0},
+		0,
+		rl.WHITE,
+	)
 
 	score_text := fmt.ctprint(score)
 	rl.DrawText(score_text, 5, 5, 10, rl.WHITE)

@@ -15,6 +15,19 @@ snake: [MAX_SNAKE_LENGTH]Vec2i
 snake_length: int
 tick_timer: f32 = TICK_RATE
 move_direction: Vec2i
+game_over: bool
+
+restart :: proc() {
+
+	start_head_pos := Vec2i{GRID_WIDTH / 2, GRID_WIDTH / 2}
+	snake[0] = start_head_pos
+	snake[1] = snake[0] - {0, 1}
+	snake[2] = snake[1] - {0, 1}
+
+	move_direction = {0, 1}
+	snake_length = 3
+	game_over = false
+}
 
 tick :: proc() {
 	if rl.IsKeyPressed(.UP) {
@@ -29,7 +42,11 @@ tick :: proc() {
 	if rl.IsKeyPressed(.RIGHT) {
 		move_direction = {1, 0}
 	}
-	tick_timer -= rl.GetFrameTime()
+	if !game_over {
+		tick_timer -= rl.GetFrameTime()
+	} else if rl.IsKeyPressed(.ENTER) {
+		restart()
+	}
 	if tick_timer <= 0 {
 		for i := snake_length - 1; i > 0; i -= 1 {
 			snake[i] = snake[i - 1]
@@ -37,6 +54,12 @@ tick :: proc() {
 		}
 		snake[0] += move_direction
 		tick_timer = TICK_RATE
+		if snake[0].x < 0 ||
+		   snake[0].y < 0 ||
+		   snake[0].x >= GRID_WIDTH ||
+		   snake[0].y >= GRID_WIDTH {
+			game_over = true
+		}
 	}
 }
 
@@ -66,22 +89,10 @@ render :: proc() {
 	rl.EndDrawing()
 
 }
-
-init :: proc() {
+main :: proc() {
 	rl.SetConfigFlags(({.VSYNC_HINT}))
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
-
-	start_head_pos := Vec2i{GRID_WIDTH / 2, GRID_WIDTH / 2}
-	snake[0] = start_head_pos
-	snake[1] = snake[0] - {0, 1}
-	snake[2] = snake[1] - {0, 1}
-
-	move_direction = {0, 1}
-	snake_length = 3
-}
-
-main :: proc() {
-	init()
+	restart()
 	for !rl.WindowShouldClose() {
 
 		tick()

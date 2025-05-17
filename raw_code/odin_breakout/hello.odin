@@ -53,6 +53,23 @@ tick :: proc() {
 	}
 	if tick_timer <= 0 {
 
+		previous_ball_pos := ball_pos
+		ball_pos += ball_dir * TICK_RATE * BALL_SPEED
+
+		if ball_pos.x + BALL_RADIUS > SCREEN_SIZE {
+			ball_pos.x = SCREEN_SIZE - BALL_RADIUS
+			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{-1, 0}))
+		}
+		if ball_pos.x - BALL_RADIUS < 0 {
+			ball_pos.x = BALL_RADIUS
+			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{1, 0}))
+		}
+		if ball_pos.y - BALL_RADIUS < 0 {
+			ball_pos.y = BALL_RADIUS
+			ball_dir = linalg.normalize(linalg.reflect(ball_dir, rl.Vector2{0, 1}))
+		}
+
+
 		paddle_move_velocity = 0
 		if rl.IsKeyDown(.LEFT) {
 			paddle_move_velocity -= PADDLE_SPEED
@@ -65,8 +82,6 @@ tick :: proc() {
 		paddle_pos_x = clamp(paddle_pos_x, 0, SCREEN_SIZE - PADDLE_WIDTH)
 
 		paddle_rect := rl.Rectangle{paddle_pos_x, PADDLE_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT}
-		previous_ball_pos := ball_pos
-		ball_pos += ball_dir * TICK_RATE * BALL_SPEED
 		if rl.CheckCollisionCircleRec(ball_pos, BALL_RADIUS, paddle_rect) {
 			collision_normal: rl.Vector2
 

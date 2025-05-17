@@ -169,6 +169,9 @@ enum Node {
     },
 }
 
+// reference on voice generation: https://newt.phys.unsw.edu.au/jw/voice.html#phonemes
+// https://news.ycombinator.com/item?id=36771149
+
 // this lets us go from various filters to a single form
 impl From<SerializedNode> for Node {
     fn from(node: SerializedNode) -> Node {

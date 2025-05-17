@@ -17,6 +17,7 @@ tick_timer: f32 = TICK_RATE
 move_direction: Vec2i
 game_over: bool
 food_pos: Vec2i
+food_sprite: rl.Texture2D
 
 place_food :: proc() {
 	occupied: [GRID_WIDTH][GRID_WIDTH]bool
@@ -123,7 +124,8 @@ render :: proc() {
 		CELL_SIZE,
 		CELL_SIZE,
 	}
-	rl.DrawRectangleRec(head_rect, rl.RED)
+
+	rl.DrawTexture(food_sprite, i32(food_pos.x) * CELL_SIZE, i32(food_pos.y) * CELL_SIZE, rl.WHITE)
 
 	for i in 0 ..< snake_length {
 		head_rect := rl.Rectangle {
@@ -152,6 +154,8 @@ main :: proc() {
 	rl.SetConfigFlags(({.VSYNC_HINT}))
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
 	restart()
+
+	food_sprite = rl.LoadTexture("assets/food.png")
 	for !rl.WindowShouldClose() {
 
 		tick()

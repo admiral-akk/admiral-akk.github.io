@@ -64,7 +64,34 @@ tick :: proc() {
 		paddle_pos_x += paddle_move_velocity * TICK_RATE
 		paddle_pos_x = clamp(paddle_pos_x, 0, SCREEN_SIZE - PADDLE_WIDTH)
 
+		paddle_rect := rl.Rectangle{paddle_pos_x, PADDLE_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT}
+		previous_ball_pos := ball_pos
 		ball_pos += ball_dir * TICK_RATE * BALL_SPEED
+		if rl.CheckCollisionCircleRec(ball_pos, BALL_RADIUS, paddle_rect) {
+			collision_normal: rl.Vector2
+
+			if previous_ball_pos.y < paddle_rect.y + paddle_rect.height {
+				collision_normal += {0, -1}
+				ball_pos.y = paddle_rect.y - BALL_RADIUS
+			} else {
+				collision_normal += {0, 1}
+				ball_pos.y = paddle_rect.y + paddle_rect.height + BALL_RADIUS
+			}
+
+			if previous_ball_pos.x < paddle_rect.x {
+				collision_normal += {-1, 0}
+
+			} else if previous_ball_pos.x > paddle_rect.x + paddle_rect.width {
+				collision_normal += {1, 0}
+			}
+
+			if collision_normal != 0 {
+				ball_dir = linalg.normalize(
+					linalg.reflect(ball_dir, linalg.normalize((collision_normal))),
+				)
+			}
+		}
+
 
 		tick_timer = TICK_RATE
 	}

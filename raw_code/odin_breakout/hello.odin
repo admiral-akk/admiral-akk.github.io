@@ -1,5 +1,7 @@
 package snake
 
+import "core:math"
+import "core:math/linalg"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1280
@@ -25,17 +27,32 @@ BALL_START_Y :: 160
 ball_pos: rl.Vector2
 ball_dir: rl.Vector2
 
+started: bool
 
 restart :: proc() {
 	paddle_pos_x = 0.5 * (SCREEN_SIZE - PADDLE_WIDTH)
 	ball_pos = {0.5 * SCREEN_SIZE, BALL_START_Y}
-	ball_dir = {0, 1}
+	ball_dir = {0, 0}
+	started = false
 }
 
 
 tick :: proc() {
-	tick_timer -= rl.GetFrameTime()
+	if !started {
+		ball_pos = {SCREEN_SIZE * (0.5 + 0.3 * f32(math.cos(rl.GetTime()))), BALL_START_Y}
+
+		if rl.IsKeyPressed(.SPACE) {
+			paddle_middle := rl.Vector2{paddle_pos_x + 0.5 * PADDLE_WIDTH, PADDLE_POS_Y}
+			ball_to_paddle := paddle_middle - ball_pos
+
+			ball_dir = linalg.normalize0(ball_to_paddle)
+			started = true
+		}
+	} else {
+		tick_timer -= rl.GetFrameTime()
+	}
 	if tick_timer <= 0 {
+
 		paddle_move_velocity = 0
 		if rl.IsKeyDown(.LEFT) {
 			paddle_move_velocity -= PADDLE_SPEED
@@ -46,6 +63,9 @@ tick :: proc() {
 
 		paddle_pos_x += paddle_move_velocity * TICK_RATE
 		paddle_pos_x = clamp(paddle_pos_x, 0, SCREEN_SIZE - PADDLE_WIDTH)
+
+		ball_pos += ball_dir * TICK_RATE * BALL_SPEED
+
 		tick_timer = TICK_RATE
 	}
 }
@@ -63,7 +83,7 @@ render :: proc() {
 
 	rl.DrawRectangleRec(paddle_rect, {50, 150, 90, 255})
 
-	rl.DrawCircle(i32(ball_pos.x), i32(ball_pos.y), BALL_RADIUS, rl.WHITE)
+	rl.DrawCircleV(ball_pos, BALL_RADIUS, {200, 90, 20, 255})
 	rl.EndMode2D()
 	rl.EndDrawing()
 

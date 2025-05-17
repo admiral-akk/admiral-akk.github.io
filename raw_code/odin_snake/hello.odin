@@ -87,17 +87,20 @@ tick :: proc() {
 		restart()
 	}
 	if tick_timer <= 0 {
-		next_head_pos := snake[0] + move_direction
 		for i := snake_length - 1; i > 0; i -= 1 {
-			if next_head_pos == snake[i] {
-				game_over = true
-			}
 
 			snake[i] = snake[i - 1]
 
 
 		}
 		snake[0] += move_direction
+
+		// check death
+		for i in 1 ..< snake_length {
+			if snake[i] == snake[0] {
+				game_over = true
+			}
+		}
 
 		if snake[0] == food_pos {
 			snake_length += 1

@@ -55,18 +55,23 @@ restart :: proc() {
 }
 
 tick :: proc() {
-	if rl.IsKeyPressed(.UP) && snake[0].y != snake[1].y + 1 {
-		move_direction = {0, -1}
+	new_move_dir := move_direction
+	if rl.IsKeyPressed(.UP) {
+		new_move_dir = {0, -1}
 	}
-	if rl.IsKeyPressed(.DOWN) && snake[0].y != snake[1].y - 1 {
-		move_direction = {0, 1}
+	if rl.IsKeyPressed(.DOWN) {
+		new_move_dir = {0, 1}
 	}
-	if rl.IsKeyPressed(.LEFT) && snake[0].x != snake[1].x + 1 {
-		move_direction = {-1, 0}
+	if rl.IsKeyPressed(.LEFT) {
+		new_move_dir = {-1, 0}
 	}
-	if rl.IsKeyPressed(.RIGHT) && snake[0].x != snake[1].x - 1 {
-		move_direction = {1, 0}
+	if rl.IsKeyPressed(.RIGHT) {
+		new_move_dir = {1, 0}
 	}
+	if new_move_dir != snake[1] - snake[0] {
+		move_direction = new_move_dir
+	}
+
 	if !game_over {
 		tick_timer -= rl.GetFrameTime()
 	} else if rl.IsKeyPressed(.ENTER) {

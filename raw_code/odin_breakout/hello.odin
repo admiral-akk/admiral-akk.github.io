@@ -75,7 +75,7 @@ block_color_values := [Block_Color]rl.Color {
 
 ball_texture: rl.Texture2D
 paddle_texture: rl.Texture2D
-hit_sound: rl.Sound
+hit_block_sound: rl.Sound
 hit_paddle_sound: rl.Sound
 game_over_sound: rl.Sound
 
@@ -155,6 +155,7 @@ tick :: proc() {
 		}
 		if !game_over && ball_pos.y + BALL_RADIUS > SCREEN_SIZE + 6 * BALL_RADIUS {
 			game_over = true
+			rl.PlaySound(game_over_sound)
 		}
 
 
@@ -190,6 +191,8 @@ tick :: proc() {
 
 			if collision_normal != 0 {
 				ball_dir = reflect(ball_dir, collision_normal)
+
+				rl.PlaySound(hit_paddle_sound)
 			}
 		}
 
@@ -227,6 +230,7 @@ tick :: proc() {
 
 						blocks[x][y] = false
 						score += block_color_score[row_colors[y]]
+						rl.PlaySound(hit_block_sound)
 						break block_x_loop
 					}
 				}
@@ -337,6 +341,10 @@ main :: proc() {
 	ball_texture = rl.LoadTexture("assets/ball.png")
 	paddle_texture = rl.LoadTexture("assets/paddle.png")
 
+	hit_block_sound = rl.LoadSound("assets/hit_block.wav")
+	hit_paddle_sound = rl.LoadSound("assets/hit_paddle.wav")
+	game_over_sound = rl.LoadSound("assets/game_over.wav")
+
 	restart()
 
 	for !rl.WindowShouldClose() {
@@ -344,6 +352,10 @@ main :: proc() {
 		render()
 		free_all(context.temp_allocator)
 	}
+
+	rl.UnloadSound(hit_block_sound)
+	rl.UnloadSound(hit_paddle_sound)
+	rl.UnloadSound(game_over_sound)
 
 	rl.UnloadTexture(ball_texture)
 	rl.UnloadTexture(paddle_texture)

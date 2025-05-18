@@ -1,4 +1,4 @@
-rm -rf ./dist/*
+rm -rf ./dist
 mkdir dist
 ./build.sh
 odin build src/main.odin -file -out:dist/main

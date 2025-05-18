@@ -1,1 +1,1 @@
-odin build src/game.odin -file -build-mode:shared -out:dist/game.so -define:RAYLIB_SHARED=true
+odin build src/game.odin -file -build-mode:shared -out:dist/game.so -define:RAYLIB_SHARED=true -vet

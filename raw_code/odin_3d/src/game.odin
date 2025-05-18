@@ -1,34 +1,10 @@
 package game
 
-import "core:fmt"
-import "core:math"
-import "core:math/linalg"
-import "core:math/rand"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1280
 SCREEN_SIZE :: 320
-Vec2i :: [2]int
 TICK_RATE :: 0.02
-
-PADDLE_WIDTH :: 50
-PADDLE_HEIGHT :: 6
-PADDLE_POS_Y :: 260
-PADDLE_SPEED :: 200
-
-BALL_SPEED :: 200
-BALL_RADIUS :: 4
-BALL_START_Y :: 160
-
-
-NUM_BLOCKS_X :: 10
-NUM_BLOCKS_Y :: 8
-
-BLOCK_WIDTH :: 28
-BLOCK_X_PADDING :: 20
-BLOCK_HEIGHT :: 10
-BLOCK_Y_PADDING :: 40
-
 
 generate_box :: proc() -> rl.Mesh {
 	vertexCount := i32(6 * 6)
@@ -86,108 +62,28 @@ generate_box :: proc() -> rl.Mesh {
 	}
 }
 
-block_color_score := [Block_Color]int {
-	.Yellow = 2,
-	.Green  = 4,
-	.Orange = 6,
-	.Red    = 8,
-}
-
-Block_Color :: enum {
-	Yellow,
-	Green,
-	Orange,
-	Red,
-}
-
-row_colors := [NUM_BLOCKS_Y]Block_Color {
-	.Red,
-	.Red,
-	.Orange,
-	.Orange,
-	.Green,
-	.Green,
-	.Yellow,
-	.Yellow,
-}
-
-block_color_values := [Block_Color]rl.Color {
-	.Yellow = {253, 249, 150, 255},
-	.Green  = {180, 245, 190, 255},
-	.Orange = {170, 120, 250, 255},
-	.Red    = {250, 90, 85, 255},
-}
-
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
 must be transferable from one game DLL to
 another when a hot reload occurs. We can do that
 when all the game's memory live in here. */
 GameMemory :: struct {
-	some_state:           int,
-	ball_texture:         rl.Texture2D,
-	paddle_texture:       rl.Texture2D,
-	hit_block_sound:      rl.Sound,
-	hit_paddle_sound:     rl.Sound,
-	game_over_sound:      rl.Sound,
-	blocks:               [NUM_BLOCKS_X][NUM_BLOCKS_Y]bool,
-	score:                int,
-	start_time_offset:    f64,
-	game_over:            bool,
-	started:              bool,
-	ball_pos:             rl.Vector2,
-	ball_dir:             rl.Vector2,
-	tick_timer:           f32,
-	paddle_pos_x:         f32,
-	paddle_move_velocity: f32,
-	cube_mesh:            rl.Mesh,
-	cube_material:        rl.Material,
-	cube_transform:       # row_major matrix[4, 4]f32,
+	tick_timer:     f32,
+	cube_mesh:      rl.Mesh,
+	cube_material:  rl.Material,
+	cube_transform: # row_major matrix[4, 4]f32,
 }
 
 g_mem: ^GameMemory
 
-
 restart :: proc() {
-	g_mem.paddle_pos_x = 0.5 * (SCREEN_SIZE - PADDLE_WIDTH)
-	g_mem.ball_pos = {0.5 * SCREEN_SIZE, BALL_START_Y}
-	g_mem.ball_dir = {0, 0}
-	g_mem.start_time_offset = rl.GetTime()
-	g_mem.started = false
-	g_mem.score = 0
-	g_mem.game_over = false
-
-	for x in 0 ..< NUM_BLOCKS_X {
-		for y in 0 ..< NUM_BLOCKS_Y {
-			g_mem.blocks[x][y] = true
-		}
-	}
+	g_mem.cube_transform = rl.Matrix(1)
 }
-
-calc_block_rect :: proc(x, y: int) -> rl.Rectangle {
-	return {
-		f32(BLOCK_X_PADDING + x * BLOCK_WIDTH),
-		f32(BLOCK_Y_PADDING + y * BLOCK_HEIGHT),
-		BLOCK_WIDTH,
-		BLOCK_HEIGHT,
-	}
-
-}
-
-reflect :: proc(dir, normal: rl.Vector2) -> rl.Vector2 {
-
-	return linalg.normalize(linalg.reflect(dir, normal))
-}
-
-block_exists :: proc(x, y: int) -> bool {
-	return x >= 0 && y >= 0 && x < NUM_BLOCKS_X && y < NUM_BLOCKS_Y && g_mem.blocks[x][y]
-}
-
 
 tick :: proc() {
 	g_mem.tick_timer -= rl.GetFrameTime()
 	if g_mem.tick_timer <= 0 {
-		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, -10)
+		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.1)
 		g_mem.cube_transform = rotation * g_mem.cube_transform
 
 		g_mem.tick_timer = TICK_RATE
@@ -213,25 +109,6 @@ render :: proc() {
 	rl.EndDrawing()
 
 }
-loop :: proc() {
-
-
-	for !rl.WindowShouldClose() {
-		tick()
-		render()
-		free_all(context.temp_allocator)
-	}
-
-	rl.UnloadSound(g_mem.hit_block_sound)
-	rl.UnloadSound(g_mem.hit_paddle_sound)
-	rl.UnloadSound(g_mem.game_over_sound)
-
-	rl.UnloadTexture(g_mem.ball_texture)
-	rl.UnloadTexture(g_mem.paddle_texture)
-
-	rl.CloseAudioDevice()
-	rl.CloseWindow()
-}
 /* Allocates the GameMemory that we use to store
   our game's state. We assign it to a global
   variable so we can use it from the other
@@ -245,14 +122,8 @@ game_init :: proc() {
 	rl.InitAudioDevice()
 	g_mem.cube_material = rl.LoadMaterialDefault()
 	g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
-	g_mem.cube_transform = rl.Matrix(1)
 
-	g_mem.ball_texture = rl.LoadTexture("assets/ball.png")
-	g_mem.paddle_texture = rl.LoadTexture("assets/paddle.png")
-
-	g_mem.hit_block_sound = rl.LoadSound("assets/hit_block.wav")
-	g_mem.hit_paddle_sound = rl.LoadSound("assets/hit_paddle.wav")
-	g_mem.game_over_sound = rl.LoadSound("assets/game_over.wav")
+	restart()
 }
 
 /* Allocates the GameMemory that we use to store
@@ -261,7 +132,6 @@ game_init :: proc() {
   procedures. */
 @(export)
 game_init_window :: proc() {
-
 	restart()
 }
 /* Allocates the GameMemory that we use to store
@@ -286,14 +156,10 @@ game_update :: proc() -> bool {
   has exited. Clean up your memory here. */
 @(export)
 game_shutdown :: proc() {
+	rl.UnloadMaterial(g_mem.cube_material)
+	rl.UnloadMesh(g_mem.cube_mesh)
+
 	free(g_mem)
-	rl.UnloadSound(g_mem.hit_block_sound)
-	rl.UnloadSound(g_mem.hit_paddle_sound)
-	rl.UnloadSound(g_mem.game_over_sound)
-
-	rl.UnloadTexture(g_mem.ball_texture)
-	rl.UnloadTexture(g_mem.paddle_texture)
-
 	rl.CloseAudioDevice()
 	rl.CloseWindow()
 }

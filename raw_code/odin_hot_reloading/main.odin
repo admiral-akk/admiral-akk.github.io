@@ -132,6 +132,8 @@ load_game_api :: proc(api_version: int) -> (GameAPI, bool) {
 	lib, lib_ok := dynlib.load_library(dll_name)
 
 	if !lib_ok {
+		fmt.println("dll_name: ", dll_name)
+		fmt.eprintln(dynlib.last_error())
 		fmt.println("Failed loading game DLL")
 		return {}, false
 	}
@@ -178,7 +180,7 @@ unload_game_api :: proc(api: GameAPI) {
 
   Note: I use the windows del command, there are
   better ways to do this. */
-	del_cmd := fmt.ctprintf("del game_{0}.so", api.api_version)
+	del_cmd := fmt.ctprintf("rm game_{0}.so", api.api_version)
 	if libc.system(del_cmd) != 0 {
 		fmt.println("Failed to remove game_{0}.so copy", api.api_version)
 	}

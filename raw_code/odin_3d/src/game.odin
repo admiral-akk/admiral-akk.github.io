@@ -6,6 +6,37 @@ WINDOW_SIZE :: 1280
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
+VERT_SHADER :: `#version 330                       
+in vec3 vertexPosition;            
+in vec2 vertexTexCoord;            
+in vec4 vertexColor;               
+out vec2 fragTexCoord;             
+out vec4 fragColor;  
+
+uniform mat4 mvp;                  
+void main()                        
+{                                  
+    fragTexCoord = vertexTexCoord; 
+    fragColor = vertexColor;       
+    gl_Position = mvp*vec4(vertexPosition, 1.0); 
+}                                  
+	              `
+
+
+FRAG_SHADER :: `#version 330       
+in vec2 fragTexCoord;              
+in vec4 fragColor;                 
+out vec4 finalColor;               
+uniform sampler2D texture0;        
+uniform vec4 colDiffuse;           
+void main()                        
+{                                  
+    vec4 texelColor = texture(texture0, fragTexCoord);   
+    finalColor = vec4(0.4);// texelColor*colDiffuse*fragColor;        
+}                                  
+	`
+
+
 generate_box :: proc() -> rl.Mesh {
 	vertexCount := i32(6 * 6)
 	triangleCount := i32(6 * 2)
@@ -72,6 +103,7 @@ GameMemory :: struct {
 	cube_mesh:      rl.Mesh,
 	cube_material:  rl.Material,
 	cube_transform: # row_major matrix[4, 4]f32,
+	cube_shader:    rl.Shader,
 }
 
 g_mem: ^GameMemory
@@ -107,7 +139,6 @@ render :: proc() {
 
 	rl.EndMode3D()
 	rl.EndDrawing()
-
 }
 /* Allocates the GameMemory that we use to store
   our game's state. We assign it to a global
@@ -120,11 +151,18 @@ game_init :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
 	rl.SetTargetFPS(500)
 	rl.InitAudioDevice()
-	g_mem.cube_material = rl.LoadMaterialDefault()
-	g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
-
+	game_reload()
 	restart()
 }
+
+@(export)
+game_reload :: proc() {
+	g_mem.cube_material = rl.LoadMaterialDefault()
+	g_mem.cube_material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
+	free_all(context.temp_allocator)
+}
+
 
 /* Allocates the GameMemory that we use to store
   our game's state. We assign it to a global
@@ -172,6 +210,7 @@ game_shutdown :: proc() {
   it the game memory pointer. */
 @(export)
 game_memory :: proc() -> rawptr {
+	game_reload()
 	return g_mem
 }
 

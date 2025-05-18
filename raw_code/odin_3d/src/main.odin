@@ -85,6 +85,7 @@ GameAPI :: struct {
 	shutdown_window: proc(),
 	update:          proc() -> bool,
 	shutdown:        proc(),
+	reload:          proc(),
 	memory:          proc() -> rawptr,
 	hot_reloaded:    proc(_: rawptr),
 
@@ -145,6 +146,7 @@ load_game_api :: proc(api_version: int) -> (GameAPI, bool) {
 		init            = cast(proc())(dynlib.symbol_address(lib, "game_init") or_else nil),
 		init_window     = cast(proc())(dynlib.symbol_address(lib, "init_window") or_else nil),
 		shutdown_window = cast(proc())(dynlib.symbol_address(lib, "shutdown_window") or_else nil),
+		reload          = cast(proc())(dynlib.symbol_address(lib, "game_reload") or_else nil),
 		update          = cast(proc(
 		) -> bool)(dynlib.symbol_address(lib, "game_update") or_else nil),
 		shutdown        = cast(proc())(dynlib.symbol_address(lib, "game_shutdown") or_else nil),

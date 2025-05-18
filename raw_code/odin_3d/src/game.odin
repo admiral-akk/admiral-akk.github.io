@@ -7,9 +7,12 @@ SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
 VERT_SHADER :: `#version 330                       
-in vec3 vertexPosition;            
-in vec2 vertexTexCoord;            
-in vec4 vertexColor;               
+layout(location = 0)  in vec3 vertexPosition;            
+layout(location = 1) in vec2 vertexTexCoord;    
+layout(location = 2) in vec3 vertexNormal;         
+layout(location = 3)  in vec4 vertexColor;         
+layout(location = 4)  in vec4 vertexTangent;         
+layout(location = 5) in vec2 vertexTexCoord2;              
 out vec2 fragTexCoord;             
 out vec4 fragColor;  
 
@@ -32,7 +35,7 @@ uniform vec4 colDiffuse;
 void main()                        
 {                                  
     vec4 texelColor = texture(texture0, fragTexCoord);   
-    finalColor = vec4(0.4);// texelColor*colDiffuse*fragColor;        
+    finalColor =  texelColor*colDiffuse*fragColor;        
 }                                  
 	`
 
@@ -131,7 +134,7 @@ render :: proc() {
 		position = rl.Vector3{3, 3, 3},
 		target   = rl.Vector3{0, 0, 0},
 		up       = rl.Vector3{0, 1, 0},
-		fovy     = 60,
+		fovy     = 40,
 	}
 
 	rl.BeginMode3D(camera_3d)

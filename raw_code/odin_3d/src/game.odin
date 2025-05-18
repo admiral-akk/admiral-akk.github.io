@@ -187,7 +187,7 @@ block_exists :: proc(x, y: int) -> bool {
 tick :: proc() {
 	g_mem.tick_timer -= rl.GetFrameTime()
 	if g_mem.tick_timer <= 0 {
-		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.)
+		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, -10)
 		g_mem.cube_transform = rotation * g_mem.cube_transform
 
 		g_mem.tick_timer = TICK_RATE

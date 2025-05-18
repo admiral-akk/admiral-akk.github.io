@@ -1,5 +1,7 @@
 package game
 
+import "core:fmt"
+import "core:math"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 1280
@@ -40,62 +42,6 @@ void main()
 	`
 
 
-generate_box :: proc() -> rl.Mesh {
-	vertexCount := i32(6 * 6)
-	triangleCount := i32(6 * 2)
-	vertices := [?]f32{1}
-	colors := [?]u8{1}
-	indices := [?]u16{1}
-	texcoords := [?]f32{1}
-	texcoords2 := [?]f32{1}
-	normals := [?]f32{1}
-	tangents := [?]f32{1}
-	animVertices := [?]f32{1}
-	animNormals := [?]f32{1}
-	boneIds := [?]u8{1}
-	boneWeights := [?]f32{}
-	boneMatrices := [?](# row_major matrix[4, 4]f32){}
-	boneCount := i32(1)
-	vaoId := u32(1)
-	vboId := [?]u32{1}
-
-	return rl.Mesh {
-		vertexCount   = vertexCount,
-		// Number of vertices stored in arrays
-		triangleCount = triangleCount,
-		// Default vertex data
-		vertices      = raw_data(vertices[:]),
-		// Vertex position (XYZ - 3 components per vertex) (shader-location = 0)
-		texcoords     = raw_data(texcoords[:]),
-		// Vertex texture coordinates (UV - 2 components per vertex) (shader-location = 1)
-		texcoords2    = raw_data(texcoords2[:]),
-		// Vertex second texture coordinates (useful for lightmaps) (shader-location = 5)
-		normals       = raw_data(normals[:]),
-		// Vertex normals (XYZ - 3 components per vertex) (shader-location = 2)
-		tangents      = raw_data(tangents[:]),
-		// Vertex tangents (XYZW - 4 components per vertex) (shader-location = 4)
-		colors        = raw_data(colors[:]),
-		// Vertex colors (RGBA - 4 components per vertex) (shader-location = 3)
-		indices       = raw_data(indices[:]),
-		// Animation vertex data
-		animVertices  = raw_data(animVertices[:]),
-		// Animated vertex positions (after bones transformations)
-		animNormals   = raw_data(animNormals[:]),
-		// Animated normals (after bones transformations)
-		boneIds       = raw_data(boneIds[:]),
-		// Vertex bone ids, up to 4 bones influence by vertex (skinning)
-		boneWeights   = raw_data(boneWeights[:]),
-		// Vertex bone weight, up to 4 bones influence by vertex (skinning)
-		boneMatrices  = raw_data(boneMatrices[:]),
-		// Bones animated transformation matrices
-		boneCount     = boneCount,
-		// OpenGL identifiers
-		vaoId         = vaoId,
-		// OpenGL Vertex Array Object id
-		vboId         = raw_data(vboId[:]),
-	}
-}
-
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
 must be transferable from one game DLL to
@@ -105,6 +51,9 @@ GameMemory :: struct {
 	tick_timer:     f32,
 	cube_mesh:      rl.Mesh,
 	cube_material:  rl.Material,
+	audio_stream:   rl.AudioStream,
+	audio_frame:    u32,
+	audio_buffer:   [BUFFER_SIZE]f32,
 	cube_transform: # row_major matrix[4, 4]f32,
 	cube_shader:    rl.Shader,
 }
@@ -138,6 +87,7 @@ render :: proc() {
 	}
 
 	rl.BeginMode3D(camera_3d)
+	fill_audio()
 	rl.DrawMesh(g_mem.cube_mesh, g_mem.cube_material, g_mem.cube_transform)
 
 	rl.EndMode3D()
@@ -158,11 +108,296 @@ game_init :: proc() {
 	restart()
 }
 
+generate_mesh :: proc() -> rl.Mesh {
+	mesh := rl.Mesh {
+		vertexCount   = 24,
+		triangleCount = 12,
+		vertices      = raw_data(
+			[]f32 {
+				-0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				-0.500,
+				0.500,
+				-0.500,
+				0.500,
+				0.500,
+				-0.500,
+				0.500,
+				-0.500,
+			},
+		),
+		texcoords     = raw_data(
+			[]f32 {
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				1.000,
+				1.000,
+				0.000,
+				1.000,
+			},
+		),
+		normals       = raw_data(
+			[]f32 {
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+				-1.000,
+				0.000,
+				0.000,
+			},
+		),
+		indices       = raw_data(
+			[]u16 {
+				0,
+				1,
+				2,
+				0,
+				2,
+				3,
+				4,
+				5,
+				6,
+				4,
+				6,
+				7,
+				8,
+				9,
+				10,
+				8,
+				10,
+				11,
+				12,
+				13,
+				14,
+				12,
+				14,
+				15,
+				16,
+				17,
+				18,
+				16,
+				18,
+				19,
+				20,
+				21,
+				22,
+				20,
+				22,
+				23,
+			},
+		),
+	}
+	rl.UploadMesh(&mesh, false)
+	return mesh
+}
+
+SAMPLE_RATE :: 44100
+BUFFER_SIZE :: 512
+FREQUENCY :: 440
+
+fill_audio :: proc() {fmt.println(rl.IsAudioStreamProcessed(g_mem.audio_stream))
+	if rl.IsAudioStreamProcessed(g_mem.audio_stream) {
+		for i in 0 ..< BUFFER_SIZE {
+			g_mem.audio_buffer[i] = math.sin(
+				FREQUENCY * math.TAU * f32(i + int(g_mem.audio_frame)) / SAMPLE_RATE,
+			)
+		}
+		rl.UpdateAudioStream(g_mem.audio_stream, raw_data(g_mem.audio_buffer[:]), BUFFER_SIZE)
+		g_mem.audio_frame += BUFFER_SIZE
+	}
+}
+
+
+audio_callback :: proc "c" (b: rawptr, frames: u32) {
+	ptr: [^]f32 = cast([^]f32)(b)
+	for i in 0 ..< frames {
+		ptr[i] = math.sin(FREQUENCY * math.TAU * f32(i + g_mem.audio_frame) / SAMPLE_RATE)
+	}
+	g_mem.audio_frame += frames
+}
+
 @(export)
 game_reload :: proc() {
 	g_mem.cube_material = rl.LoadMaterialDefault()
 	g_mem.cube_material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
+	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
+	rl.PlayAudioStream(g_mem.audio_stream)
+	g_mem.audio_frame = 0
+
+	//g_mem.cube_mesh = generate_mesh()
 	g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
+
 	free_all(context.temp_allocator)
 }
 

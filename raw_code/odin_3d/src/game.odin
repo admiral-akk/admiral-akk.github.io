@@ -48,6 +48,12 @@ ButtonState :: enum int {
 	HOT      = 1,
 	ACTIVE   = 2,
 }
+
+Command :: enum int {
+	NONE    = 0,
+	CLICKED = 1,
+}
+
 UIElement :: struct {
 	id: int,
 }
@@ -81,6 +87,7 @@ GameMemory :: struct {
 	cube_shader:    rl.Shader,
 	ui_memory:      UIMemory,
 	score:          int,
+	current:        Command,
 }
 
 g_mem: ^GameMemory
@@ -121,9 +128,20 @@ tick :: proc() {
 	case .ACTIVE:
 		if !md {
 			g_mem.ui_memory.button.state = .INACTIVE
+			if over_button {
+				g_mem.current = .CLICKED
+			}
 		}
 	}
 
+	// apply command 
+
+	switch g_mem.current {
+	case .NONE:
+	case .CLICKED:
+		g_mem.score += 1
+	}
+	g_mem.current = .NONE
 }
 
 
@@ -161,6 +179,9 @@ render :: proc() {
 	}
 	rl.DrawRectangleRec(g_mem.ui_memory.button.position, button_color)
 	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
+
+	score := fmt.ctprint(g_mem.score)
+	rl.DrawText(score, 100, 100, 14, {240, 240, 240, 255})
 	fmt.println(mp)
 
 	rl.EndMode2D()

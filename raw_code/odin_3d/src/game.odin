@@ -71,6 +71,7 @@ UIMemory :: struct {
 	button: Button,
 }
 
+
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
 must be transferable from one game DLL to
@@ -87,6 +88,7 @@ GameMemory :: struct {
 	cube_shader:    rl.Shader,
 	ui_memory:      UIMemory,
 	score:          int,
+	score_size:     f32,
 	current:        Command,
 }
 
@@ -96,6 +98,7 @@ restart :: proc() {
 	g_mem.cube_transform = rl.Matrix(1)
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.score = 0
+	g_mem.score_size = 14
 }
 
 tick :: proc() {
@@ -106,6 +109,10 @@ tick :: proc() {
 		g_mem.cube_transform = rotation * g_mem.cube_transform
 
 		g_mem.tick_timer = TICK_RATE
+		if g_mem.score_size > 14 {
+			g_mem.score_size -= TICK_RATE * 75
+			g_mem.score_size = math.max(14, g_mem.score_size)
+		}
 	}
 
 	// gui state 
@@ -140,6 +147,7 @@ tick :: proc() {
 	case .NONE:
 	case .CLICKED:
 		g_mem.score += 1
+		g_mem.score_size = 20
 	}
 	g_mem.current = .NONE
 }
@@ -181,7 +189,7 @@ render :: proc() {
 	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
 
 	score := fmt.ctprint(g_mem.score)
-	rl.DrawText(score, 100, 100, 14, {240, 240, 240, 255})
+	rl.DrawText(score, 100, 100, i32(g_mem.score_size), {240, 240, 240, 255})
 	fmt.println(mp)
 
 	rl.EndMode2D()

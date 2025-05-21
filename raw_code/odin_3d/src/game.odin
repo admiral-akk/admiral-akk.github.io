@@ -42,6 +42,29 @@ void main()
 	`
 
 
+// Mouse buttons
+ButtonState :: enum int {
+	INACTIVE = 0,
+	HOT      = 1,
+	ACTIVE   = 2,
+}
+UIElement :: struct {
+	id: int,
+}
+
+Button :: struct {
+	using identifier: UIElement,
+	hot:              bool,
+	active:           bool,
+	text:             string,
+	position:         rl.Rectangle,
+	state:            ButtonState,
+}
+
+UIMemory :: struct {
+	button: Button,
+}
+
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
 must be transferable from one game DLL to
@@ -56,15 +79,20 @@ GameMemory :: struct {
 	audio_buffer:   [BUFFER_SIZE]f32,
 	cube_transform: # row_major matrix[4, 4]f32,
 	cube_shader:    rl.Shader,
+	ui_memory:      UIMemory,
+	score:          int,
 }
 
 g_mem: ^GameMemory
 
 restart :: proc() {
 	g_mem.cube_transform = rl.Matrix(1)
+	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
+	g_mem.score = 0
 }
 
 tick :: proc() {
+	// game state
 	g_mem.tick_timer -= rl.GetFrameTime()
 	if g_mem.tick_timer <= 0 {
 		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.1)
@@ -72,6 +100,30 @@ tick :: proc() {
 
 		g_mem.tick_timer = TICK_RATE
 	}
+
+	// gui state 
+	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
+	md := rl.IsMouseButtonDown(.LEFT)
+	over_button := rl.CheckCollisionPointRec(mp, g_mem.ui_memory.button.position)
+
+
+	switch g_mem.ui_memory.button.state {
+	case .INACTIVE:
+		if over_button {
+			g_mem.ui_memory.button.state = .HOT
+		}
+	case .HOT:
+		if !over_button {
+			g_mem.ui_memory.button.state = .INACTIVE
+		} else if md {
+			g_mem.ui_memory.button.state = .ACTIVE
+		}
+	case .ACTIVE:
+		if !md {
+			g_mem.ui_memory.button.state = .INACTIVE
+		}
+	}
+
 }
 
 
@@ -91,8 +143,30 @@ render :: proc() {
 	rl.DrawMesh(g_mem.cube_mesh, g_mem.cube_material, g_mem.cube_transform)
 
 	rl.EndMode3D()
+
+
+	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
+	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
+
+	button_color := rl.Color{200, 200, 200, 255}
+
+
+	switch g_mem.ui_memory.button.state {
+	case .INACTIVE:
+		button_color = rl.Color{200, 200, 200, 255}
+	case .HOT:
+		button_color = rl.Color{0, 200, 200, 255}
+	case .ACTIVE:
+		button_color = rl.Color{200, 0, 200, 255}
+	}
+	rl.DrawRectangleRec(g_mem.ui_memory.button.position, button_color)
+	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
+	fmt.println(mp)
+
+	rl.EndMode2D()
 	rl.EndDrawing()
 }
+
 /* Allocates the GameMemory that we use to store
   our game's state. We assign it to a global
   variable so we can use it from the other
@@ -159,8 +233,9 @@ SAMPLE_RATE :: 44100
 BUFFER_SIZE :: 512
 FREQUENCY :: 440
 
-fill_audio :: proc() {fmt.println(rl.IsAudioStreamProcessed(g_mem.audio_stream))
+fill_audio :: proc() {
 	if rl.IsAudioStreamProcessed(g_mem.audio_stream) {
+		fmt.println(rl.IsAudioStreamProcessed(g_mem.audio_stream))
 		for i in 0 ..< BUFFER_SIZE {
 			g_mem.audio_buffer[i] = math.sin(
 				FREQUENCY * math.TAU * f32(i + int(g_mem.audio_frame)) / SAMPLE_RATE,
@@ -170,7 +245,6 @@ fill_audio :: proc() {fmt.println(rl.IsAudioStreamProcessed(g_mem.audio_stream))
 		g_mem.audio_frame += BUFFER_SIZE
 	}
 }
-
 
 audio_callback :: proc "c" (b: rawptr, frames: u32) {
 	ptr: [^]f32 = cast([^]f32)(b)
@@ -186,12 +260,12 @@ game_reload :: proc() {
 	g_mem.cube_material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
 	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
 	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
-	rl.PlayAudioStream(g_mem.audio_stream)
+	//rl.PlayAudioStream(g_mem.audio_stream)
 	g_mem.audio_frame = 0
 
 	g_mem.cube_mesh = generate_mesh()
 	//g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
-
+	restart()
 	free_all(context.temp_allocator)
 }
 
@@ -251,4 +325,5 @@ game_memory :: proc() -> rawptr {
 @(export)
 game_hot_reloaded :: proc(mem: ^GameMemory) {
 	g_mem = mem
+	restart()
 }

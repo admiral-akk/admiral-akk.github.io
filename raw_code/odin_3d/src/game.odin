@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:math"
 import rl "vendor:raylib"
 
-WINDOW_SIZE :: 1280
+WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
@@ -14,7 +14,8 @@ layout(location = 1) in vec2 vertexTexCoord;
 layout(location = 2) in vec3 vertexNormal;         
 layout(location = 3)  in vec4 vertexColor;         
 layout(location = 4)  in vec4 vertexTangent;         
-layout(location = 5) in vec2 vertexTexCoord2;              
+layout(location = 5) in vec2 vertexTexCoord2;     
+uniform sampler2D sTex;         
 out vec2 fragTexCoord;             
 out vec4 fragColor;  
 
@@ -22,7 +23,7 @@ uniform mat4 mvp;
 void main()                        
 {                                  
     fragTexCoord = vertexTexCoord; 
-    fragColor = vertexColor;       
+    fragColor = texture(sTex, vertexTexCoord);   
     gl_Position = mvp*vec4(vertexPosition, 1.0); 
 }                                  
 	              `
@@ -90,6 +91,7 @@ GameMemory :: struct {
 	score:          int,
 	score_size:     f32,
 	current:        Command,
+	texture:        rl.Texture2D,
 }
 
 g_mem: ^GameMemory
@@ -98,7 +100,12 @@ restart :: proc() {
 	g_mem.cube_transform = rl.Matrix(1)
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.score = 0
-	g_mem.score_size = 14
+	g_mem.score_size = 20
+	image := rl.GenImageColor(128, 128, {255, 0, 0, 255})
+	g_mem.texture = rl.LoadTextureFromImage(image)
+	rl.GenTextureMipmaps(&g_mem.texture)
+	rl.SetShaderValueTexture(g_mem.cube_material.shader, 0, g_mem.texture) // Set shader uniform value for texture (sampler2d)
+	g_mem.cube_material.maps[0].texture = g_mem.texture
 }
 
 tick :: proc() {
@@ -110,7 +117,7 @@ tick :: proc() {
 
 		g_mem.tick_timer = TICK_RATE
 		if g_mem.score_size > 14 {
-			g_mem.score_size -= TICK_RATE * 75
+			g_mem.score_size -= TICK_RATE * 275
 			g_mem.score_size = math.max(14, g_mem.score_size)
 		}
 	}
@@ -147,7 +154,7 @@ tick :: proc() {
 	case .NONE:
 	case .CLICKED:
 		g_mem.score += 1
-		g_mem.score_size = 20
+		g_mem.score_size = 40
 	}
 	g_mem.current = .NONE
 }
@@ -189,7 +196,14 @@ render :: proc() {
 	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
 
 	score := fmt.ctprint(g_mem.score)
-	rl.DrawText(score, 100, 100, i32(g_mem.score_size), {240, 240, 240, 255})
+	size := rl.MeasureTextEx(rl.GetFontDefault(), score, f32(g_mem.score_size), 0)
+	rl.DrawText(
+		score,
+		100 - i32(size.x / 2),
+		100 - i32(size.y / 2),
+		i32(g_mem.score_size),
+		{240, 240, 240, 255},
+	)
 	fmt.println(mp)
 
 	rl.EndMode2D()
@@ -287,6 +301,7 @@ audio_callback :: proc "c" (b: rawptr, frames: u32) {
 game_reload :: proc() {
 	g_mem.cube_material = rl.LoadMaterialDefault()
 	g_mem.cube_material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+
 	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
 	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
 	//rl.PlayAudioStream(g_mem.audio_stream)

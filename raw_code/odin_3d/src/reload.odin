@@ -62,7 +62,6 @@ GameMemory :: struct {
 	current:         gui.Command,
 	cube_shader:     rl.Shader,
 	cube_mesh:       rl.Mesh,
-	cube_material:   rl.Material,
 }
 
 AudioState :: struct {
@@ -90,11 +89,12 @@ restart :: proc() {
 	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
 	rl.GenTextureMipmaps(&g_mem.graphics_memory.textures["base"])
 	rl.SetShaderValueTexture(
-		g_mem.cube_material.shader,
+		g_mem.graphics_memory.materials["base"].shader,
 		0,
 		g_mem.graphics_memory.textures["base"],
 	) // Set shader uniform value for texture (sampler2d)
-	g_mem.cube_material.maps[0].texture = g_mem.graphics_memory.textures["base"]
+	g_mem.graphics_memory.materials["base"].maps[0].texture =
+		g_mem.graphics_memory.textures["base"]
 }
 
 tick :: proc() {
@@ -161,7 +161,7 @@ render :: proc() {
 
 	rl.BeginMode3D(camera_3d)
 	fill_audio()
-	rl.DrawMesh(g_mem.cube_mesh, g_mem.cube_material, g_mem.cube_transform)
+	rl.DrawMesh(g_mem.cube_mesh, g_mem.graphics_memory.materials["base"], g_mem.cube_transform)
 
 	rl.EndMode3D()
 
@@ -304,8 +304,9 @@ audio_callback :: proc "c" (b: rawptr, frames: u32) {
 
 @(export)
 game_reload :: proc() {
-	g_mem.cube_material = rl.LoadMaterialDefault()
-	g_mem.cube_material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	material := rl.LoadMaterialDefault()
+	material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	g_mem.graphics_memory.materials["base"] = material
 
 	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
 	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
@@ -349,7 +350,7 @@ game_update :: proc() -> bool {
   has exited. Clean up your memory here. */
 @(export)
 game_shutdown :: proc() {
-	rl.UnloadMaterial(g_mem.cube_material)
+	rl.UnloadMaterial(g_mem.graphics_memory.materials["base"])
 	rl.UnloadMesh(g_mem.cube_mesh)
 
 	free(g_mem)

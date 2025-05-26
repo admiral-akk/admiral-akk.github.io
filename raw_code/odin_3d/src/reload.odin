@@ -71,7 +71,7 @@ restart :: proc() {
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.game_memory.score = 0
 	g_mem.score_size = 20
-	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 0, 0, 255})
+	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
 	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
 	rl.GenTextureMipmaps(&g_mem.graphics_memory.textures["base"])
 	rl.SetShaderValueTexture(
@@ -116,34 +116,7 @@ render :: proc() {
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
 
-	camera_3d := rl.Camera3D {
-		position = rl.Vector3{3, 3, 3},
-		target   = rl.Vector3{0, 0, 0},
-		up       = rl.Vector3{0, 1, 0},
-		fovy     = 40,
-	}
-
-	rl.BeginMode3D(camera_3d)
-	fill_audio()
-	rl.DrawMesh(
-		g_mem.graphics_memory.meshes["base"],
-		g_mem.graphics_memory.materials["base"],
-		g_mem.game_memory.cube_transform,
-	)
-
-	for i in 0 ..< len(g_mem.game_memory.ground) {
-		renderable := g_mem.game_memory.ground[i].render
-
-
-		rl.DrawMesh(
-			g_mem.graphics_memory.meshes[renderable.mesh_id],
-			g_mem.graphics_memory.materials[renderable.material_id],
-			renderable.transform_matrix,
-		)
-	}
-
-	rl.EndMode3D()
-
+	game.render(&g_mem.game_memory, &g_mem.graphics_memory)
 	gui.render(&g_mem.ui_memory, &g_mem.game_memory)
 
 	rl.EndDrawing()

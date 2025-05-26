@@ -50,6 +50,10 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
+place_tower :: proc(state: ^GameState, pos: Vec2i) {
+
+}
+
 init :: proc() -> GameState {
 	state := GameState{}
 	for x in -10 ..< 11 {
@@ -60,7 +64,6 @@ init :: proc() -> GameState {
 					position = rl.Vector3{f32(x), 0, f32(y)},
 					rotation = rl.Quaternion{},
 					scale = rl.Vector3{1, 1, 1},
-					transform_matrix = rl.Matrix(1),
 					mesh_id = "base",
 					material_id = "base",
 				},
@@ -78,16 +81,59 @@ init :: proc() -> GameState {
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	mp := rl.GetMousePosition()
 	camera := rl.Camera3D {
-		position = rl.Vector3{3, 3, 3},
+		position = rl.Vector3{10, 10, 10},
 		target   = rl.Vector3{0, 0, 0},
 		up       = rl.Vector3{0, 1, 0},
 		fovy     = 40,
 	}
 	ray := rl.GetScreenToWorldRay(mp, camera) // Get a ray trace from screen position (i.e mouse)
-	collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes["base"], state.cube_transform)
+
+	for i in 0 ..< len(state.ground) {
+
+		collision := rl.GetRayCollisionMesh(
+			ray,
+			graphics_state.meshes[state.ground[i].render.mesh_id],
+			state.ground[i].render.transform_matrix,
+		)
 
 
-	if collision.hit {
-		fmt.println(collision)
+		if collision.hit {
+			md := rl.IsMouseButtonDown(.LEFT)
+			if md {
+
+				fmt.println(collision)
+			}
+		}
 	}
+}
+
+
+render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
+
+
+	camera_3d := rl.Camera3D {
+		position = rl.Vector3{10, 10, 10},
+		target   = rl.Vector3{0, 0, 0},
+		up       = rl.Vector3{0, 1, 0},
+		fovy     = 40,
+	}
+
+	rl.BeginMode3D(camera_3d)
+	rl.DrawMesh(
+		graphics_state.meshes["base"],
+		graphics_state.materials["base"],
+		state.cube_transform,
+	)
+
+	for i in 0 ..< len(state.ground) {
+		renderable := state.ground[i].render
+
+		rl.DrawMesh(
+			graphics_state.meshes[renderable.mesh_id],
+			graphics_state.materials[renderable.material_id],
+			renderable.transform_matrix,
+		)
+	}
+
+	rl.EndMode3D()
 }

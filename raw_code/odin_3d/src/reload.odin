@@ -60,8 +60,6 @@ GameMemory :: struct {
 	graphics_memory: GraphicsState,
 	score_size:      f32,
 	current:         gui.Command,
-	cube_shader:     rl.Shader,
-	cube_mesh:       rl.Mesh,
 }
 
 AudioState :: struct {
@@ -309,7 +307,8 @@ audio_callback :: proc "c" (b: rawptr, frames: u32) {
 @(export)
 game_reload :: proc() {
 	material := rl.LoadMaterialDefault()
-	material.shader = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	g_mem.graphics_memory.shaders["base"] = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
+	material.shader = g_mem.graphics_memory.shaders["base"]
 	g_mem.graphics_memory.materials["base"] = material
 
 	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)

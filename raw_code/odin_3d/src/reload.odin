@@ -40,8 +40,8 @@ uniform sampler2D texture0;
 uniform vec4 colDiffuse;           
 void main()                        
 {                                  
-    vec4 texelColor = texture(texture0, step(1.0, fragTexCoord));   
-    finalColor =  texelColor;        
+    vec4 texelColor = texture(texture0, fragTexCoord);   
+    finalColor = colDiffuse *texelColor;        
 }                                  
 	`
 
@@ -56,7 +56,6 @@ GameMemory :: struct {
 	tick_timer:      f32,
 	audio_frame:     u32,
 	audio_buffer:    [BUFFER_SIZE]f32,
-	cube_transform:  # row_major matrix[4, 4]f32,
 	ui_memory:       gui.UIState,
 	game_memory:     game.GameState,
 	graphics_memory: graphics.GraphicsState,
@@ -68,7 +67,7 @@ GameMemory :: struct {
 g_mem: ^GameMemory
 
 restart :: proc() {
-	g_mem.cube_transform = rl.Matrix(1)
+	g_mem.game_memory.cube_transform = rl.Matrix(1)
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.game_memory.score = 0
 	g_mem.score_size = 20
@@ -88,8 +87,8 @@ tick :: proc() {
 	// game state
 	g_mem.tick_timer -= rl.GetFrameTime()
 	if g_mem.tick_timer <= 0 {
-		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, math.PI * 1.5 / 2.0)
-		g_mem.cube_transform = rotation
+		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.1) //math.PI * 1.5 / 2.0)
+		g_mem.game_memory.cube_transform = rotation * g_mem.game_memory.cube_transform
 		g_mem.tick_timer = TICK_RATE
 		if g_mem.score_size > 14 {
 			g_mem.score_size -= TICK_RATE * 275
@@ -97,12 +96,14 @@ tick :: proc() {
 		}
 	}
 
+	game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
 	// gui state 
 	cmd := gui.tick(&g_mem.ui_memory)
 
 	// apply command 
 
 	gui.apply(&g_mem.ui_memory, cmd)
+
 	switch cmd {
 	case .NONE:
 	case .CLICKED:
@@ -127,8 +128,19 @@ render :: proc() {
 	rl.DrawMesh(
 		g_mem.graphics_memory.meshes["base"],
 		g_mem.graphics_memory.materials["base"],
-		g_mem.cube_transform,
+		g_mem.game_memory.cube_transform,
 	)
+
+	for i in 0 ..< len(g_mem.game_memory.ground) {
+		renderable := g_mem.game_memory.ground[i].render
+
+
+		rl.DrawMesh(
+			g_mem.graphics_memory.meshes[renderable.mesh_id],
+			g_mem.graphics_memory.materials[renderable.material_id],
+			renderable.transform_matrix,
+		)
+	}
 
 	rl.EndMode3D()
 
@@ -149,6 +161,7 @@ game_init :: proc() {
 	rl.SetTargetFPS(500)
 	rl.InitAudioDevice()
 	game_reload()
+	g_mem.game_memory = game.init()
 	restart()
 }
 
@@ -253,8 +266,8 @@ game_reload :: proc() {
 	//rl.PlayAudioStream(g_mem.audio_stream)
 	g_mem.audio_frame = 0
 
-	g_mem.graphics_memory.meshes["base"] = generate_mesh()
-	//g_mem.graphics_memory.meshes["base"] = rl.GenMeshCube(1, 1, 1)
+	//g_mem.graphics_memory.meshes["base"] = generate_mesh()
+	g_mem.graphics_memory.meshes["base"] = rl.GenMeshCube(1, 1, 1)
 	restart()
 	free_all(context.temp_allocator)
 }

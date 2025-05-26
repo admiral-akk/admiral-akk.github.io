@@ -1,1 +1,1 @@
-odin build src/game.odin -file -build-mode:shared -out:dist/game.so -define:RAYLIB_SHARED=true -vet -debug
+odin build src/reload.odin -file -build-mode:shared -out:dist/reload.so -define:RAYLIB_SHARED=true -vet -debug

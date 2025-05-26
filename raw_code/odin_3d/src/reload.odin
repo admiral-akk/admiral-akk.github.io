@@ -1,7 +1,8 @@
-package game
+package reload
 
 import "core:fmt"
 import "core:math"
+import "gui"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -37,40 +38,10 @@ uniform sampler2D texture0;
 uniform vec4 colDiffuse;           
 void main()                        
 {                                  
-    vec4 texelColor = texture(texture0, fragTexCoord);   
-    finalColor =  texelColor*colDiffuse*fragColor;        
+    vec4 texelColor = texture(texture0, step(1.0, fragTexCoord));   
+    finalColor =  texelColor;        
 }                                  
 	`
-
-
-// Mouse buttons
-ButtonState :: enum int {
-	INACTIVE = 0,
-	HOT      = 1,
-	ACTIVE   = 2,
-}
-
-Command :: enum int {
-	NONE    = 0,
-	CLICKED = 1,
-}
-
-UIElement :: struct {
-	id: int,
-}
-
-Button :: struct {
-	using identifier: UIElement,
-	hot:              bool,
-	active:           bool,
-	text:             string,
-	position:         rl.Rectangle,
-	state:            ButtonState,
-}
-
-UIMemory :: struct {
-	button: Button,
-}
 
 
 /* Our game's state lives within this struct. In
@@ -87,10 +58,10 @@ GameMemory :: struct {
 	audio_buffer:   [BUFFER_SIZE]f32,
 	cube_transform: # row_major matrix[4, 4]f32,
 	cube_shader:    rl.Shader,
-	ui_memory:      UIMemory,
+	ui_memory:      gui.UIMemory,
 	score:          int,
 	score_size:     f32,
-	current:        Command,
+	current:        gui.Command,
 	texture:        rl.Texture2D,
 }
 
@@ -101,7 +72,7 @@ restart :: proc() {
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.score = 0
 	g_mem.score_size = 20
-	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
+	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 0, 0, 255})
 	g_mem.texture = rl.LoadTextureFromImage(image)
 	rl.GenTextureMipmaps(&g_mem.texture)
 	rl.SetShaderValueTexture(g_mem.cube_material.shader, 0, g_mem.texture) // Set shader uniform value for texture (sampler2d)
@@ -112,9 +83,8 @@ tick :: proc() {
 	// game state
 	g_mem.tick_timer -= rl.GetFrameTime()
 	if g_mem.tick_timer <= 0 {
-		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.1)
-		g_mem.cube_transform = rotation * g_mem.cube_transform
-
+		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, math.PI * 1.5 / 2.0)
+		g_mem.cube_transform = rotation
 		g_mem.tick_timer = TICK_RATE
 		if g_mem.score_size > 14 {
 			g_mem.score_size -= TICK_RATE * 275
@@ -179,7 +149,7 @@ render :: proc() {
 
 
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
-	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
+	//mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 
 	button_color := rl.Color{200, 200, 200, 255}
 
@@ -204,7 +174,7 @@ render :: proc() {
 		i32(g_mem.score_size),
 		{240, 240, 240, 255},
 	)
-	fmt.println(mp)
+	//fmt.println(mp)
 
 	rl.EndMode2D()
 	rl.EndDrawing()
@@ -225,49 +195,66 @@ game_init :: proc() {
 	restart()
 }
 
+
 generate_mesh :: proc() -> rl.Mesh {
 	vertices: [dynamic]f32
 	normals: [dynamic]f32
 	texcoords: [dynamic]f32
 	indices: [dynamic]u16
+	colors: [dynamic]u8
 
 	v := []rl.Vector3 {
 		rl.Vector3{-0.5, -0.5, -0.5},
 		rl.Vector3{-0.5, 0.5, -0.5},
-		rl.Vector3{-0.5, -0.5, 0.5},
 		rl.Vector3{-0.5, 0.5, 0.5},
+		rl.Vector3{-0.5, -0.5, 0.5},
 		rl.Vector3{0.5, -0.5, -0.5},
 		rl.Vector3{0.5, 0.5, -0.5},
 		rl.Vector3{0.5, -0.5, 0.5},
 		rl.Vector3{0.5, 0.5, 0.5},
 	}
 
+	centers := []rl.Vector3 {
+		rl.Vector3{-0.5, 0.0, 0.0},
+		rl.Vector3{0.5, 0.0, 0.0},
+		rl.Vector3{0.0, -0.5, 0.0},
+		rl.Vector3{0.0, 0.5, 0.0},
+		rl.Vector3{0.0, 0.0, -0.5},
+		rl.Vector3{0.0, 0.0, 0.5},
+	}
 
-	append(&vertices, ..v[0][:])
-	append(&vertices, ..v[1][:])
-	append(&vertices, ..v[2][:])
-	append(&vertices, ..v[3][:])
-	norm := rl.Vector3Normalize(rl.Vector3CrossProduct(v[1] - v[0], v[2] - v[0]))
-	append(&normals, ..norm[:])
-	append(&normals, ..norm[:])
-	append(&normals, ..norm[:])
-	append(&normals, ..norm[:])
-	append(&texcoords, 0, 0)
-	append(&texcoords, 0, 1)
-	append(&texcoords, 1, 0)
-	append(&texcoords, 1, 1)
-	append(&indices, 1, 0, 2)
-	append(&indices, 1, 2, 3)
+	left := []rl.Vector3{v[0], v[1], v[2], v[3]}
+
+	for i in 0 ..< 4 {
+		v1 := left[i]
+		v2 := left[(i + 1) % 4]
+		append(&vertices, ..v2[:])
+		append(&vertices, ..v1[:])
+		append(&vertices, ..centers[0][:])
+		norm := rl.Vector3Normalize(rl.Vector3CrossProduct(v1 - centers[0], v2 - centers[0]))
+		append(&normals, ..norm[:])
+		append(&normals, ..norm[:])
+		append(&normals, ..norm[:])
+		append(&texcoords, 0, 0)
+		append(&texcoords, 0, 0)
+		append(&texcoords, 0, 1.0 / math.SQRT_TWO)
+
+		max_index := u16(len(indices))
+		append(&indices, max_index, max_index + 1, max_index + 2)
+	}
 
 	// let's make some triangles?
 	mesh := rl.Mesh {
-		vertexCount   = 4,
-		triangleCount = 2,
+		vertexCount   = i32(len(vertices) / 3),
+		triangleCount = i32(len(indices) / 3),
 		vertices      = raw_data(vertices),
 		texcoords     = raw_data(texcoords),
 		normals       = raw_data(normals),
 		indices       = raw_data(indices),
+		colors        = raw_data(colors),
 	}
+	fmt.println(i32(len(vertices) / 3))
+	fmt.println(i32(len(indices) / 3))
 	rl.UploadMesh(&mesh, false)
 	return mesh
 }

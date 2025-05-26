@@ -161,7 +161,11 @@ render :: proc() {
 
 	rl.BeginMode3D(camera_3d)
 	fill_audio()
-	rl.DrawMesh(g_mem.cube_mesh, g_mem.graphics_memory.materials["base"], g_mem.cube_transform)
+	rl.DrawMesh(
+		g_mem.graphics_memory.meshes["base"],
+		g_mem.graphics_memory.materials["base"],
+		g_mem.cube_transform,
+	)
 
 	rl.EndMode3D()
 
@@ -313,8 +317,8 @@ game_reload :: proc() {
 	//rl.PlayAudioStream(g_mem.audio_stream)
 	g_mem.audio_frame = 0
 
-	g_mem.cube_mesh = generate_mesh()
-	//g_mem.cube_mesh = rl.GenMeshCube(1, 1, 1)
+	g_mem.graphics_memory.meshes["base"] = generate_mesh()
+	//g_mem.graphics_memory.meshes["base"] = rl.GenMeshCube(1, 1, 1)
 	restart()
 	free_all(context.temp_allocator)
 }
@@ -351,7 +355,7 @@ game_update :: proc() -> bool {
 @(export)
 game_shutdown :: proc() {
 	rl.UnloadMaterial(g_mem.graphics_memory.materials["base"])
-	rl.UnloadMesh(g_mem.cube_mesh)
+	rl.UnloadMesh(g_mem.graphics_memory.meshes["base"])
 
 	free(g_mem)
 	rl.CloseAudioDevice()

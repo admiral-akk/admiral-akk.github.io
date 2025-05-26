@@ -101,7 +101,7 @@ restart :: proc() {
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.score = 0
 	g_mem.score_size = 20
-	image := rl.GenImageColor(128, 128, {255, 0, 0, 255})
+	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
 	g_mem.texture = rl.LoadTextureFromImage(image)
 	rl.GenTextureMipmaps(&g_mem.texture)
 	rl.SetShaderValueTexture(g_mem.cube_material.shader, 0, g_mem.texture) // Set shader uniform value for texture (sampler2d)
@@ -253,9 +253,9 @@ generate_mesh :: proc() -> rl.Mesh {
 	append(&normals, ..norm[:])
 	append(&normals, ..norm[:])
 	append(&texcoords, 0, 0)
-	append(&texcoords, 0, 0)
-	append(&texcoords, 0, 0)
-	append(&texcoords, 0, 0)
+	append(&texcoords, 0, 1)
+	append(&texcoords, 1, 0)
+	append(&texcoords, 1, 1)
 	append(&indices, 1, 0, 2)
 	append(&indices, 1, 2, 3)
 

@@ -102,11 +102,11 @@ tick :: proc() {
 
 	// apply command 
 
+	gui.apply(&g_mem.ui_memory, cmd)
 	switch cmd {
 	case .NONE:
 	case .CLICKED:
 		g_mem.game_memory.score += 1
-		g_mem.score_size = 40
 	}
 }
 

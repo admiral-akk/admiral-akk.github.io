@@ -1,6 +1,7 @@
 package gui
 import "../game"
 import "core:fmt"
+import "core:math"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -27,18 +28,28 @@ Button :: struct {
 	state:            ButtonState,
 }
 
+TextBox :: struct {
+	using identifier: UIElement,
+	position:         rl.Vector2,
+	font_size:        f32,
+	text_val:         cstring,
+}
+
 UIState :: struct {
 	button: Button,
+	score:  TextBox,
 }
 
 
 tick :: proc(state: ^UIState) -> game.Command {
-	// gui state 
+	if state.score.font_size > 14 {
+		state.score.font_size -= TICK_RATE * 275
+		state.score.font_size = math.max(14, state.score.font_size)
+	}
+
 	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
 	over_button := rl.CheckCollisionPointRec(mp, state.button.position)
-
-
 	switch state.button.state {
 	case .INACTIVE:
 		if over_button {
@@ -61,8 +72,15 @@ tick :: proc(state: ^UIState) -> game.Command {
 	return .NONE
 }
 
-render :: proc(state: ^UIState, game_state: ^game.GameState) {
+apply :: proc(state: ^UIState, cmd: game.Command) {
+	switch cmd {
+	case .NONE:
+	case .CLICKED:
+		state.score.font_size = 40
+	}
+}
 
+render :: proc(state: ^UIState, game_state: ^game.GameState) {
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
 	//mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 
@@ -80,9 +98,15 @@ render :: proc(state: ^UIState, game_state: ^game.GameState) {
 	rl.DrawRectangleRec(state.button.position, button_color)
 	rl.DrawRectangleLinesEx(state.button.position, 1, {50, 50, 50, 255})
 
-	score := fmt.ctprint(game_state.score)
-	size := rl.MeasureTextEx(rl.GetFontDefault(), score, 14, 0)
-	rl.DrawText(score, 100 - i32(size.x / 2), 100 - i32(size.y / 2), 14, {240, 240, 240, 255})
+	state.score.text_val = fmt.ctprint(game_state.score)
+	size := rl.MeasureTextEx(rl.GetFontDefault(), state.score.text_val, state.score.font_size, 0)
+	rl.DrawText(
+		state.score.text_val,
+		100 - i32(size.x / 2),
+		100 - i32(size.y / 2),
+		i32(state.score.font_size),
+		{240, 240, 240, 255},
+	)
 	//fmt.println(mp)
 
 	rl.EndMode2D()

@@ -2,6 +2,8 @@ package reload
 
 import "core:fmt"
 import "core:math"
+import "game"
+import "graphics"
 import "gui"
 import rl "vendor:raylib"
 
@@ -56,25 +58,12 @@ GameMemory :: struct {
 	audio_buffer:    [BUFFER_SIZE]f32,
 	cube_transform:  # row_major matrix[4, 4]f32,
 	ui_memory:       gui.UIState,
-	game_memory:     GameState,
-	graphics_memory: GraphicsState,
+	game_memory:     game.GameState,
+	graphics_memory: graphics.GraphicsState,
 	score_size:      f32,
-	current:         gui.Command,
+	current:         game.Command,
 }
 
-AudioState :: struct {
-}
-
-GraphicsState :: struct {
-	meshes:    map[string]rl.Mesh,
-	materials: map[string]rl.Material,
-	textures:  map[string]rl.Texture2D,
-	shaders:   map[string]rl.Shader,
-}
-
-GameState :: struct {
-	score: int,
-}
 
 g_mem: ^GameMemory
 
@@ -109,40 +98,16 @@ tick :: proc() {
 	}
 
 	// gui state 
-	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
-	md := rl.IsMouseButtonDown(.LEFT)
-	over_button := rl.CheckCollisionPointRec(mp, g_mem.ui_memory.button.position)
-
-
-	switch g_mem.ui_memory.button.state {
-	case .INACTIVE:
-		if over_button {
-			g_mem.ui_memory.button.state = .HOT
-		}
-	case .HOT:
-		if !over_button {
-			g_mem.ui_memory.button.state = .INACTIVE
-		} else if md {
-			g_mem.ui_memory.button.state = .ACTIVE
-		}
-	case .ACTIVE:
-		if !md {
-			g_mem.ui_memory.button.state = .INACTIVE
-			if over_button {
-				g_mem.current = .CLICKED
-			}
-		}
-	}
+	cmd := gui.tick(&g_mem.ui_memory)
 
 	// apply command 
 
-	switch g_mem.current {
+	switch cmd {
 	case .NONE:
 	case .CLICKED:
 		g_mem.game_memory.score += 1
 		g_mem.score_size = 40
 	}
-	g_mem.current = .NONE
 }
 
 

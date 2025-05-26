@@ -1,4 +1,5 @@
 package gui
+import "../game"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -10,11 +11,6 @@ ButtonState :: enum int {
 	INACTIVE = 0,
 	HOT      = 1,
 	ACTIVE   = 2,
-}
-
-Command :: enum int {
-	NONE    = 0,
-	CLICKED = 1,
 }
 
 UIElement :: struct {
@@ -32,4 +28,34 @@ Button :: struct {
 
 UIState :: struct {
 	button: Button,
+}
+
+
+tick :: proc(state: ^UIState) -> game.Command {
+	// gui state 
+	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
+	md := rl.IsMouseButtonDown(.LEFT)
+	over_button := rl.CheckCollisionPointRec(mp, state.button.position)
+
+
+	switch state.button.state {
+	case .INACTIVE:
+		if over_button {
+			state.button.state = .HOT
+		}
+	case .HOT:
+		if !over_button {
+			state.button.state = .INACTIVE
+		} else if md {
+			state.button.state = .ACTIVE
+		}
+	case .ACTIVE:
+		if !md {
+			state.button.state = .INACTIVE
+			if over_button {
+				return .CLICKED
+			}
+		}
+	}
+	return .NONE
 }

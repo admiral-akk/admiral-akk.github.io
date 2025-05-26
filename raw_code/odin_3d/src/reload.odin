@@ -132,36 +132,8 @@ render :: proc() {
 
 	rl.EndMode3D()
 
+	gui.render(&g_mem.ui_memory, &g_mem.game_memory)
 
-	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
-	//mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
-
-	button_color := rl.Color{200, 200, 200, 255}
-
-
-	switch g_mem.ui_memory.button.state {
-	case .INACTIVE:
-		button_color = rl.Color{200, 200, 200, 255}
-	case .HOT:
-		button_color = rl.Color{0, 200, 200, 255}
-	case .ACTIVE:
-		button_color = rl.Color{200, 0, 200, 255}
-	}
-	rl.DrawRectangleRec(g_mem.ui_memory.button.position, button_color)
-	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
-
-	score := fmt.ctprint(g_mem.game_memory.score)
-	size := rl.MeasureTextEx(rl.GetFontDefault(), score, f32(g_mem.score_size), 0)
-	rl.DrawText(
-		score,
-		100 - i32(size.x / 2),
-		100 - i32(size.y / 2),
-		i32(g_mem.score_size),
-		{240, 240, 240, 255},
-	)
-	//fmt.println(mp)
-
-	rl.EndMode2D()
 	rl.EndDrawing()
 }
 

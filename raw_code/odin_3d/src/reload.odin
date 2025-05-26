@@ -50,19 +50,29 @@ must be transferable from one game DLL to
 another when a hot reload occurs. We can do that
 when all the game's memory live in here. */
 GameMemory :: struct {
-	texture:        rl.Texture2D,
-	cube_mesh:      rl.Mesh,
-	cube_material:  rl.Material,
-	audio_stream:   rl.AudioStream,
-	tick_timer:     f32,
-	audio_frame:    u32,
-	audio_buffer:   [BUFFER_SIZE]f32,
-	cube_transform: # row_major matrix[4, 4]f32,
-	cube_shader:    rl.Shader,
-	ui_memory:      gui.UIState,
-	game_memory:    GameState,
-	score_size:     f32,
-	current:        gui.Command,
+	audio_stream:    rl.AudioStream,
+	tick_timer:      f32,
+	audio_frame:     u32,
+	audio_buffer:    [BUFFER_SIZE]f32,
+	cube_transform:  # row_major matrix[4, 4]f32,
+	ui_memory:       gui.UIState,
+	game_memory:     GameState,
+	graphics_memory: GraphicsState,
+	score_size:      f32,
+	current:         gui.Command,
+	cube_shader:     rl.Shader,
+	cube_mesh:       rl.Mesh,
+	cube_material:   rl.Material,
+}
+
+AudioState :: struct {
+}
+
+GraphicsState :: struct {
+	meshes:    map[string]rl.Mesh,
+	materials: map[string]rl.Material,
+	textures:  map[string]rl.Texture2D,
+	shaders:   map[string]rl.Shader,
 }
 
 GameState :: struct {
@@ -77,10 +87,14 @@ restart :: proc() {
 	g_mem.game_memory.score = 0
 	g_mem.score_size = 20
 	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 0, 0, 255})
-	g_mem.texture = rl.LoadTextureFromImage(image)
-	rl.GenTextureMipmaps(&g_mem.texture)
-	rl.SetShaderValueTexture(g_mem.cube_material.shader, 0, g_mem.texture) // Set shader uniform value for texture (sampler2d)
-	g_mem.cube_material.maps[0].texture = g_mem.texture
+	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
+	rl.GenTextureMipmaps(&g_mem.graphics_memory.textures["base"])
+	rl.SetShaderValueTexture(
+		g_mem.cube_material.shader,
+		0,
+		g_mem.graphics_memory.textures["base"],
+	) // Set shader uniform value for texture (sampler2d)
+	g_mem.cube_material.maps[0].texture = g_mem.graphics_memory.textures["base"]
 }
 
 tick :: proc() {

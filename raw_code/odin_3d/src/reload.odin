@@ -19,6 +19,7 @@ layout(location = 3)  in vec4 vertexColor;
 layout(location = 4)  in vec4 vertexTangent;         
 layout(location = 5) in vec2 vertexTexCoord2;     
 uniform sampler2D sTex;         
+uniform vec4 colDiffuse2;
 out vec2 fragTexCoord;             
 out vec4 fragColor;  
 
@@ -26,7 +27,7 @@ uniform mat4 mvp;
 void main()                        
 {                                  
     fragTexCoord = vertexTexCoord; 
-    fragColor = texture(sTex, vertexTexCoord);   
+    fragColor = colDiffuse2;   
     gl_Position = mvp*vec4(vertexPosition, 1.0); 
 }                                  
 	              `
@@ -41,7 +42,7 @@ uniform vec4 colDiffuse;
 void main()                        
 {                                  
     vec4 texelColor = texture(texture0, fragTexCoord);   
-    finalColor = colDiffuse *texelColor;        
+    finalColor = fragColor;        
 }                                  
 	`
 

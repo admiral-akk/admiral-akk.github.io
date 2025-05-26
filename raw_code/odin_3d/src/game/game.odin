@@ -12,28 +12,23 @@ Enemy :: struct {
 	pos:    Vec2i,
 	health: int,
 	speed:  int,
-	render: Renderable,
+}
+
+// Mouse buttons
+TargetState :: enum int {
+	INACTIVE = 0,
+	HOT      = 1,
+	ACTIVE   = 2,
 }
 
 Tower :: struct {
 	pos:    Vec2i,
 	attack: int,
 	range:  int,
-	render: Renderable,
 }
 
 Ground :: struct {
-	pos:    Vec2i,
-	render: Renderable,
-}
-
-Renderable :: struct {
-	position:         rl.Vector3,
-	rotation:         rl.Quaternion,
-	scale:            rl.Vector3,
-	transform_matrix: # row_major matrix[4, 4]f32,
-	mesh_id:          string,
-	material_id:      string,
+	pos: Vec2i,
 }
 
 GameState :: struct {
@@ -60,18 +55,7 @@ init :: proc() -> GameState {
 		for y in -10 ..< 11 {
 			g := Ground {
 				pos = Vec2i{x, y},
-				render = Renderable {
-					position = rl.Vector3{f32(x), 0, f32(y)},
-					rotation = rl.Quaternion{},
-					scale = rl.Vector3{1, 1, 1},
-					mesh_id = "base",
-					material_id = "base",
-				},
 			}
-			g.render.transform_matrix =
-				rl.MatrixTranslate(f32(x), 0, f32(y)) *
-				rl.QuaternionToMatrix(g.render.rotation) *
-				rl.MatrixScale(0.4, 0.4, 0.4)
 			append(&state.ground, g)
 		}
 	}
@@ -90,17 +74,14 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 
 	for i in 0 ..< len(state.ground) {
 
-		collision := rl.GetRayCollisionMesh(
-			ray,
-			graphics_state.meshes[state.ground[i].render.mesh_id],
-			state.ground[i].render.transform_matrix,
-		)
+		g := state.ground[i]
+		transform_matrix := rl.MatrixTranslate(f32(g.pos[0]), 0, f32(g.pos[1]))
 
+		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes["base"], transform_matrix)
 
 		if collision.hit {
 			md := rl.IsMouseButtonDown(.LEFT)
 			if md {
-
 				fmt.println(collision)
 			}
 		}
@@ -117,6 +98,8 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		up       = rl.Vector3{0, 1, 0},
 		fovy     = 40,
 	}
+	loc := rl.GetShaderLocation(graphics_state.shaders["base"], "colDiffuse2")
+	rl.SetShaderValue(graphics_state.shaders["base"], loc, raw_data([]f32{1, 0, 0, 1}), .VEC4)
 
 	rl.BeginMode3D(camera_3d)
 	rl.DrawMesh(
@@ -125,13 +108,14 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		state.cube_transform,
 	)
 
-	for i in 0 ..< len(state.ground) {
-		renderable := state.ground[i].render
 
+	for i in 0 ..< len(state.ground) {
+		g := state.ground[i]
+		transform_matrix := rl.MatrixTranslate(f32(g.pos[0]), 0, f32(g.pos[1]))
 		rl.DrawMesh(
-			graphics_state.meshes[renderable.mesh_id],
-			graphics_state.materials[renderable.material_id],
-			renderable.transform_matrix,
+			graphics_state.meshes["base"],
+			graphics_state.materials["base"],
+			transform_matrix,
 		)
 	}
 

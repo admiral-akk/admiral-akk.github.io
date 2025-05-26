@@ -50,19 +50,23 @@ must be transferable from one game DLL to
 another when a hot reload occurs. We can do that
 when all the game's memory live in here. */
 GameMemory :: struct {
-	tick_timer:     f32,
+	texture:        rl.Texture2D,
 	cube_mesh:      rl.Mesh,
 	cube_material:  rl.Material,
 	audio_stream:   rl.AudioStream,
+	tick_timer:     f32,
 	audio_frame:    u32,
 	audio_buffer:   [BUFFER_SIZE]f32,
 	cube_transform: # row_major matrix[4, 4]f32,
 	cube_shader:    rl.Shader,
-	ui_memory:      gui.UIMemory,
-	score:          int,
+	ui_memory:      gui.UIState,
+	game_memory:    GameState,
 	score_size:     f32,
 	current:        gui.Command,
-	texture:        rl.Texture2D,
+}
+
+GameState :: struct {
+	score: int,
 }
 
 g_mem: ^GameMemory
@@ -70,7 +74,7 @@ g_mem: ^GameMemory
 restart :: proc() {
 	g_mem.cube_transform = rl.Matrix(1)
 	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
-	g_mem.score = 0
+	g_mem.game_memory.score = 0
 	g_mem.score_size = 20
 	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 0, 0, 255})
 	g_mem.texture = rl.LoadTextureFromImage(image)
@@ -123,7 +127,7 @@ tick :: proc() {
 	switch g_mem.current {
 	case .NONE:
 	case .CLICKED:
-		g_mem.score += 1
+		g_mem.game_memory.score += 1
 		g_mem.score_size = 40
 	}
 	g_mem.current = .NONE
@@ -165,7 +169,7 @@ render :: proc() {
 	rl.DrawRectangleRec(g_mem.ui_memory.button.position, button_color)
 	rl.DrawRectangleLinesEx(g_mem.ui_memory.button.position, 1, {50, 50, 50, 255})
 
-	score := fmt.ctprint(g_mem.score)
+	score := fmt.ctprint(g_mem.game_memory.score)
 	size := rl.MeasureTextEx(rl.GetFontDefault(), score, f32(g_mem.score_size), 0)
 	rl.DrawText(
 		score,

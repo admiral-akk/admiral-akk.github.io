@@ -30,6 +30,6 @@ Button :: struct {
 	state:            ButtonState,
 }
 
-UIMemory :: struct {
+UIState :: struct {
 	button: Button,
 }

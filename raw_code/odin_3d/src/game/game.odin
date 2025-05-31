@@ -191,7 +191,6 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 
 	for i in 0 ..< len(state.entities) {
-
 		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].index == i {
 			md := rl.IsMouseButtonDown(.LEFT)
 			switch state.entities[i].selected {
@@ -209,7 +208,6 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 			case .HOT:
 				if md {
 					state.entities[i].selected = .ACTIVE
-
 				}
 			}
 		} else {
@@ -255,39 +253,52 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
-		switch entity in e.entity {
-		case Ground:
-		case Tower:
-		}
-		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
-		switch e.selected {
-		case .INACTIVE:
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{1, 1, 0, 1}),
-				.VEC4,
-			)
-		case .HOT:
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{1, 0, 0, 1}),
-				.VEC4,
-			)
-		case .ACTIVE:
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{0, 1, 0, 1}),
-				.VEC4,
-			)
-		}
 		transform_matrix := rl.MatrixTranslate(
 			f32(e.position[0]) / GRID_SIZE,
 			0,
 			f32(e.position[1]) / GRID_SIZE,
 		)
+		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
+		switch entity in e.entity {
+		case Ground:
+			switch e.selected {
+			case .INACTIVE:
+				rl.SetShaderValue(
+					graphics_state.materials[e.material].shader,
+					loc,
+					raw_data([]f32{1, 1, 0, 1}),
+					.VEC4,
+				)
+			case .HOT:
+				rl.SetShaderValue(
+					graphics_state.materials[e.material].shader,
+					loc,
+					raw_data([]f32{1, 0, 0, 1}),
+					.VEC4,
+				)
+			case .ACTIVE:
+				rl.SetShaderValue(
+					graphics_state.materials[e.material].shader,
+					loc,
+					raw_data([]f32{0, 1, 0, 1}),
+					.VEC4,
+				)
+			}
+		case Tower:
+			transform_matrix =
+				rl.MatrixTranslate(
+					f32(e.position[0]) / GRID_SIZE,
+					1,
+					f32(e.position[1]) / GRID_SIZE,
+				) *
+				rl.MatrixScale(0.8, 0.8, 0.8)
+			rl.SetShaderValue(
+				graphics_state.materials[e.material].shader,
+				loc,
+				raw_data([]f32{1, 0, 1, 1}),
+				.VEC4,
+			)
+		}
 		rl.DrawMesh(
 			graphics_state.meshes[e.mesh],
 			graphics_state.materials[e.material],

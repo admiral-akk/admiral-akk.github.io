@@ -1,7 +1,4 @@
 package gui
-import "../game"
-import "core:fmt"
-import "core:math"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -33,34 +30,4 @@ Button :: struct {
 render_button :: proc(button: Button) {
 	rl.DrawRectangleRec(button.position, button.color)
 	rl.DrawRectangleLinesEx(button.position, 1, {50, 50, 50, 255})
-
-}
-
-
-render :: proc(game_state: ^game.GameState) {
-	state := game_state.ui_memory
-	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
-	//mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
-
-	button_color := rl.Color{200, 200, 200, 255}
-
-
-	switch state.button.state {
-	case .INACTIVE:
-		button_color = rl.Color{200, 200, 200, 255}
-	case .HOT:
-		button_color = rl.Color{0, 200, 200, 255}
-	case .ACTIVE:
-		button_color = rl.Color{200, 0, 200, 255}
-	}
-	render_button(Button{color = button_color, position = state.button.position})
-
-	text_val := fmt.ctprint(game_state.score.value)
-	time_since_change := f32(rl.GetTime()) - game_state.score.last_changed
-	font_size := math.max(14, 40 - 200 * time_since_change)
-	render_text_box(
-		TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
-	)
-
-	rl.EndMode2D()
 }

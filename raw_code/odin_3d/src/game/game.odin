@@ -1,7 +1,9 @@
 package game
 
 import "../graphics"
+import "../gui"
 import "core:fmt"
+import "core:math"
 import rl "vendor:raylib"
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
@@ -224,6 +226,27 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	}
 
 	rl.EndMode3D()
+
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
+
+	button_color := rl.Color{200, 200, 200, 255}
+
+	switch state.ui_memory.button.state {
+	case .INACTIVE:
+		button_color = rl.Color{200, 200, 200, 255}
+	case .HOT:
+		button_color = rl.Color{0, 200, 200, 255}
+	case .ACTIVE:
+		button_color = rl.Color{200, 0, 200, 255}
+	}
+	gui.render_button(gui.Button{color = button_color, position = state.ui_memory.button.position})
+
+	text_val := fmt.ctprint(state.score.value)
+	time_since_change := f32(rl.GetTime()) - state.score.last_changed
+	font_size := math.max(14, 40 - 200 * time_since_change)
+	gui.render_text_box(
+		gui.TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
+	)
+
 	rl.EndMode2D()
 }

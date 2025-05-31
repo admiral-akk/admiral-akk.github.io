@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:math"
 import "game"
 import "graphics"
-import "gui"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -113,7 +112,6 @@ render :: proc() {
 	rl.ClearBackground({76, 53, 83, 255})
 
 	game.render(&g_mem.game_memory, &g_mem.graphics_memory)
-	gui.render(&g_mem.game_memory)
 
 	rl.EndDrawing()
 }

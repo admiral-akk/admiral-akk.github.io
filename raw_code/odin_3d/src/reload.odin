@@ -97,9 +97,7 @@ tick :: proc() {
 		}
 	}
 
-	game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
-	// gui state 
-	cmd := gui.tick(&g_mem.game_memory)
+	cmd := game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
 
 	switch cmd {
 	case .NONE:

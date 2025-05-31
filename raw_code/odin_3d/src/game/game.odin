@@ -114,8 +114,7 @@ init :: proc() -> GameState {
 	return state
 }
 
-tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
-
+tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
 	mp := rl.GetMousePosition()
 	camera := rl.Camera3D {
 		position = rl.Vector3{10, 10, 10},
@@ -144,6 +143,30 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 			}
 		}
 	}
+
+	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
+	md := rl.IsMouseButtonDown(.LEFT)
+	over_button := rl.CheckCollisionPointRec(mp_2d, state.ui_memory.button.position)
+	switch state.ui_memory.button.state {
+	case .INACTIVE:
+		if over_button {
+			state.ui_memory.button.state = .HOT
+		}
+	case .HOT:
+		if !over_button {
+			state.ui_memory.button.state = .INACTIVE
+		} else if md {
+			state.ui_memory.button.state = .ACTIVE
+		}
+	case .ACTIVE:
+		if !md {
+			state.ui_memory.button.state = .INACTIVE
+			if over_button {
+				return .CLICKED
+			}
+		}
+	}
+	return .NONE
 }
 
 
@@ -201,4 +224,6 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	}
 
 	rl.EndMode3D()
+	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
+	rl.EndMode2D()
 }

@@ -36,34 +36,6 @@ render_button :: proc(button: Button) {
 
 }
 
-// Mouse buttons
-tick :: proc(state: ^game.GameState) -> game.Command {
-
-	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
-	md := rl.IsMouseButtonDown(.LEFT)
-	over_button := rl.CheckCollisionPointRec(mp, state.ui_memory.button.position)
-	switch state.ui_memory.button.state {
-	case .INACTIVE:
-		if over_button {
-			state.ui_memory.button.state = .HOT
-		}
-	case .HOT:
-		if !over_button {
-			state.ui_memory.button.state = .INACTIVE
-		} else if md {
-			state.ui_memory.button.state = .ACTIVE
-		}
-	case .ACTIVE:
-		if !md {
-			state.ui_memory.button.state = .INACTIVE
-			if over_button {
-				return .CLICKED
-			}
-		}
-	}
-	return .NONE
-}
-
 
 render :: proc(game_state: ^game.GameState) {
 	state := game_state.ui_memory

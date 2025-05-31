@@ -32,6 +32,7 @@ Ground :: struct {
 }
 
 GameState :: struct {
+	selected:       int,
 	score:          int,
 	lives:          int,
 	ground:         [dynamic]Ground,
@@ -63,6 +64,7 @@ init :: proc() -> GameState {
 }
 
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
+
 	mp := rl.GetMousePosition()
 	camera := rl.Camera3D {
 		position = rl.Vector3{10, 10, 10},
@@ -72,6 +74,9 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	}
 	ray := rl.GetScreenToWorldRay(mp, camera) // Get a ray trace from screen position (i.e mouse)
 
+	state.selected = -1
+	closest := f32(10000000.0)
+	// find the closest, mark it as selected
 	for i in 0 ..< len(state.ground) {
 
 		g := state.ground[i]
@@ -79,7 +84,9 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 
 		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes["base"], transform_matrix)
 
-		if collision.hit {
+		if collision.hit && collision.distance < closest {
+			state.selected = i
+			closest = collision.distance
 			md := rl.IsMouseButtonDown(.LEFT)
 			if md {
 				fmt.println(collision)
@@ -111,6 +118,31 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 
 	for i in 0 ..< len(state.ground) {
 		g := state.ground[i]
+		if i == state.selected {
+			if rl.IsMouseButtonDown(.LEFT) {
+
+				rl.SetShaderValue(
+					graphics_state.shaders["base"],
+					loc,
+					raw_data([]f32{0, 1, 0, 1}),
+					.VEC4,
+				)
+			} else {
+				rl.SetShaderValue(
+					graphics_state.shaders["base"],
+					loc,
+					raw_data([]f32{1, 1, 0, 1}),
+					.VEC4,
+				)}
+		} else {
+			rl.SetShaderValue(
+				graphics_state.shaders["base"],
+				loc,
+				raw_data([]f32{1, 0, 0, 1}),
+				.VEC4,
+			)
+
+		}
 		transform_matrix := rl.MatrixTranslate(f32(g.pos[0]), 0, f32(g.pos[1]))
 		rl.DrawMesh(
 			graphics_state.meshes["base"],

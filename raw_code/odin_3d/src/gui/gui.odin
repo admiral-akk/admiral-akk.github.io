@@ -8,12 +8,25 @@ WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
+TextBox :: struct {
+	position:  rl.Vector2,
+	font_size: f32,
+	text_val:  cstring,
+}
+
+render_text_box :: proc(text_box: TextBox) {
+	size := rl.MeasureTextEx(rl.GetFontDefault(), text_box.text_val, text_box.font_size, 0)
+	rl.DrawText(
+		text_box.text_val,
+		i32(text_box.position.x - size.x / 2),
+		i32(text_box.position.y - size.y / 2),
+		i32(text_box.font_size),
+		{240, 240, 240, 255},
+	)
+}
+
 // Mouse buttons
 tick :: proc(state: ^game.GameState) -> game.Command {
-	if state.ui_memory.score.font_size > 14 {
-		state.ui_memory.score.font_size -= TICK_RATE * 275
-		state.ui_memory.score.font_size = math.max(14, state.ui_memory.score.font_size)
-	}
 
 	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
@@ -41,11 +54,6 @@ tick :: proc(state: ^game.GameState) -> game.Command {
 }
 
 apply :: proc(state: ^game.GameState, cmd: game.Command) {
-	switch cmd {
-	case .NONE:
-	case .CLICKED:
-		state.ui_memory.score.font_size = 40
-	}
 }
 
 render :: proc(game_state: ^game.GameState) {
@@ -67,14 +75,11 @@ render :: proc(game_state: ^game.GameState) {
 	rl.DrawRectangleRec(state.button.position, button_color)
 	rl.DrawRectangleLinesEx(state.button.position, 1, {50, 50, 50, 255})
 
-	state.score.text_val = fmt.ctprint(game_state.score)
-	size := rl.MeasureTextEx(rl.GetFontDefault(), state.score.text_val, state.score.font_size, 0)
-	rl.DrawText(
-		state.score.text_val,
-		100 - i32(size.x / 2),
-		100 - i32(size.y / 2),
-		i32(state.score.font_size),
-		{240, 240, 240, 255},
+	text_val := fmt.ctprint(game_state.score.value)
+	time_since_change := f32(rl.GetTime()) - game_state.score.last_changed
+	font_size := math.max(14, 40 - 200 * time_since_change)
+	render_text_box(
+		TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
 	)
 	//fmt.println(mp)
 

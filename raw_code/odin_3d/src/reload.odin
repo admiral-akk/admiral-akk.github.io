@@ -69,7 +69,8 @@ g_mem: ^GameMemory
 restart :: proc() {
 	g_mem.game_memory.cube_transform = rl.Matrix(1)
 	g_mem.game_memory.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
-	g_mem.game_memory.score = 0
+	g_mem.game_memory.score.value = 0
+	g_mem.game_memory.score.last_changed = 0.0
 	g_mem.score_size = 20
 	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
 	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
@@ -106,7 +107,8 @@ tick :: proc() {
 	switch cmd {
 	case .NONE:
 	case .CLICKED:
-		g_mem.game_memory.score += 1
+		g_mem.game_memory.score.value += 1
+		g_mem.game_memory.score.last_changed = f32(rl.GetTime())
 	}
 }
 

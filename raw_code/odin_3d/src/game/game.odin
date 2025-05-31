@@ -31,11 +31,33 @@ Ground :: struct {
 	pos: Vec2i,
 }
 
-ButtonState :: enum int {
+SelectionState :: enum int {
 	INACTIVE = 0,
 	HOT      = 1,
 	ACTIVE   = 2,
 }
+
+
+// Define a union type
+MySumType :: union {
+	Ground,
+}
+
+// Define a tag type to identify the type currently stored
+MySumTypeTag :: enum {
+	Ground,
+}
+
+TaggedMySumType :: struct {
+	tag:   MySumTypeTag,
+	value: MySumType,
+}
+
+GameEntity :: struct {
+	id:     int,
+	entity: TaggedMySumType,
+}
+
 
 UIElement :: struct {
 	id: int,
@@ -47,24 +69,21 @@ Button :: struct {
 	active:           bool,
 	text:             string,
 	position:         rl.Rectangle,
-	state:            ButtonState,
-}
-
-TextBox :: struct {
-	using identifier: UIElement,
-	position:         rl.Vector2,
-	font_size:        f32,
-	text_val:         cstring,
+	state:            SelectionState,
 }
 
 UIState :: struct {
 	button: Button,
-	score:  TextBox,
+}
+
+Score :: struct {
+	value:        int,
+	last_changed: f32,
 }
 
 GameState :: struct {
 	selected:       int,
-	score:          int,
+	score:          Score,
 	lives:          int,
 	ground:         [dynamic]Ground,
 	enemies:        [dynamic]Enemy,

@@ -11,23 +11,11 @@ SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 Vec2i :: [2]int
 
-Enemy :: struct {
-	pos:    Vec2i,
-	health: int,
-	speed:  int,
-}
-
 // Mouse buttons
 TargetState :: enum int {
 	INACTIVE = 0,
 	HOT      = 1,
 	ACTIVE   = 2,
-}
-
-Tower :: struct {
-	pos:    Vec2i,
-	attack: int,
-	range:  int,
 }
 
 Ground :: struct {
@@ -40,9 +28,21 @@ SelectionState :: enum int {
 }
 
 
+Tower :: struct {
+	attack: int,
+	range:  int,
+}
+
+Enemy :: struct {
+	pos:    Vec2i,
+	health: int,
+	speed:  int,
+}
+
 // Define a union type
 MySumType :: union {
 	Ground,
+	Tower,
 }
 
 
@@ -89,20 +89,18 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
-place_tower :: proc(state: ^GameState, pos: Vec2i) {
-
-}
-
-ground :: proc(pos: Vec2i) -> GameEntity {
-	return GameEntity{}
-}
 
 entity :: proc(game: ^GameState) -> ^GameEntity {
-	e := GameEntity{}
+	e := GameEntity {
+		material = "base",
+		mesh     = "base",
+	}
 	append(&game.entities, e)
 	return &game.entities[len(game.entities) - 1]
 }
 
+
+GRID_SIZE :: 128
 
 init :: proc() -> GameState {
 	state := GameState{}
@@ -110,9 +108,7 @@ init :: proc() -> GameState {
 		for y in -10 ..< 11 {
 			g := entity(&state)
 			g.entity = Ground{}
-			g.position = Vec2i{x, y}
-			g.material = "base"
-			g.mesh = "base"
+			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
 		}
 	}
 	return state
@@ -123,8 +119,17 @@ RayHit :: struct {
 	hit:   rl.RayCollision,
 }
 
-restart :: proc(game: ^GameState) {
 
+place_tower :: proc(state: ^GameState, pos: Vec2i) {
+	e := entity(state)
+	e.position = pos
+	e.entity = Tower {
+		attack = 1,
+		range  = 1,
+	}
+}
+
+restart :: proc(game: ^GameState) {
 	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	game.score.value = 0
 	game.score.last_changed = 0.0
@@ -155,12 +160,25 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	for i in 0 ..< len(state.entities) {
 
 		g := state.entities[i]
-		transform_matrix := rl.MatrixTranslate(f32(g.position[0]), 0, f32(g.position[1]))
+		switch entity in g.entity {
+		case Ground:
+			transform_matrix := rl.MatrixTranslate(
+				f32(g.position[0]) / GRID_SIZE,
+				0,
+				f32(g.position[1]) / GRID_SIZE,
+			)
 
-		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes[g.mesh], transform_matrix)
+			collision := rl.GetRayCollisionMesh(
+				ray,
+				graphics_state.meshes[g.mesh],
+				transform_matrix,
+			)
 
-		if collision.hit {
-			append(&rayHit, RayHit{hit = collision, index = i})
+			if collision.hit {
+				append(&rayHit, RayHit{hit = collision, index = i})
+			}
+		case Tower:
+
 		}
 	}
 
@@ -174,16 +192,28 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 	for i in 0 ..< len(state.entities) {
 
-		state.entities[i].selected = .INACTIVE
-
 		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].index == i {
 			md := rl.IsMouseButtonDown(.LEFT)
-			if md {
-				state.entities[i].selected = .ACTIVE
-			} else {
-				state.entities[i].selected = .HOT
+			switch state.entities[i].selected {
+			case .INACTIVE:
+				if md {
+					state.entities[i].selected = .ACTIVE
+				} else {
+					state.entities[i].selected = .HOT
+				}
+			case .ACTIVE:
+				if !md {
+					state.entities[i].selected = .HOT
+					place_tower(state, state.entities[i].position)
+				}
+			case .HOT:
+				if md {
+					state.entities[i].selected = .ACTIVE
 
+				}
 			}
+		} else {
+			state.entities[i].selected = .INACTIVE
 		}
 	}
 
@@ -227,6 +257,7 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		e := state.entities[i]
 		switch entity in e.entity {
 		case Ground:
+		case Tower:
 		}
 		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
 		switch e.selected {
@@ -252,7 +283,11 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 				.VEC4,
 			)
 		}
-		transform_matrix := rl.MatrixTranslate(f32(e.position[0]), 0, f32(e.position[1]))
+		transform_matrix := rl.MatrixTranslate(
+			f32(e.position[0]) / GRID_SIZE,
+			0,
+			f32(e.position[1]) / GRID_SIZE,
+		)
 		rl.DrawMesh(
 			graphics_state.meshes[e.mesh],
 			graphics_state.materials[e.material],

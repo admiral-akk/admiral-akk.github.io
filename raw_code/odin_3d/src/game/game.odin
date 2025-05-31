@@ -30,7 +30,6 @@ Tower :: struct {
 }
 
 Ground :: struct {
-	pos: Vec2i,
 }
 
 SelectionState :: enum int {
@@ -45,19 +44,14 @@ MySumType :: union {
 	Ground,
 }
 
-// Define a tag type to identify the type currently stored
-MySumTypeTag :: enum {
-	Ground,
-}
-
-TaggedMySumType :: struct {
-	tag:   MySumTypeTag,
-	value: MySumType,
-}
 
 GameEntity :: struct {
-	id:     int,
-	entity: TaggedMySumType,
+	id:       int,
+	entity:   MySumType,
+	selected: SelectionState,
+	position: Vec2i,
+	mesh:     string,
+	material: string,
 }
 
 
@@ -67,12 +61,10 @@ UIElement :: struct {
 
 Button :: struct {
 	using identifier: UIElement,
-	hot:              bool,
-	active:           bool,
-	text:             string,
 	position:         rl.Rectangle,
 	state:            SelectionState,
 }
+
 
 UIState :: struct {
 	button: Button,
@@ -87,6 +79,8 @@ GameState :: struct {
 	selected:       int,
 	score:          Score,
 	lives:          int,
+	entityId:       int,
+	entities:       [dynamic]GameEntity,
 	ground:         [dynamic]Ground,
 	enemies:        [dynamic]Enemy,
 	towers:         [dynamic]Tower,
@@ -103,14 +97,26 @@ place_tower :: proc(state: ^GameState, pos: Vec2i) {
 
 }
 
+ground :: proc(pos: Vec2i) -> GameEntity {
+	return GameEntity{}
+}
+
+entity :: proc(game: ^GameState) -> ^GameEntity {
+	e := GameEntity{}
+	append(&game.entities, e)
+	return &game.entities[len(game.entities) - 1]
+}
+
+
 init :: proc() -> GameState {
 	state := GameState{}
 	for x in -10 ..< 11 {
 		for y in -10 ..< 11 {
-			g := Ground {
-				pos = Vec2i{x, y},
-			}
-			append(&state.ground, g)
+			g := entity(&state)
+			g.entity = Ground{}
+			g.position = Vec2i{x, y}
+			g.material = "base"
+			g.mesh = "base"
 		}
 	}
 	return state
@@ -129,12 +135,12 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	state.selected = -1
 	closest := f32(10000000.0)
 	// find the closest, mark it as selected
-	for i in 0 ..< len(state.ground) {
+	for i in 0 ..< len(state.entities) {
 
-		g := state.ground[i]
-		transform_matrix := rl.MatrixTranslate(f32(g.pos[0]), 0, f32(g.pos[1]))
+		g := state.entities[i]
+		transform_matrix := rl.MatrixTranslate(f32(g.position[0]), 0, f32(g.position[1]))
 
-		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes["base"], transform_matrix)
+		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes[g.mesh], transform_matrix)
 
 		if collision.hit && collision.distance < closest {
 			state.selected = i
@@ -189,41 +195,45 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		state.cube_transform,
 	)
 
-
-	for i in 0 ..< len(state.ground) {
-		g := state.ground[i]
+	for i in 0 ..< len(state.entities) {
+		e := state.entities[i]
+		switch entity in e.entity {
+		case Ground:
+		}
 		if i == state.selected {
 			if rl.IsMouseButtonDown(.LEFT) {
 
 				rl.SetShaderValue(
-					graphics_state.shaders["base"],
+					graphics_state.materials[e.material].shader,
 					loc,
 					raw_data([]f32{0, 1, 0, 1}),
 					.VEC4,
 				)
 			} else {
 				rl.SetShaderValue(
-					graphics_state.shaders["base"],
+					graphics_state.materials[e.material].shader,
 					loc,
 					raw_data([]f32{1, 1, 0, 1}),
 					.VEC4,
 				)}
 		} else {
 			rl.SetShaderValue(
-				graphics_state.shaders["base"],
+				graphics_state.materials[e.material].shader,
 				loc,
 				raw_data([]f32{1, 0, 0, 1}),
 				.VEC4,
 			)
 
 		}
-		transform_matrix := rl.MatrixTranslate(f32(g.pos[0]), 0, f32(g.pos[1]))
+		transform_matrix := rl.MatrixTranslate(f32(e.position[0]), 0, f32(e.position[1]))
 		rl.DrawMesh(
-			graphics_state.meshes["base"],
-			graphics_state.materials["base"],
+			graphics_state.meshes[e.mesh],
+			graphics_state.materials[e.material],
 			transform_matrix,
 		)
+
 	}
+
 
 	rl.EndMode3D()
 

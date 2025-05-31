@@ -4,6 +4,7 @@ import "../graphics"
 import "../gui"
 import "core:fmt"
 import "core:math"
+import "core:slice"
 import rl "vendor:raylib"
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
@@ -76,14 +77,10 @@ Score :: struct {
 }
 
 GameState :: struct {
-	selected:       int,
 	score:          Score,
 	lives:          int,
 	entityId:       int,
 	entities:       [dynamic]GameEntity,
-	ground:         [dynamic]Ground,
-	enemies:        [dynamic]Enemy,
-	towers:         [dynamic]Tower,
 	cube_transform: # row_major matrix[4, 4]f32,
 	ui_memory:      UIState,
 }
@@ -122,6 +119,11 @@ init :: proc() -> GameState {
 	return state
 }
 
+RayHit :: struct {
+	index: int,
+	hit:   rl.RayCollision,
+}
+
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
 	mp := rl.GetMousePosition()
 	camera := rl.Camera3D {
@@ -132,9 +134,9 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	}
 	ray := rl.GetScreenToWorldRay(mp, camera) // Get a ray trace from screen position (i.e mouse)
 
-	state.selected = -1
-	closest := f32(10000000.0)
-	// find the closest, mark it as selected
+	rayHit := make([dynamic]RayHit)
+
+	// find the ray hits
 	for i in 0 ..< len(state.entities) {
 
 		g := state.entities[i]
@@ -142,12 +144,30 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 		collision := rl.GetRayCollisionMesh(ray, graphics_state.meshes[g.mesh], transform_matrix)
 
-		if collision.hit && collision.distance < closest {
-			state.selected = i
-			closest = collision.distance
+		if collision.hit {
+			append(&rayHit, RayHit{hit = collision, index = i})
+		}
+	}
+
+	slice.sort_by(
+		rayHit[:],
+		proc(a, b: RayHit) -> bool {
+			return a.hit.distance > b.hit.distance // descending order
+		},
+	)
+
+
+	for i in 0 ..< len(state.entities) {
+
+		state.entities[i].selected = .INACTIVE
+
+		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].index == i {
 			md := rl.IsMouseButtonDown(.LEFT)
 			if md {
-				fmt.println(collision)
+				state.entities[i].selected = .ACTIVE
+			} else {
+				state.entities[i].selected = .HOT
+
 			}
 		}
 	}
@@ -200,30 +220,28 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		switch entity in e.entity {
 		case Ground:
 		}
-		if i == state.selected {
-			if rl.IsMouseButtonDown(.LEFT) {
-
-				rl.SetShaderValue(
-					graphics_state.materials[e.material].shader,
-					loc,
-					raw_data([]f32{0, 1, 0, 1}),
-					.VEC4,
-				)
-			} else {
-				rl.SetShaderValue(
-					graphics_state.materials[e.material].shader,
-					loc,
-					raw_data([]f32{1, 1, 0, 1}),
-					.VEC4,
-				)}
-		} else {
+		switch e.selected {
+		case .INACTIVE:
+			rl.SetShaderValue(
+				graphics_state.materials[e.material].shader,
+				loc,
+				raw_data([]f32{1, 1, 0, 1}),
+				.VEC4,
+			)
+		case .HOT:
 			rl.SetShaderValue(
 				graphics_state.materials[e.material].shader,
 				loc,
 				raw_data([]f32{1, 0, 0, 1}),
 				.VEC4,
 			)
-
+		case .ACTIVE:
+			rl.SetShaderValue(
+				graphics_state.materials[e.material].shader,
+				loc,
+				raw_data([]f32{0, 1, 0, 1}),
+				.VEC4,
+			)
 		}
 		transform_matrix := rl.MatrixTranslate(f32(e.position[0]), 0, f32(e.position[1]))
 		rl.DrawMesh(

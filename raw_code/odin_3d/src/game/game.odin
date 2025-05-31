@@ -34,7 +34,6 @@ Tower :: struct {
 }
 
 Enemy :: struct {
-	pos:    Vec2i,
 	health: int,
 	speed:  int,
 }
@@ -119,8 +118,17 @@ RayHit :: struct {
 	hit:   rl.RayCollision,
 }
 
-
 place_tower :: proc(state: ^GameState, pos: Vec2i) {
+	for i in 0 ..< len(state.entities) {
+		e := state.entities[i]
+		switch entity in e.entity {
+		case Ground:
+		case Tower:
+			if (e.position == pos) {
+				return
+			}
+		}
+	}
 	e := entity(state)
 	e.position = pos
 	e.entity = Tower {

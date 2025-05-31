@@ -77,12 +77,11 @@ Score :: struct {
 }
 
 GameState :: struct {
-	score:          Score,
-	lives:          int,
-	entityId:       int,
-	entities:       [dynamic]GameEntity,
-	cube_transform: # row_major matrix[4, 4]f32,
-	ui_memory:      UIState,
+	score:     Score,
+	lives:     int,
+	entityId:  int,
+	entities:  [dynamic]GameEntity,
+	ui_memory: UIState,
 }
 
 Command :: enum int {
@@ -122,6 +121,22 @@ init :: proc() -> GameState {
 RayHit :: struct {
 	index: int,
 	hit:   rl.RayCollision,
+}
+
+restart :: proc(game: ^GameState) {
+
+	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
+	game.score.value = 0
+	game.score.last_changed = 0.0
+}
+
+apply :: proc(state: ^GameState, command: Command) {
+	switch command {
+	case .NONE:
+	case .CLICKED:
+		state.score.value += 1
+		state.score.last_changed = f32(rl.GetTime())
+	}
 }
 
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
@@ -205,21 +220,15 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 		up       = rl.Vector3{0, 1, 0},
 		fovy     = 40,
 	}
-	loc := rl.GetShaderLocation(graphics_state.shaders["base"], "colDiffuse2")
-	rl.SetShaderValue(graphics_state.shaders["base"], loc, raw_data([]f32{1, 0, 0, 1}), .VEC4)
 
 	rl.BeginMode3D(camera_3d)
-	rl.DrawMesh(
-		graphics_state.meshes["base"],
-		graphics_state.materials["base"],
-		state.cube_transform,
-	)
 
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
 		switch entity in e.entity {
 		case Ground:
 		}
+		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
 		switch e.selected {
 		case .INACTIVE:
 			rl.SetShaderValue(

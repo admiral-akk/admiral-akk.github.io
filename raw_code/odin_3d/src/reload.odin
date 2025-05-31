@@ -58,7 +58,6 @@ GameMemory :: struct {
 	audio_buffer:    [BUFFER_SIZE]f32,
 	game_memory:     game.GameState,
 	graphics_memory: graphics.GraphicsState,
-	score_size:      f32,
 	current:         game.Command,
 }
 
@@ -66,11 +65,7 @@ GameMemory :: struct {
 g_mem: ^GameMemory
 
 restart :: proc() {
-	g_mem.game_memory.cube_transform = rl.Matrix(1)
-	g_mem.game_memory.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
-	g_mem.game_memory.score.value = 0
-	g_mem.game_memory.score.last_changed = 0.0
-	g_mem.score_size = 20
+	game.restart(&g_mem.game_memory)
 	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
 	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
 	rl.GenTextureMipmaps(&g_mem.graphics_memory.textures["base"])
@@ -85,25 +80,8 @@ restart :: proc() {
 
 tick :: proc() {
 	// game state
-	g_mem.tick_timer -= rl.GetFrameTime()
-	if g_mem.tick_timer <= 0 {
-		rotation := rl.MatrixRotate(rl.Vector3{0, 1, 0}, 0.1) //math.PI * 1.5 / 2.0)
-		g_mem.game_memory.cube_transform = rotation * g_mem.game_memory.cube_transform
-		g_mem.tick_timer = TICK_RATE
-		if g_mem.score_size > 14 {
-			g_mem.score_size -= TICK_RATE * 275
-			g_mem.score_size = math.max(14, g_mem.score_size)
-		}
-	}
-
 	cmd := game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
-
-	switch cmd {
-	case .NONE:
-	case .CLICKED:
-		g_mem.game_memory.score.value += 1
-		g_mem.game_memory.score.last_changed = f32(rl.GetTime())
-	}
+	game.apply(&g_mem.game_memory, cmd)
 }
 
 

@@ -148,8 +148,6 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 
 
 render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
-
-
 	camera_3d := rl.Camera3D {
 		position = rl.Vector3{10, 10, 10},
 		target   = rl.Vector3{0, 0, 0},

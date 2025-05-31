@@ -101,9 +101,6 @@ tick :: proc() {
 	// gui state 
 	cmd := gui.tick(&g_mem.game_memory)
 
-	// apply command 
-	gui.apply(&g_mem.game_memory, cmd)
-
 	switch cmd {
 	case .NONE:
 	case .CLICKED:

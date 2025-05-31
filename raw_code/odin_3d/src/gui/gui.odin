@@ -25,6 +25,17 @@ render_text_box :: proc(text_box: TextBox) {
 	)
 }
 
+Button :: struct {
+	color:    rl.Color,
+	position: rl.Rectangle,
+}
+
+render_button :: proc(button: Button) {
+	rl.DrawRectangleRec(button.position, button.color)
+	rl.DrawRectangleLinesEx(button.position, 1, {50, 50, 50, 255})
+
+}
+
 // Mouse buttons
 tick :: proc(state: ^game.GameState) -> game.Command {
 
@@ -53,8 +64,6 @@ tick :: proc(state: ^game.GameState) -> game.Command {
 	return .NONE
 }
 
-apply :: proc(state: ^game.GameState, cmd: game.Command) {
-}
 
 render :: proc(game_state: ^game.GameState) {
 	state := game_state.ui_memory
@@ -72,8 +81,7 @@ render :: proc(game_state: ^game.GameState) {
 	case .ACTIVE:
 		button_color = rl.Color{200, 0, 200, 255}
 	}
-	rl.DrawRectangleRec(state.button.position, button_color)
-	rl.DrawRectangleLinesEx(state.button.position, 1, {50, 50, 50, 255})
+	render_button(Button{color = button_color, position = state.button.position})
 
 	text_val := fmt.ctprint(game_state.score.value)
 	time_since_change := f32(rl.GetTime()) - game_state.score.last_changed
@@ -81,7 +89,6 @@ render :: proc(game_state: ^game.GameState) {
 	render_text_box(
 		TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
 	)
-	//fmt.println(mp)
 
 	rl.EndMode2D()
 }

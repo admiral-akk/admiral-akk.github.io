@@ -9,61 +9,29 @@ SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
 // Mouse buttons
-ButtonState :: enum int {
-	INACTIVE = 0,
-	HOT      = 1,
-	ACTIVE   = 2,
-}
-
-UIElement :: struct {
-	id: int,
-}
-
-Button :: struct {
-	using identifier: UIElement,
-	hot:              bool,
-	active:           bool,
-	text:             string,
-	position:         rl.Rectangle,
-	state:            ButtonState,
-}
-
-TextBox :: struct {
-	using identifier: UIElement,
-	position:         rl.Vector2,
-	font_size:        f32,
-	text_val:         cstring,
-}
-
-UIState :: struct {
-	button: Button,
-	score:  TextBox,
-}
-
-
-tick :: proc(state: ^UIState) -> game.Command {
-	if state.score.font_size > 14 {
-		state.score.font_size -= TICK_RATE * 275
-		state.score.font_size = math.max(14, state.score.font_size)
+tick :: proc(state: ^game.GameState) -> game.Command {
+	if state.ui_memory.score.font_size > 14 {
+		state.ui_memory.score.font_size -= TICK_RATE * 275
+		state.ui_memory.score.font_size = math.max(14, state.ui_memory.score.font_size)
 	}
 
 	mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
-	over_button := rl.CheckCollisionPointRec(mp, state.button.position)
-	switch state.button.state {
+	over_button := rl.CheckCollisionPointRec(mp, state.ui_memory.button.position)
+	switch state.ui_memory.button.state {
 	case .INACTIVE:
 		if over_button {
-			state.button.state = .HOT
+			state.ui_memory.button.state = .HOT
 		}
 	case .HOT:
 		if !over_button {
-			state.button.state = .INACTIVE
+			state.ui_memory.button.state = .INACTIVE
 		} else if md {
-			state.button.state = .ACTIVE
+			state.ui_memory.button.state = .ACTIVE
 		}
 	case .ACTIVE:
 		if !md {
-			state.button.state = .INACTIVE
+			state.ui_memory.button.state = .INACTIVE
 			if over_button {
 				return .CLICKED
 			}
@@ -72,15 +40,16 @@ tick :: proc(state: ^UIState) -> game.Command {
 	return .NONE
 }
 
-apply :: proc(state: ^UIState, cmd: game.Command) {
+apply :: proc(state: ^game.GameState, cmd: game.Command) {
 	switch cmd {
 	case .NONE:
 	case .CLICKED:
-		state.score.font_size = 40
+		state.ui_memory.score.font_size = 40
 	}
 }
 
-render :: proc(state: ^UIState, game_state: ^game.GameState) {
+render :: proc(game_state: ^game.GameState) {
+	state := game_state.ui_memory
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
 	//mp := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 

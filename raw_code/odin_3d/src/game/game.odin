@@ -31,6 +31,37 @@ Ground :: struct {
 	pos: Vec2i,
 }
 
+ButtonState :: enum int {
+	INACTIVE = 0,
+	HOT      = 1,
+	ACTIVE   = 2,
+}
+
+UIElement :: struct {
+	id: int,
+}
+
+Button :: struct {
+	using identifier: UIElement,
+	hot:              bool,
+	active:           bool,
+	text:             string,
+	position:         rl.Rectangle,
+	state:            ButtonState,
+}
+
+TextBox :: struct {
+	using identifier: UIElement,
+	position:         rl.Vector2,
+	font_size:        f32,
+	text_val:         cstring,
+}
+
+UIState :: struct {
+	button: Button,
+	score:  TextBox,
+}
+
 GameState :: struct {
 	selected:       int,
 	score:          int,
@@ -39,6 +70,7 @@ GameState :: struct {
 	enemies:        [dynamic]Enemy,
 	towers:         [dynamic]Tower,
 	cube_transform: # row_major matrix[4, 4]f32,
+	ui_memory:      UIState,
 }
 
 Command :: enum int {

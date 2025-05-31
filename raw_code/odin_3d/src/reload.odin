@@ -57,7 +57,6 @@ GameMemory :: struct {
 	tick_timer:      f32,
 	audio_frame:     u32,
 	audio_buffer:    [BUFFER_SIZE]f32,
-	ui_memory:       gui.UIState,
 	game_memory:     game.GameState,
 	graphics_memory: graphics.GraphicsState,
 	score_size:      f32,
@@ -69,7 +68,7 @@ g_mem: ^GameMemory
 
 restart :: proc() {
 	g_mem.game_memory.cube_transform = rl.Matrix(1)
-	g_mem.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
+	g_mem.game_memory.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	g_mem.game_memory.score = 0
 	g_mem.score_size = 20
 	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
@@ -99,11 +98,10 @@ tick :: proc() {
 
 	game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
 	// gui state 
-	cmd := gui.tick(&g_mem.ui_memory)
+	cmd := gui.tick(&g_mem.game_memory)
 
 	// apply command 
-
-	gui.apply(&g_mem.ui_memory, cmd)
+	gui.apply(&g_mem.game_memory, cmd)
 
 	switch cmd {
 	case .NONE:
@@ -118,7 +116,7 @@ render :: proc() {
 	rl.ClearBackground({76, 53, 83, 255})
 
 	game.render(&g_mem.game_memory, &g_mem.graphics_memory)
-	gui.render(&g_mem.ui_memory, &g_mem.game_memory)
+	gui.render(&g_mem.game_memory)
 
 	rl.EndDrawing()
 }

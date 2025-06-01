@@ -77,7 +77,6 @@ UIEntity :: struct {
 	selected: SelectionState,
 	position: rl.Rectangle,
 }
-
 Score :: struct {
 	value:        int,
 	last_changed: int,
@@ -402,7 +401,7 @@ update_time :: proc(state: ^Game) {
 }
 
 ClickedOn :: union {
-	Button,
+	UIElement,
 }
 
 tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
@@ -497,13 +496,19 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		}
 	}
 
-	for &c in clickedOn {
+	for c in clickedOn {
 		switch v in c {
-		case Button:
-			switch v.type {
-			case .Increment:
-				state.score.value += 1
-				state.score.last_changed = state.time.frame
+		case UIElement:
+			{
+				switch ui in v {
+				case Button:
+					switch ui.type {
+					case .Increment:
+						state.score.value += 1
+						state.score.last_changed = state.time.frame
+					}
+				}
+
 			}
 		}
 	}

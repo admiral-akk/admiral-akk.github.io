@@ -38,10 +38,14 @@ Enemy :: struct {
 	speed:  int,
 }
 
+Town :: struct {
+}
+
 EntityType :: union {
 	Ground,
 	Tower,
 	Enemy,
+	Town,
 }
 
 GameEntity :: struct {
@@ -133,6 +137,9 @@ restart :: proc(game: ^GameState) {
 			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
 		}
 	}
+
+	town := entity(game)
+	town.entity = Town{}
 }
 
 init :: proc() -> GameState {
@@ -150,9 +157,7 @@ RayHit :: struct {
 place_tower :: proc(state: ^GameState, pos: Vec2i) {
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
-		switch entity in e.entity {
-		case Ground:
-		case Enemy:
+		#partial switch entity in e.entity {
 		case Tower:
 			if (e.position == pos) {
 				return
@@ -167,11 +172,61 @@ place_tower :: proc(state: ^GameState, pos: Vec2i) {
 	}
 }
 
+// assumes we're trying to get to the closest town, gives the next
+// target spot.
+//
+// assumes position is on the GRID, or in between two orthogonal points on 
+// the grid.
+//
+// returns a direction with distance till you reach the next time you should check
+path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
+	// find the points on the grid we could move to, max of 4.
+
+	nextPoints := make([dynamic]Vec2i)
+	onY := math.abs(pos.y) % GRID_SIZE == 0
+	onX := math.abs(pos.x) % GRID_SIZE == 0
+
+
+	if onY && onX {
+		// on a grid point, can move in all 4 orthogonal directions
+		append(&nextPoints, Vec2i{pos.x + 1, pos.y})
+		append(&nextPoints, Vec2i{pos.x - 1, pos.y})
+		append(&nextPoints, Vec2i{pos.x, pos.y + 1})
+		append(&nextPoints, Vec2i{pos.x, pos.y - 1})
+	} else if onX {
+
+		// truncates towards 0
+		baseY := pos.y / GRID_SIZE
+		if pos.y < 0 {
+			baseY -= 1
+		}
+
+		append(&nextPoints, Vec2i{pos.x, baseY + 1})
+		append(&nextPoints, Vec2i{pos.x, baseY})
+
+	} else if onY {
+		// truncates towards 0
+		baseX := pos.x / GRID_SIZE
+		if pos.x < 0 {
+			baseX -= 1
+		}
+
+		append(&nextPoints, Vec2i{baseX + 1, pos.y})
+		append(&nextPoints, Vec2i{baseX, pos.y})
+	} else {
+		// not on grid at all, grab the 4 quad around
+
+	}
+
+
+	return Vec2i{1, 0}, 1
+}
+
 spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
-		switch entity in e.entity {
-		case Ground:
+		#partial switch entity in e.entity {
+		case Town:
 		case Enemy:
 			if (e.position == pos) {
 				return
@@ -210,7 +265,7 @@ get_ray_hits :: proc(
 	// find the ray hits
 	for i in 0 ..< len(state.entities) {
 		g := state.entities[i]
-		switch entity in g.entity {
+		#partial switch entity in g.entity {
 		case Ground:
 			transform_matrix := rl.MatrixTranslate(
 				f32(g.position[0]) / GRID_SIZE,
@@ -227,8 +282,6 @@ get_ray_hits :: proc(
 			if collision.hit {
 				append(&rayHit, RayHit{hit = collision, id = g.id})
 			}
-		case Tower:
-		case Enemy:
 		}
 	}
 	slice.sort_by(
@@ -274,11 +327,17 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 	for i in 0 ..< len(state.entities) {
 		g := &state.entities[i]
-		switch entity in g.entity {
-		case Ground:
-		case Tower:
+		#partial switch entity in g.entity {
 		case Enemy:
-			g.position.x += 1
+			remaining_dist := entity.speed
+
+			for remaining_dist > 0 {
+				dir, dist := path_find(state, g.position)
+				travel_dist := math.min(remaining_dist, dist)
+				g.position += travel_dist * dir
+				remaining_dist -= travel_dist
+
+			}
 		}
 	}
 
@@ -371,6 +430,20 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 				graphics_state.materials[e.material].shader,
 				loc,
 				raw_data([]f32{1, 0.5, 0.5, 1}),
+				.VEC4,
+			)
+		case Town:
+			transform_matrix =
+				rl.MatrixTranslate(
+					f32(e.position[0]) / GRID_SIZE,
+					1,
+					f32(e.position[1]) / GRID_SIZE,
+				) *
+				rl.MatrixScale(0.8, 0.8, 0.8)
+			rl.SetShaderValue(
+				graphics_state.materials[e.material].shader,
+				loc,
+				raw_data([]f32{0.5, 0.5, 0.5, 1}),
 				.VEC4,
 			)
 		}

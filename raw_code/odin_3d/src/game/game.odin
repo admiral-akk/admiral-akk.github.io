@@ -553,15 +553,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
 		case Ground:
-			color = oklab.color({0.5, 0.4, 0.3, 1.})
-			switch e.selected {
-			case .INACTIVE:
-				color = oklab.color({0.2, 0.2, 0.5, 1.})
-			case .HOT:
-				color = oklab.color({0.3, 0.3, 0.5, 1.})
-			case .ACTIVE:
-				color = oklab.color({0.4, 0.4, 0.5, 1.})
-			}
+			color = oklab.color({0.2, 0.2, 0.5, 1.})
 		case Tower:
 			color = oklab.color({0.5, 0.4, 0.3, 1.})
 			pos[1] = 1
@@ -575,6 +567,18 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			scale *= 0.8
 			color = oklab.color({0.4, 0.4, 0.5, 1.})
 		}
+
+		switch e.selected {
+		case .INACTIVE:
+
+		case .HOT:
+			color[0] += 0.1
+			color[1] += 0.1
+		case .ACTIVE:
+			color[0] += 0.2
+			color[1] += 0.2
+		}
+
 		transform_matrix :=
 			rl.MatrixTranslate(pos.x, pos.y, pos.z) * rl.MatrixScale(scale.x, scale.y, scale.z)
 

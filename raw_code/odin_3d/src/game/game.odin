@@ -32,7 +32,7 @@ SelectionState :: enum int {
 Tower :: struct {
 	attack:          int,
 	reload_ticks:    int,
-	last_fired_tick: int,
+	last_fired_tick: GameTime,
 	range:           int,
 }
 
@@ -83,7 +83,7 @@ UIEntity :: struct {
 }
 Score :: struct {
 	value:        int,
-	last_changed: int,
+	last_changed: GameTime,
 }
 
 GameTime :: struct {
@@ -176,7 +176,7 @@ restart :: proc(game: ^Game) {
 		type = .Increment,
 	}
 	game.score.value = 0
-	game.score.last_changed = 0
+	game.score.last_changed = game.time
 
 	for x in -10 ..< 11 {
 		for y in -10 ..< 11 {
@@ -402,7 +402,7 @@ apply :: proc(state: ^Game, command: Command) {
 	case .NONE:
 	case .CLICKED:
 		state.score.value += 1
-		state.score.last_changed = state.time.frame
+		state.score.last_changed = state.time
 	}
 }
 
@@ -497,14 +497,14 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		#reverse for &g in state.entities {
 			#partial switch &tower in g.entity {
 			case Tower:
-				if state.time.tick - tower.last_fired_tick >= tower.reload_ticks {
+				if state.time.tick - tower.last_fired_tick.tick >= tower.reload_ticks {
 					nearest := find_nearest_enemy(state, g.position)
 					#partial switch v in nearest {
 					case ^GameEntity:
 						#partial switch &enemy in v.entity {
 						case Enemy:
 							if length_2(v.position - g.position) <= tower.range {
-								tower.last_fired_tick = state.time.tick
+								tower.last_fired_tick = state.time
 								enemy.health -= tower.attack
 							}
 
@@ -586,7 +586,7 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 					switch ui.type {
 					case .Increment:
 						state.score.value += 1
-						state.score.last_changed = state.time.frame
+						state.score.last_changed = state.time
 					case .NewGame:
 						newGame(state)
 					}
@@ -700,7 +700,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	}
 
 	text_val := fmt.ctprint(state.score.value)
-	frames_since_change := state.time.frame - state.score.last_changed
+	frames_since_change := state.time.frame - state.score.last_changed.frame
 	font_size := f32(math.max(14, 40 - 3 * frames_since_change))
 	gui.render_text_box(
 		gui.TextBox {

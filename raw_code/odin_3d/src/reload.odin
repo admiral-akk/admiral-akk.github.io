@@ -20,7 +20,7 @@ GameMemory :: struct {
 	tick_timer:      f32,
 	audio_frame:     u32,
 	audio_buffer:    [BUFFER_SIZE]f32,
-	game_memory:     game.GameState,
+	game_memory:     game.Game,
 	graphics_memory: graphics.GraphicsState,
 }
 
@@ -174,9 +174,7 @@ game_shutdown_window :: proc() {
 game_update :: proc() -> bool {
 
 	// game state
-	cmd := game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
-	game.apply(&g_mem.game_memory, cmd)
-
+	game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
 
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})

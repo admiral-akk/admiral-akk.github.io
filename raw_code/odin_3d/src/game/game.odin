@@ -28,7 +28,6 @@ SelectionState :: enum int {
 	ACTIVE   = 2,
 }
 
-
 Tower :: struct {
 	attack: int,
 	range:  int,
@@ -84,7 +83,14 @@ GameTime :: struct {
 	deltaTime: f32,
 }
 
-GameState :: struct {
+GameState :: enum int {
+	PLAYING   = 0,
+	GAME_OVER = 1,
+}
+
+
+Game :: struct {
+	state:     GameState,
 	time:      GameTime,
 	score:     Score,
 	lives:     int,
@@ -99,7 +105,7 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
-entity :: proc(game: ^GameState) -> ^GameEntity {
+entity :: proc(game: ^Game) -> ^GameEntity {
 	e := GameEntity {
 		material = "base",
 		mesh     = "base",
@@ -110,7 +116,7 @@ entity :: proc(game: ^GameState) -> ^GameEntity {
 	return &game.entities[len(game.entities) - 1]
 }
 
-delete_e :: proc(game: ^GameState, entityId: int) {
+delete_e :: proc(game: ^Game, entityId: int) {
 	for i in 0 ..< len(game.entities) {
 		if game.entities[i].id == entityId {
 			unordered_remove(&game.entities, i)
@@ -121,8 +127,7 @@ delete_e :: proc(game: ^GameState, entityId: int) {
 
 GRID_SIZE :: 128
 
-
-restart :: proc(game: ^GameState) {
+restart :: proc(game: ^Game) {
 	game.camera = rl.Camera3D {
 		position   = rl.Vector3{10, 10, 10},
 		target     = rl.Vector3{0, 0, 0},
@@ -130,6 +135,7 @@ restart :: proc(game: ^GameState) {
 		fovy       = 30,
 		projection = .ORTHOGRAPHIC,
 	}
+	game.state = .PLAYING
 	game.lives = 10
 	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	game.score.value = 0
@@ -150,8 +156,8 @@ restart :: proc(game: ^GameState) {
 	town.entity = Town{}
 }
 
-init :: proc() -> GameState {
-	state := GameState{}
+init :: proc() -> Game {
+	state := Game{}
 	// test deletion
 	restart(&state)
 	return state
@@ -162,9 +168,8 @@ RayHit :: struct {
 	hit: rl.RayCollision,
 }
 
-place_tower :: proc(state: ^GameState, pos: Vec2i) {
-	for i in 0 ..< len(state.entities) {
-		e := state.entities[i]
+place_tower :: proc(state: ^Game, pos: Vec2i) {
+	#reverse for &e in state.entities {
 		#partial switch entity in e.entity {
 		case Tower:
 			if (e.position == pos) {
@@ -207,7 +212,7 @@ length :: proc(v: Vec2i) -> int {
 // the grid.
 //
 // returns a direction with distance till you reach the next time you should check
-path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
+path_find :: proc(state: ^Game, pos: Vec2i) -> (Vec2i, int) {
 	// find the points on the grid we could move to, max of 4.
 
 	nextPoints := make([dynamic]Vec2i)
@@ -287,9 +292,8 @@ path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
 	return sign(dir_distance), length(dir_distance)
 }
 
-spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
-	for i in 0 ..< len(state.entities) {
-		e := state.entities[i]
+spawn_enemy :: proc(state: ^Game, pos: Vec2i) {
+	#reverse for &e in state.entities {
 		#partial switch entity in e.entity {
 		case Town:
 		case Enemy:
@@ -310,12 +314,12 @@ spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
 	}
 }
 
-spawn_enemy_rand :: proc(state: ^GameState) {
+spawn_enemy_rand :: proc(state: ^Game) {
 	pos := Vec2i{2 * GRID_SIZE, 2 * GRID_SIZE}
 	spawn_enemy(state, pos)
 }
 
-apply :: proc(state: ^GameState, command: Command) {
+apply :: proc(state: ^Game, command: Command) {
 	switch command {
 	case .NONE:
 	case .CLICKED:
@@ -324,10 +328,7 @@ apply :: proc(state: ^GameState, command: Command) {
 	}
 }
 
-get_ray_hits :: proc(
-	state: ^GameState,
-	graphics_state: ^graphics.GraphicsState,
-) -> [dynamic]RayHit {
+get_ray_hits :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
@@ -363,13 +364,13 @@ get_ray_hits :: proc(
 	return rayHit
 }
 
-update_time :: proc(state: ^GameState) {
+update_time :: proc(state: ^Game) {
 	state.time.frame += 1
 	state.time.tick += 1
 	state.time.deltaTime = rl.GetFrameTime()
 }
 
-tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
+tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
 	if state.time.tick % 200 == 0 {
@@ -432,6 +433,8 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
 	over_button := rl.CheckCollisionPointRec(mp_2d, state.ui_memory.button.position)
+
+	cmd := Command.NONE
 	switch state.ui_memory.button.state {
 	case .INACTIVE:
 		if over_button {
@@ -447,15 +450,20 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 		if !md {
 			state.ui_memory.button.state = .INACTIVE
 			if over_button {
-				return .CLICKED
+				cmd = .CLICKED
 			}
 		}
 	}
-	return .NONE
+	switch cmd {
+	case .NONE:
+	case .CLICKED:
+		state.score.value += 1
+		state.score.last_changed = state.time.frame
+	}
 }
 
 
-render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
+render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	rl.BeginMode3D(state.camera)
 
 	for i in 0 ..< len(state.entities) {

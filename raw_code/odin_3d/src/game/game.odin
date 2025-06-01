@@ -94,11 +94,21 @@ entity :: proc(game: ^GameState) -> ^GameEntity {
 	e := GameEntity {
 		material = "base",
 		mesh     = "base",
+		id       = game.entityId,
 	}
+	game.entityId += 1
 	append(&game.entities, e)
 	return &game.entities[len(game.entities) - 1]
 }
 
+delete_e :: proc(game: ^GameState, entityId: int) {
+	for i in 0 ..< len(game.entities) {
+		if game.entities[i].id == entityId {
+			unordered_remove(&game.entities, i)
+			return
+		}
+	}
+}
 
 GRID_SIZE :: 128
 
@@ -115,8 +125,8 @@ init :: proc() -> GameState {
 }
 
 RayHit :: struct {
-	index: int,
-	hit:   rl.RayCollision,
+	id:  int,
+	hit: rl.RayCollision,
 }
 
 place_tower :: proc(state: ^GameState, pos: Vec2i) {
@@ -192,7 +202,6 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 	// find the ray hits
 	for i in 0 ..< len(state.entities) {
-
 		g := state.entities[i]
 		switch entity in g.entity {
 		case Ground:
@@ -209,7 +218,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 			)
 
 			if collision.hit {
-				append(&rayHit, RayHit{hit = collision, index = i})
+				append(&rayHit, RayHit{hit = collision, id = g.id})
 			}
 		case Tower:
 		case Enemy:
@@ -225,7 +234,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 
 	for i in 0 ..< len(state.entities) {
-		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].index == i {
+		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
 			md := rl.IsMouseButtonDown(.LEFT)
 			rmd := rl.IsMouseButtonDown(.RIGHT)
 			switch state.entities[i].selected {

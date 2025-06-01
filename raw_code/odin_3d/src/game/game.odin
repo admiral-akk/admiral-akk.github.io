@@ -502,10 +502,7 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 						#partial switch &enemy in v.entity {
 						case Enemy:
 							if length_2(v.position - g.position) <= tower.range {
-								// attack 
-								fmt.println("ATTACK!")
 								tower.last_fired_tick = state.time.tick
-
 								enemy.health -= tower.attack
 							}
 

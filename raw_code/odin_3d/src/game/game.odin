@@ -30,8 +30,10 @@ SelectionState :: enum int {
 }
 
 Tower :: struct {
-	attack: int,
-	range:  int,
+	attack:          int,
+	reload_ticks:    int,
+	last_fired_tick: int,
+	range:           int,
 }
 
 Enemy :: struct {
@@ -229,7 +231,7 @@ place_tower :: proc(state: ^Game, pos: Vec2i) {
 	e.position = pos
 	e.entity = Tower {
 		attack = 1,
-		range  = 1,
+		range  = 2 * GRID_SIZE,
 	}
 }
 
@@ -252,6 +254,33 @@ sign :: proc(v: Vec2i) -> Vec2i {
 length :: proc(v: Vec2i) -> int {
 	return math.abs(v.x) + math.abs(v.y)
 }
+
+length_2 :: proc(v: Vec2i) -> int {
+	return int(math.sqrt(f32(v.x * v.x + v.y * v.y)))
+}
+
+// 
+find_nearest_enemy :: proc(state: ^Game, pos: Vec2i) -> Maybe(^GameEntity) {
+	closest := -1
+	ent: ^GameEntity
+	distance := 100000
+	for &e in state.entities {
+		#partial switch &v in e.entity {
+		case Enemy:
+			new_dist := length_2(pos - e.position)
+			if new_dist < distance {
+				closest = e.id
+				distance = new_dist
+				ent = &e
+			}
+		}
+	}
+	if closest > -1 {
+		return ent
+	}
+	return nil
+}
+
 
 // assumes we're trying to get to the closest town, gives the next
 // target spot.
@@ -357,7 +386,7 @@ spawn_enemy :: proc(state: ^Game, pos: Vec2i) {
 	e := entity(state)
 	e.position = pos
 	e.entity = Enemy {
-		health = 1,
+		health = 2,
 		speed  = 20,
 	}
 }
@@ -463,27 +492,55 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 				state.entities[i].selected = .INACTIVE
 			}
 		}
+		#reverse for &g in state.entities {
+			#partial switch &tower in g.entity {
+			case Tower:
+				if state.time.tick - tower.last_fired_tick >= tower.reload_ticks {
+					nearest := find_nearest_enemy(state, g.position)
+					#partial switch v in nearest {
+					case ^GameEntity:
+						#partial switch &enemy in v.entity {
+						case Enemy:
+							if length_2(v.position - g.position) <= tower.range {
+								// attack 
+								fmt.println("ATTACK!")
+								tower.last_fired_tick = state.time.tick
+
+								enemy.health -= tower.attack
+							}
+
+						}
+					}
+
+				}
+			}
+		}
 
 
 		#reverse for &g in state.entities {
 			#partial switch entity in g.entity {
 			case Enemy:
-				remaining_dist := entity.speed
+				if entity.health <= 0 {
 
-				for remaining_dist > 0 {
-					if g.position == (Vec2i{0, 0}) {
-						delete_e(state, g.id)
-						state.lives -= 1
-						if state.lives <= 0 {
-							gameOver(state)
+					delete_e(state, g.id)
+				} else {
+					remaining_dist := entity.speed
+
+					for remaining_dist > 0 {
+						if g.position == (Vec2i{0, 0}) {
+							delete_e(state, g.id)
+							state.lives -= 1
+							if state.lives <= 0 {
+								gameOver(state)
+							}
+							break
 						}
-						break
-					}
-					dir, dist := path_find(state, g.position)
-					travel_dist := math.min(remaining_dist, dist)
-					g.position += travel_dist * dir
-					remaining_dist -= travel_dist
+						dir, dist := path_find(state, g.position)
+						travel_dist := math.min(remaining_dist, dist)
+						g.position += travel_dist * dir
+						remaining_dist -= travel_dist
 
+					}
 				}
 			}
 		}

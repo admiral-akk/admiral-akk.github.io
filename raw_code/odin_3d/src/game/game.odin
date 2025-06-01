@@ -140,10 +140,24 @@ delete_e :: proc(game: ^Game, entityId: int) {
 		}
 	}
 }
+delete_ui :: proc(game: ^Game, entityId: int) {
+	for i in 0 ..< len(game.ui_entities) {
+		if game.ui_entities[i].id == entityId {
+			unordered_remove(&game.ui_entities, i)
+			return
+		}
+	}
+}
 
 GRID_SIZE :: 128
 
 restart :: proc(game: ^Game) {
+	for len(game.entities) > 0 {
+		delete_e(game, game.entities[0].id)
+	}
+	for len(game.ui_entities) > 0 {
+		delete_ui(game, game.ui_entities[0].id)
+	}
 	game.camera = rl.Camera3D {
 		position   = rl.Vector3{10, 10, 10},
 		target     = rl.Vector3{0, 0, 0},
@@ -160,9 +174,6 @@ restart :: proc(game: ^Game) {
 	}
 	game.score.value = 0
 	game.score.last_changed = 0
-	for len(game.entities) > 0 {
-		delete_e(game, game.entities[0].id)
-	}
 
 	for x in -10 ..< 11 {
 		for y in -10 ..< 11 {
@@ -390,6 +401,10 @@ update_time :: proc(state: ^Game) {
 	state.time.deltaTime = rl.GetFrameTime()
 }
 
+ClickedOn :: union {
+	Button,
+}
+
 tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
@@ -453,9 +468,10 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
 
+	clickedOn := make([dynamic]ClickedOn)
+
+
 	cmd := Command.NONE
-
-
 	#reverse for &g in state.ui_entities {
 		#partial switch &elem in g.element {
 		case Button:
@@ -476,18 +492,25 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 				if !md {
 					elem.state = .INACTIVE
 					if over_button2 {
+						append(&clickedOn, elem)
 						cmd = .CLICKED
 					}
 				}
 			}
 		}
 	}
-	switch cmd {
-	case .NONE:
-	case .CLICKED:
-		state.score.value += 1
-		state.score.last_changed = state.time.frame
+
+	for &c in clickedOn {
+		switch v in c {
+		case Button:
+			switch v.type {
+			case .Increment:
+				state.score.value += 1
+				state.score.last_changed = state.time.frame
+			}
+		}
 	}
+	clear(&clickedOn)
 }
 
 
@@ -605,7 +628,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	frames_since_change := state.time.frame - state.score.last_changed
 	font_size := f32(math.max(14, 40 - 3 * frames_since_change))
 	gui.render_text_box(
-		gui.TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
+		gui.TextBox{position = rl.Vector2{220, 20}, font_size = font_size, text_val = text_val},
 	)
 
 	gui.render_text_box(

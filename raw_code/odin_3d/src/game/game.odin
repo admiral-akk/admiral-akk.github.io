@@ -251,8 +251,9 @@ spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
 	}
 }
 
-spawn_enemy_rand :: proc(state: ^GameState, pos: Vec2i) {
-
+spawn_enemy_rand :: proc(state: ^GameState) {
+	pos := Vec2i{2 * GRID_SIZE, 2 * GRID_SIZE}
+	spawn_enemy(state, pos)
 }
 
 apply :: proc(state: ^GameState, command: Command) {
@@ -311,6 +312,10 @@ update_time :: proc(state: ^GameState) {
 
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
 	update_time(state)
+
+	if state.time.tick % 200 == 0 {
+		spawn_enemy_rand(state)
+	}
 
 	rayHit := get_ray_hits(state, graphics_state)
 

@@ -470,20 +470,18 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 	clickedOn := make([dynamic]ClickedOn)
 
-
-	cmd := Command.NONE
 	#reverse for &g in state.ui_entities {
 		#partial switch &elem in g.element {
 		case Button:
-			over_button2 := rl.CheckCollisionPointRec(mp_2d, g.position)
+			over_button := rl.CheckCollisionPointRec(mp_2d, g.position)
 
 			switch elem.state {
 			case .INACTIVE:
-				if over_button2 {
+				if over_button {
 					elem.state = .HOT
 				}
 			case .HOT:
-				if !over_button2 {
+				if !over_button {
 					elem.state = .INACTIVE
 				} else if md {
 					elem.state = .ACTIVE
@@ -491,9 +489,8 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			case .ACTIVE:
 				if !md {
 					elem.state = .INACTIVE
-					if over_button2 {
+					if over_button {
 						append(&clickedOn, elem)
-						cmd = .CLICKED
 					}
 				}
 			}

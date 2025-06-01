@@ -10,42 +10,6 @@ WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 
-VERT_SHADER :: `#version 330                       
-layout(location = 0)  in vec3 vertexPosition;            
-layout(location = 1) in vec2 vertexTexCoord;    
-layout(location = 2) in vec3 vertexNormal;         
-layout(location = 3)  in vec4 vertexColor;         
-layout(location = 4)  in vec4 vertexTangent;         
-layout(location = 5) in vec2 vertexTexCoord2;     
-uniform sampler2D sTex;         
-uniform vec4 colDiffuse2;
-out vec2 fragTexCoord;             
-out vec4 fragColor;  
-
-uniform mat4 mvp;                  
-void main()                        
-{                                  
-    fragTexCoord = vertexTexCoord; 
-    fragColor = colDiffuse2;   
-    gl_Position = mvp*vec4(vertexPosition, 1.0); 
-}                                  
-	              `
-
-
-FRAG_SHADER :: `#version 330       
-in vec2 fragTexCoord;              
-in vec4 fragColor;                 
-out vec4 finalColor;               
-uniform sampler2D texture0;        
-uniform vec4 colDiffuse;           
-void main()                        
-{                                  
-    vec4 texelColor = texture(texture0, fragTexCoord);   
-    finalColor = fragColor;        
-}                                  
-	`
-
-
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
 must be transferable from one game DLL to
@@ -177,10 +141,6 @@ audio_callback :: proc "c" (b: rawptr, frames: u32) {
 
 @(export)
 game_reload :: proc() {
-	material := rl.LoadMaterialDefault()
-	g_mem.graphics_memory.shaders["base"] = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
-	material.shader = g_mem.graphics_memory.shaders["base"]
-	g_mem.graphics_memory.materials["base"] = material
 
 	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
 	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
@@ -188,7 +148,6 @@ game_reload :: proc() {
 	g_mem.audio_frame = 0
 
 	//g_mem.graphics_memory.meshes["base"] = generate_mesh()
-	g_mem.graphics_memory.meshes["base"] = rl.GenMeshCube(1, 1, 1)
 	restart()
 	free_all(context.temp_allocator)
 }

@@ -66,16 +66,7 @@ g_mem: ^GameMemory
 
 restart :: proc() {
 	game.restart(&g_mem.game_memory)
-	image := rl.GenImageGradientLinear(128, 128, 0, {255, 0, 0, 255}, {0, 255, 0, 255})
-	g_mem.graphics_memory.textures["base"] = rl.LoadTextureFromImage(image)
-	rl.GenTextureMipmaps(&g_mem.graphics_memory.textures["base"])
-	rl.SetShaderValueTexture(
-		g_mem.graphics_memory.materials["base"].shader,
-		0,
-		g_mem.graphics_memory.textures["base"],
-	) // Set shader uniform value for texture (sampler2d)
-	g_mem.graphics_memory.materials["base"].maps[0].texture =
-		g_mem.graphics_memory.textures["base"]
+	graphics.restart(&g_mem.graphics_memory)
 }
 
 

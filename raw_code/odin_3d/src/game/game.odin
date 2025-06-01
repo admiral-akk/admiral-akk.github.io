@@ -42,6 +42,7 @@ Enemy :: struct {
 MySumType :: union {
 	Ground,
 	Tower,
+	Enemy,
 }
 
 
@@ -123,6 +124,7 @@ place_tower :: proc(state: ^GameState, pos: Vec2i) {
 		e := state.entities[i]
 		switch entity in e.entity {
 		case Ground:
+		case Enemy:
 		case Tower:
 			if (e.position == pos) {
 				return
@@ -135,6 +137,30 @@ place_tower :: proc(state: ^GameState, pos: Vec2i) {
 		attack = 1,
 		range  = 1,
 	}
+}
+
+spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
+	for i in 0 ..< len(state.entities) {
+		e := state.entities[i]
+		switch entity in e.entity {
+		case Ground:
+		case Enemy:
+			if (e.position == pos) {
+				return
+			}
+		case Tower:
+			if (e.position == pos) {
+				return
+			}
+		}
+	}
+	e := entity(state)
+	e.position = pos
+	e.entity = Enemy {
+		health = 1,
+		speed  = 1,
+	}
+
 }
 
 restart :: proc(game: ^GameState) {
@@ -186,7 +212,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 				append(&rayHit, RayHit{hit = collision, index = i})
 			}
 		case Tower:
-
+		case Enemy:
 		}
 	}
 
@@ -201,6 +227,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	for i in 0 ..< len(state.entities) {
 		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].index == i {
 			md := rl.IsMouseButtonDown(.LEFT)
+			rmd := rl.IsMouseButtonDown(.RIGHT)
 			switch state.entities[i].selected {
 			case .INACTIVE:
 				if md {
@@ -209,6 +236,9 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 					state.entities[i].selected = .HOT
 				}
 			case .ACTIVE:
+				if rmd {
+					spawn_enemy(state, state.entities[i].position)
+				}
 				if !md {
 					state.entities[i].selected = .HOT
 					place_tower(state, state.entities[i].position)
@@ -304,6 +334,20 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 				graphics_state.materials[e.material].shader,
 				loc,
 				raw_data([]f32{1, 0, 1, 1}),
+				.VEC4,
+			)
+		case Enemy:
+			transform_matrix =
+				rl.MatrixTranslate(
+					f32(e.position[0]) / GRID_SIZE,
+					1,
+					f32(e.position[1]) / GRID_SIZE,
+				) *
+				rl.MatrixScale(0.8, 0.8, 0.8)
+			rl.SetShaderValue(
+				graphics_state.materials[e.material].shader,
+				loc,
+				raw_data([]f32{1, 0.5, 0.5, 1}),
 				.VEC4,
 			)
 		}

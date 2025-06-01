@@ -78,21 +78,6 @@ restart :: proc() {
 		g_mem.graphics_memory.textures["base"]
 }
 
-tick :: proc() {
-	// game state
-	cmd := game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
-	game.apply(&g_mem.game_memory, cmd)
-}
-
-
-render :: proc() {
-	rl.BeginDrawing()
-	rl.ClearBackground({76, 53, 83, 255})
-
-	game.render(&g_mem.game_memory, &g_mem.graphics_memory)
-
-	rl.EndDrawing()
-}
 
 /* Allocates the GameMemory that we use to store
   our game's state. We assign it to a global
@@ -238,8 +223,19 @@ game_shutdown_window :: proc() {
   false when you wish to terminate the program. */
 @(export)
 game_update :: proc() -> bool {
-	tick()
-	render()
+
+	// game state
+	cmd := game.tick(&g_mem.game_memory, &g_mem.graphics_memory)
+	game.apply(&g_mem.game_memory, cmd)
+
+
+	rl.BeginDrawing()
+	rl.ClearBackground({76, 53, 83, 255})
+
+	game.render(&g_mem.game_memory, &g_mem.graphics_memory)
+
+	rl.EndDrawing()
+
 	free_all(context.temp_allocator)
 	return true
 }

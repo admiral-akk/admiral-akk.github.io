@@ -77,7 +77,14 @@ Score :: struct {
 	last_changed: f32,
 }
 
+GameTime :: struct {
+	frame:     int,
+	tick:      int,
+	deltaTime: f32,
+}
+
 GameState :: struct {
+	time:      GameTime,
 	score:     Score,
 	lives:     int,
 	entityId:  int,
@@ -242,6 +249,10 @@ spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
 		health = 1,
 		speed  = 1,
 	}
+}
+
+spawn_enemy_rand :: proc(state: ^GameState, pos: Vec2i) {
+
 }
 
 apply :: proc(state: ^GameState, command: Command) {

@@ -547,80 +547,43 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
-		transform_matrix := rl.MatrixTranslate(
-			f32(e.position[0]) / GRID_SIZE,
-			0,
-			f32(e.position[1]) / GRID_SIZE,
-		)
+		pos := [3]f32{f32(e.position[0]) / GRID_SIZE, 0, f32(e.position[1]) / GRID_SIZE}
+		scale := [3]f32{1, 1, 1}
 		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
+		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
 		case Ground:
+			color = oklab.color({0.5, 0.4, 0.3, 1.})
 			switch e.selected {
 			case .INACTIVE:
-				rl.SetShaderValue(
-					graphics_state.materials[e.material].shader,
-					loc,
-					raw_data([]f32{1, 1, 0, 1}),
-					.VEC4,
-				)
+				color = oklab.color({0.2, 0.2, 0.5, 1.})
 			case .HOT:
-				rl.SetShaderValue(
-					graphics_state.materials[e.material].shader,
-					loc,
-					raw_data([]f32{1, 0, 0, 1}),
-					.VEC4,
-				)
+				color = oklab.color({0.3, 0.3, 0.5, 1.})
 			case .ACTIVE:
-				rl.SetShaderValue(
-					graphics_state.materials[e.material].shader,
-					loc,
-					raw_data([]f32{0, 1, 0, 1}),
-					.VEC4,
-				)
+				color = oklab.color({0.4, 0.4, 0.5, 1.})
 			}
 		case Tower:
-			transform_matrix =
-				rl.MatrixTranslate(
-					f32(e.position[0]) / GRID_SIZE,
-					1,
-					f32(e.position[1]) / GRID_SIZE,
-				) *
-				rl.MatrixScale(0.8, 0.8, 0.8)
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{1, 0, 1, 1}),
-				.VEC4,
-			)
+			color = oklab.color({0.5, 0.4, 0.3, 1.})
+			pos[1] = 1
+			scale *= 0.8
 		case Enemy:
-			transform_matrix =
-				rl.MatrixTranslate(
-					f32(e.position[0]) / GRID_SIZE,
-					1,
-					f32(e.position[1]) / GRID_SIZE,
-				) *
-				rl.MatrixScale(0.8, 0.8, 0.8)
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{1, 0.5, 0.5, 1}),
-				.VEC4,
-			)
+			color = oklab.color({0.5, 0.5, 0., 1.})
+			pos[1] = 1
+			scale *= 0.8
 		case Town:
-			transform_matrix =
-				rl.MatrixTranslate(
-					f32(e.position[0]) / GRID_SIZE,
-					1,
-					f32(e.position[1]) / GRID_SIZE,
-				) *
-				rl.MatrixScale(0.8, 0.8, 0.8)
-			rl.SetShaderValue(
-				graphics_state.materials[e.material].shader,
-				loc,
-				raw_data([]f32{0.5, 0.5, 0.5, 1}),
-				.VEC4,
-			)
+			pos[1] = 1
+			scale *= 0.8
+			color = oklab.color({0.4, 0.4, 0.5, 1.})
 		}
+		transform_matrix :=
+			rl.MatrixTranslate(pos.x, pos.y, pos.z) * rl.MatrixScale(scale.x, scale.y, scale.z)
+
+		rl.SetShaderValue(
+			graphics_state.materials[e.material].shader,
+			loc,
+			raw_data(color[:]),
+			.VEC4,
+		)
 		rl.DrawMesh(
 			graphics_state.meshes[e.mesh],
 			graphics_state.materials[e.material],

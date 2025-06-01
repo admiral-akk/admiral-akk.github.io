@@ -22,7 +22,7 @@ render_text_box :: proc(text_box: TextBox) {
 		i32(text_box.position.x - size.x / 2),
 		i32(text_box.position.y - size.y / 2),
 		i32(text_box.font_size),
-		oklab.color(color),
+		oklab.rlColor(color),
 	)
 }
 

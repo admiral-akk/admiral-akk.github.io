@@ -57,19 +57,25 @@ GameEntity :: struct {
 	material: string,
 }
 
-UIElement :: struct {
-	id: int,
+ButtonType :: enum int {
+	Increment = 0,
 }
 
 Button :: struct {
-	using identifier: UIElement,
-	position:         rl.Rectangle,
-	state:            SelectionState,
+	state: SelectionState,
+	type:  ButtonType,
 }
 
+// elements that have persistent state
+UIElement :: union {
+	Button,
+}
 
-UIState :: struct {
-	button: Button,
+UIEntity :: struct {
+	id:       int,
+	element:  UIElement,
+	selected: SelectionState,
+	position: rl.Rectangle,
 }
 
 Score :: struct {
@@ -90,14 +96,14 @@ GameState :: enum int {
 
 
 Game :: struct {
-	state:     GameState,
-	time:      GameTime,
-	score:     Score,
-	lives:     int,
-	entityId:  int,
-	entities:  [dynamic]GameEntity,
-	ui_memory: UIState,
-	camera:    rl.Camera3D,
+	state:       GameState,
+	time:        GameTime,
+	score:       Score,
+	lives:       int,
+	entityId:    int,
+	entities:    [dynamic]GameEntity,
+	ui_entities: [dynamic]UIEntity,
+	camera:      rl.Camera3D,
 }
 
 Command :: enum int {
@@ -114,6 +120,16 @@ entity :: proc(game: ^Game) -> ^GameEntity {
 	game.entityId += 1
 	append(&game.entities, e)
 	return &game.entities[len(game.entities) - 1]
+}
+
+ui_e :: proc(game: ^Game) -> ^UIEntity {
+	e := UIEntity {
+		id = game.entityId,
+	}
+	game.entityId += 1
+
+	append(&game.ui_entities, e)
+	return &game.ui_entities[len(game.ui_entities) - 1]
 }
 
 delete_e :: proc(game: ^Game, entityId: int) {
@@ -137,7 +153,11 @@ restart :: proc(game: ^Game) {
 	}
 	game.state = .PLAYING
 	game.lives = 10
-	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
+	button := ui_e(game)
+	button.position = rl.Rectangle{100, 240, 100, 50}
+	button.element = Button {
+		type = .Increment,
+	}
 	game.score.value = 0
 	game.score.last_changed = 0
 	for len(game.entities) > 0 {
@@ -432,25 +452,33 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
-	over_button := rl.CheckCollisionPointRec(mp_2d, state.ui_memory.button.position)
 
 	cmd := Command.NONE
-	switch state.ui_memory.button.state {
-	case .INACTIVE:
-		if over_button {
-			state.ui_memory.button.state = .HOT
-		}
-	case .HOT:
-		if !over_button {
-			state.ui_memory.button.state = .INACTIVE
-		} else if md {
-			state.ui_memory.button.state = .ACTIVE
-		}
-	case .ACTIVE:
-		if !md {
-			state.ui_memory.button.state = .INACTIVE
-			if over_button {
-				cmd = .CLICKED
+
+
+	#reverse for &g in state.ui_entities {
+		#partial switch &elem in g.element {
+		case Button:
+			over_button2 := rl.CheckCollisionPointRec(mp_2d, g.position)
+
+			switch elem.state {
+			case .INACTIVE:
+				if over_button2 {
+					elem.state = .HOT
+				}
+			case .HOT:
+				if !over_button2 {
+					elem.state = .INACTIVE
+				} else if md {
+					elem.state = .ACTIVE
+				}
+			case .ACTIVE:
+				if !md {
+					elem.state = .INACTIVE
+					if over_button2 {
+						cmd = .CLICKED
+					}
+				}
 			}
 		}
 	}
@@ -555,17 +583,23 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
 
-	button_color := rl.Color{200, 200, 200, 255}
+	for e in state.ui_entities {
+		switch elem in e.element {
+		case Button:
+			button_color := rl.Color{200, 200, 200, 255}
 
-	switch state.ui_memory.button.state {
-	case .INACTIVE:
-		button_color = rl.Color{200, 200, 200, 255}
-	case .HOT:
-		button_color = rl.Color{0, 200, 200, 255}
-	case .ACTIVE:
-		button_color = rl.Color{200, 0, 200, 255}
+			switch elem.state {
+			case .INACTIVE:
+				button_color = rl.Color{200, 200, 200, 255}
+			case .HOT:
+				button_color = rl.Color{0, 200, 200, 255}
+			case .ACTIVE:
+				button_color = rl.Color{200, 0, 200, 255}
+			}
+
+			gui.render_button(gui.Button{color = button_color, position = e.position})
+		}
 	}
-	gui.render_button(gui.Button{color = button_color, position = state.ui_memory.button.position})
 
 	text_val := fmt.ctprint(state.score.value)
 	frames_since_change := state.time.frame - state.score.last_changed

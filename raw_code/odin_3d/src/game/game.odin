@@ -38,23 +38,20 @@ Enemy :: struct {
 	speed:  int,
 }
 
-// Define a union type
-MySumType :: union {
+EntityType :: union {
 	Ground,
 	Tower,
 	Enemy,
 }
 
-
 GameEntity :: struct {
 	id:       int,
-	entity:   MySumType,
+	entity:   EntityType,
 	selected: SelectionState,
 	position: Vec2i,
 	mesh:     string,
 	material: string,
 }
-
 
 UIElement :: struct {
 	id: int,
@@ -112,34 +109,36 @@ delete_e :: proc(game: ^GameState, entityId: int) {
 
 GRID_SIZE :: 128
 
+
+restart :: proc(game: ^GameState) {
+	game.camera = rl.Camera3D {
+		position   = rl.Vector3{10, 10, 10},
+		target     = rl.Vector3{0, 0, 0},
+		up         = rl.Vector3{0, 1, 0},
+		fovy       = 30,
+		projection = .ORTHOGRAPHIC,
+	}
+	game.lives = 10
+	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
+	game.score.value = 0
+	game.score.last_changed = 0.0
+	for len(game.entities) > 0 {
+		delete_e(game, game.entities[0].id)
+	}
+
+	for x in -10 ..< 11 {
+		for y in -10 ..< 11 {
+			g := entity(game)
+			g.entity = Ground{}
+			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
+		}
+	}
+}
+
 init :: proc() -> GameState {
 	state := GameState{}
-	state.camera = rl.Camera3D {
-		position = rl.Vector3{10, 10, 10},
-		target   = rl.Vector3{0, 0, 0},
-		up       = rl.Vector3{0, 1, 0},
-		fovy     = 40,
-	}
-	for x in -10 ..< 11 {
-		for y in -10 ..< 11 {
-			g := entity(&state)
-			g.entity = Ground{}
-			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
-		}
-	}
-
 	// test deletion
-	for len(state.entities) > 0 {
-		delete_e(&state, state.entities[0].id)
-	}
-
-	for x in -10 ..< 11 {
-		for y in -10 ..< 11 {
-			g := entity(&state)
-			g.entity = Ground{}
-			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
-		}
-	}
+	restart(&state)
 	return state
 }
 
@@ -189,13 +188,6 @@ spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
 		health = 1,
 		speed  = 1,
 	}
-
-}
-
-restart :: proc(game: ^GameState) {
-	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
-	game.score.value = 0
-	game.score.last_changed = 0.0
 }
 
 apply :: proc(state: ^GameState, command: Command) {
@@ -249,7 +241,6 @@ get_ray_hits :: proc(
 }
 
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
-
 	rayHit := get_ray_hits(state, graphics_state)
 
 	for i in 0 ..< len(state.entities) {
@@ -280,6 +271,17 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 			state.entities[i].selected = .INACTIVE
 		}
 	}
+
+	for i in 0 ..< len(state.entities) {
+		g := &state.entities[i]
+		switch entity in g.entity {
+		case Ground:
+		case Tower:
+		case Enemy:
+			g.position.x += 1
+		}
+	}
+
 
 	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
@@ -402,6 +404,14 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	font_size := math.max(14, 40 - 200 * time_since_change)
 	gui.render_text_box(
 		gui.TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
+	)
+
+	gui.render_text_box(
+		gui.TextBox {
+			position = rl.Vector2{20, 20},
+			font_size = 20,
+			text_val = fmt.ctprint(state.lives),
+		},
 	)
 
 	rl.EndMode2D()

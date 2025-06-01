@@ -90,6 +90,7 @@ GameTime :: struct {
 	frame:     int,
 	tick:      int,
 	deltaTime: f32,
+	realTime:  f64,
 }
 
 GameState :: enum int {
@@ -445,6 +446,7 @@ update_time :: proc(state: ^Game) {
 	state.time.frame += 1
 	state.time.tick += 1
 	state.time.deltaTime = rl.GetFrameTime()
+	state.time.realTime = rl.GetTime()
 }
 
 ClickedOn :: union {

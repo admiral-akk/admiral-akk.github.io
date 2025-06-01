@@ -11,6 +11,13 @@ import rl "vendor:raylib"
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
+GRID_SIZE :: 128
+TOWER_ATTACK :: 1
+TICK_TO_SPAWN :: 200
+TOWER_RANGE :: 400
+TOWER_RELOAD_TICKS :: 50
+ENEMY_SPEED :: 5
+ENEMY_HEALTH :: 2
 Vec2i :: [2]int
 
 // Mouse buttons
@@ -44,11 +51,19 @@ Enemy :: struct {
 Town :: struct {
 }
 
+Ray :: struct {
+	created_at:  GameTime,
+	clean_ticks: int,
+	start:       rl.Vector3,
+	end:         rl.Vector3,
+}
+
 EntityType :: union {
 	Ground,
 	Tower,
 	Enemy,
 	Town,
+	Ray,
 }
 
 GameEntity :: struct {
@@ -114,6 +129,17 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
+spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
+	e := entity(game)
+	e.entity = Ray {
+		created_at  = game.time,
+		clean_ticks = 20,
+		start       = rl.Vector3{f32(start.x) / GRID_SIZE, 1, f32(start.y) / GRID_SIZE},
+		end         = rl.Vector3{f32(end.x) / GRID_SIZE, 1, f32(end.y) / GRID_SIZE},
+	}
+	return e
+}
+
 entity :: proc(game: ^Game) -> ^GameEntity {
 	e := GameEntity {
 		material = "base",
@@ -151,8 +177,6 @@ delete_ui :: proc(game: ^Game, entityId: int) {
 		}
 	}
 }
-
-GRID_SIZE :: 128
 
 restart :: proc(game: ^Game) {
 	for len(game.entities) > 0 {
@@ -231,8 +255,9 @@ place_tower :: proc(state: ^Game, pos: Vec2i) {
 	e := entity(state)
 	e.position = pos
 	e.entity = Tower {
-		attack = 1,
-		range  = 2 * GRID_SIZE,
+		attack       = TOWER_ATTACK,
+		reload_ticks = TOWER_RELOAD_TICKS,
+		range        = TOWER_RANGE,
 	}
 }
 
@@ -387,13 +412,13 @@ spawn_enemy :: proc(state: ^Game, pos: Vec2i) {
 	e := entity(state)
 	e.position = pos
 	e.entity = Enemy {
-		health = 2,
-		speed  = 20,
+		health = ENEMY_HEALTH,
+		speed  = ENEMY_HEALTH,
 	}
 }
 
 spawn_enemy_rand :: proc(state: ^Game) {
-	pos := Vec2i{2 * GRID_SIZE, 2 * GRID_SIZE}
+	pos := Vec2i{5 * GRID_SIZE, 5 * GRID_SIZE}
 	spawn_enemy(state, pos)
 }
 
@@ -459,7 +484,7 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	switch state.state {
 	case .GAME_OVER:
 	case .PLAYING:
-		if state.time.tick % 20 == 0 {
+		if state.time.tick % TICK_TO_SPAWN == 0 {
 			spawn_enemy_rand(state)
 		}
 
@@ -506,8 +531,8 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 							if length_2(v.position - g.position) <= tower.range {
 								tower.last_fired_tick = state.time
 								enemy.health -= tower.attack
+								spawn_ray(state, g.position, v.position)
 							}
-
 						}
 					}
 
@@ -540,6 +565,10 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 						remaining_dist -= travel_dist
 
 					}
+				}
+			case Ray:
+				if entity.clean_ticks + entity.created_at.tick <= state.time.tick {
+					delete_e(state, g.id)
 				}
 			}
 		}
@@ -605,6 +634,8 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		e := state.entities[i]
 		pos := [3]f32{f32(e.position[0]) / GRID_SIZE, 0, f32(e.position[1]) / GRID_SIZE}
 		scale := [3]f32{1, 1, 1}
+
+		rotation: rl.Vector3
 		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
 		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
@@ -622,6 +653,14 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			pos[1] = 1
 			scale *= 0.8
 			color = oklab.color({0.4, 0.4, 0.5, 1.})
+		case Ray:
+			pos = (entity.end + entity.start) / 2
+			scale.x = rl.Vector3Length(entity.end - entity.start)
+			scale.y = 0.1
+			scale.z = 0.1
+			rotation.y = math.atan2(entity.start.z - entity.end.z, entity.end.x - entity.start.x)
+			fmt.println(pos, scale, rotation)
+			color = oklab.color({0.4, 0.4, 0.9, 1.})
 		}
 
 		switch e.selected {
@@ -636,7 +675,9 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		}
 
 		transform_matrix :=
-			rl.MatrixTranslate(pos.x, pos.y, pos.z) * rl.MatrixScale(scale.x, scale.y, scale.z)
+			rl.MatrixTranslate(pos.x, pos.y, pos.z) *
+			rl.MatrixRotateXYZ(rotation) *
+			rl.MatrixScale(scale.x, scale.y, scale.z)
 
 		rl.SetShaderValue(
 			graphics_state.materials[e.material].shader,

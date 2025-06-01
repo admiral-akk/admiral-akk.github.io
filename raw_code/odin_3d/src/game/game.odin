@@ -82,13 +82,13 @@ GameState :: struct {
 	entityId:  int,
 	entities:  [dynamic]GameEntity,
 	ui_memory: UIState,
+	camera:    rl.Camera3D,
 }
 
 Command :: enum int {
 	NONE    = 0,
 	CLICKED = 1,
 }
-
 
 entity :: proc(game: ^GameState) -> ^GameEntity {
 	e := GameEntity {
@@ -114,6 +114,25 @@ GRID_SIZE :: 128
 
 init :: proc() -> GameState {
 	state := GameState{}
+	state.camera = rl.Camera3D {
+		position = rl.Vector3{10, 10, 10},
+		target   = rl.Vector3{0, 0, 0},
+		up       = rl.Vector3{0, 1, 0},
+		fovy     = 40,
+	}
+	for x in -10 ..< 11 {
+		for y in -10 ..< 11 {
+			g := entity(&state)
+			g.entity = Ground{}
+			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
+		}
+	}
+
+	// test deletion
+	for len(state.entities) > 0 {
+		delete_e(&state, state.entities[0].id)
+	}
+
 	for x in -10 ..< 11 {
 		for y in -10 ..< 11 {
 			g := entity(&state)
@@ -188,16 +207,12 @@ apply :: proc(state: ^GameState, command: Command) {
 	}
 }
 
-tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
+get_ray_hits :: proc(
+	state: ^GameState,
+	graphics_state: ^graphics.GraphicsState,
+) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
-	camera := rl.Camera3D {
-		position = rl.Vector3{10, 10, 10},
-		target   = rl.Vector3{0, 0, 0},
-		up       = rl.Vector3{0, 1, 0},
-		fovy     = 40,
-	}
-	ray := rl.GetScreenToWorldRay(mp, camera) // Get a ray trace from screen position (i.e mouse)
-
+	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
 
 	// find the ray hits
@@ -224,14 +239,18 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 		case Enemy:
 		}
 	}
-
 	slice.sort_by(
 		rayHit[:],
 		proc(a, b: RayHit) -> bool {
 			return a.hit.distance > b.hit.distance // descending order
 		},
 	)
+	return rayHit
+}
 
+tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
+
+	rayHit := get_ray_hits(state, graphics_state)
 
 	for i in 0 ..< len(state.entities) {
 		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
@@ -289,14 +308,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 
 
 render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
-	camera_3d := rl.Camera3D {
-		position = rl.Vector3{10, 10, 10},
-		target   = rl.Vector3{0, 0, 0},
-		up       = rl.Vector3{0, 1, 0},
-		fovy     = 40,
-	}
-
-	rl.BeginMode3D(camera_3d)
+	rl.BeginMode3D(state.camera)
 
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]

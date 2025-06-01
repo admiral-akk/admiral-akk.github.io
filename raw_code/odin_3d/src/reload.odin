@@ -41,7 +41,7 @@ restart :: proc() {
 game_init :: proc() {
 	g_mem = new(GameMemory)
 	rl.SetConfigFlags(({.VSYNC_HINT}))
-	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Snake")
+	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Odin 3D")
 	rl.SetTargetFPS(500)
 	rl.InitAudioDevice()
 	game_reload()

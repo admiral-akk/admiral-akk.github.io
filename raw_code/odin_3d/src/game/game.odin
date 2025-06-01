@@ -74,7 +74,7 @@ UIState :: struct {
 
 Score :: struct {
 	value:        int,
-	last_changed: f32,
+	last_changed: int,
 }
 
 GameTime :: struct {
@@ -132,7 +132,7 @@ restart :: proc(game: ^GameState) {
 	game.lives = 10
 	game.ui_memory.button.position = rl.Rectangle{100, 240, 100, 50}
 	game.score.value = 0
-	game.score.last_changed = 0.0
+	game.score.last_changed = 0
 	for len(game.entities) > 0 {
 		delete_e(game, game.entities[0].id)
 	}
@@ -260,7 +260,7 @@ apply :: proc(state: ^GameState, command: Command) {
 	case .NONE:
 	case .CLICKED:
 		state.score.value += 1
-		state.score.last_changed = f32(rl.GetTime())
+		state.score.last_changed = state.time.frame
 	}
 }
 
@@ -303,7 +303,15 @@ get_ray_hits :: proc(
 	return rayHit
 }
 
+update_time :: proc(state: ^GameState) {
+	state.time.frame += 1
+	state.time.tick += 1
+	state.time.deltaTime = rl.GetFrameTime()
+}
+
 tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Command {
+	update_time(state)
+
 	rayHit := get_ray_hits(state, graphics_state)
 
 	for i in 0 ..< len(state.entities) {
@@ -483,8 +491,8 @@ render :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) {
 	gui.render_button(gui.Button{color = button_color, position = state.ui_memory.button.position})
 
 	text_val := fmt.ctprint(state.score.value)
-	time_since_change := f32(rl.GetTime()) - state.score.last_changed
-	font_size := math.max(14, 40 - 200 * time_since_change)
+	frames_since_change := state.time.frame - state.score.last_changed
+	font_size := f32(math.max(14, 40 - 3 * frames_since_change))
 	gui.render_text_box(
 		gui.TextBox{position = rl.Vector2{100, 100}, font_size = font_size, text_val = text_val},
 	)

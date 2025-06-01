@@ -4,6 +4,7 @@ import "../graphics"
 import "../gui"
 import "core:fmt"
 import "core:math"
+import "core:math/rand"
 import "core:slice"
 import rl "vendor:raylib"
 WINDOW_SIZE :: 720
@@ -179,6 +180,26 @@ place_tower :: proc(state: ^GameState, pos: Vec2i) {
 	}
 }
 
+sign :: proc(v: Vec2i) -> Vec2i {
+	x := 0
+	y := 0
+	if v.x > 0 {
+		x = 1
+	} else if v.x < 0 {
+		x = -1
+	}
+	if v.y > 0 {
+		y = 1
+	} else if v.y < 0 {
+		y = -1
+	}
+	return Vec2i{x, y}
+}
+
+length :: proc(v: Vec2i) -> int {
+	return math.abs(v.x) + math.abs(v.y)
+}
+
 // assumes we're trying to get to the closest town, gives the next
 // target spot.
 //
@@ -196,36 +217,75 @@ path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
 
 	if onY && onX {
 		// on a grid point, can move in all 4 orthogonal directions
-		append(&nextPoints, Vec2i{pos.x + 1, pos.y})
-		append(&nextPoints, Vec2i{pos.x - 1, pos.y})
-		append(&nextPoints, Vec2i{pos.x, pos.y + 1})
-		append(&nextPoints, Vec2i{pos.x, pos.y - 1})
+		append(&nextPoints, Vec2i{pos.x + GRID_SIZE, pos.y})
+		append(&nextPoints, Vec2i{pos.x - GRID_SIZE, pos.y})
+		append(&nextPoints, Vec2i{pos.x, pos.y + GRID_SIZE})
+		append(&nextPoints, Vec2i{pos.x, pos.y - GRID_SIZE})
 	} else if onX {
 
 		// truncates towards 0
-		baseY := pos.y / GRID_SIZE
+		baseY := GRID_SIZE * (pos.y / GRID_SIZE)
 		if pos.y < 0 {
-			baseY -= 1
+			baseY -= GRID_SIZE
 		}
 
-		append(&nextPoints, Vec2i{pos.x, baseY + 1})
+		append(&nextPoints, Vec2i{pos.x, baseY + GRID_SIZE})
 		append(&nextPoints, Vec2i{pos.x, baseY})
 
 	} else if onY {
 		// truncates towards 0
-		baseX := pos.x / GRID_SIZE
+		baseX := GRID_SIZE * (pos.x / GRID_SIZE)
 		if pos.x < 0 {
-			baseX -= 1
+			baseX -= GRID_SIZE
 		}
 
-		append(&nextPoints, Vec2i{baseX + 1, pos.y})
+		append(&nextPoints, Vec2i{baseX + GRID_SIZE, pos.y})
 		append(&nextPoints, Vec2i{baseX, pos.y})
 	} else {
 		// not on grid at all, grab the 4 quad around
 
+		// truncates towards 0
+		baseX := GRID_SIZE * (pos.x / GRID_SIZE)
+		if pos.x < 0 {
+			baseX -= GRID_SIZE
+		}
+		baseY := GRID_SIZE * (pos.y / GRID_SIZE)
+		if pos.y < 0 {
+			baseY -= GRID_SIZE
+		}
+
+		append(&nextPoints, Vec2i{baseX + GRID_SIZE, pos.y})
+		append(&nextPoints, Vec2i{baseX, pos.y})
+		append(&nextPoints, Vec2i{pos.x, baseY + GRID_SIZE})
+		append(&nextPoints, Vec2i{pos.x, baseY})
 	}
 
-	return Vec2i{1, 0}, 1
+	// find the targets
+	targets := make([dynamic]Vec2i)
+	append(&targets, Vec2i{0, 0})
+
+	// find the closest point to the targets
+	closest := make([dynamic]int)
+	append(&closest, 0)
+	closest_dist :=
+		math.abs(nextPoints[0].x - targets[0].x) + math.abs(nextPoints[0].y - targets[0].y)
+	for i in 1 ..< len(nextPoints) {
+		diff := math.abs(nextPoints[i].x - targets[0].x) + math.abs(nextPoints[i].y - targets[0].y)
+		if diff < closest_dist {
+			clear(&closest)
+			append(&closest, i)
+			closest_dist = diff
+		} else if diff == closest_dist {
+			append(&closest, i)
+		}
+	}
+
+	// pick direction at random
+	selected := nextPoints[rand.choice(closest[:])]
+	fmt.println(selected, pos)
+	dir_distance := selected - pos
+
+	return sign(dir_distance), length(dir_distance)
 }
 
 spawn_enemy :: proc(state: ^GameState, pos: Vec2i) {
@@ -314,10 +374,11 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	update_time(state)
 
 	if state.time.tick % 200 == 0 {
-		spawn_enemy_rand(state)
+		//spawn_enemy_rand(state)
 	}
 
 	rayHit := get_ray_hits(state, graphics_state)
+
 
 	for i in 0 ..< len(state.entities) {
 		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
@@ -355,6 +416,9 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 			remaining_dist := entity.speed
 
 			for remaining_dist > 0 {
+				if g.position == (Vec2i{0, 0}) {
+					break
+				}
 				dir, dist := path_find(state, g.position)
 				travel_dist := math.min(remaining_dist, dist)
 				g.position += travel_dist * dir

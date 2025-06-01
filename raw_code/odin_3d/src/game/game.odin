@@ -1,11 +1,12 @@
 package game
 
 import "../graphics"
-import "../gui"
 import "core:fmt"
 import "core:math"
 import "core:math/rand"
 import "core:slice"
+import "gui"
+import "oklab"
 import rl "vendor:raylib"
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
@@ -59,6 +60,7 @@ GameEntity :: struct {
 
 ButtonType :: enum int {
 	Increment = 0,
+	NewGame   = 1,
 }
 
 Button :: struct {
@@ -92,7 +94,6 @@ GameState :: enum int {
 	PLAYING   = 0,
 	GAME_OVER = 1,
 }
-
 
 Game :: struct {
 	state:       GameState,
@@ -191,6 +192,23 @@ init :: proc() -> Game {
 	// test deletion
 	restart(&state)
 	return state
+}
+newGame :: proc(game: ^Game) {
+	restart(game)
+}
+
+gameOver :: proc(game: ^Game) {
+	game.state = .GAME_OVER
+
+	for len(game.ui_entities) > 0 {
+		delete_ui(game, game.ui_entities[0].id)
+	}
+
+	button := ui_e(game)
+	button.position = rl.Rectangle{100, 240, 100, 50}
+	button.element = Button {
+		type = .NewGame,
+	}
 }
 
 RayHit :: struct {
@@ -340,7 +358,7 @@ spawn_enemy :: proc(state: ^Game, pos: Vec2i) {
 	e.position = pos
 	e.entity = Enemy {
 		health = 1,
-		speed  = 1,
+		speed  = 20,
 	}
 }
 
@@ -407,62 +425,69 @@ ClickedOn :: union {
 tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
-	if state.time.tick % 200 == 0 {
-		spawn_enemy_rand(state)
-	}
-
-	rayHit := get_ray_hits(state, graphics_state)
-
-
-	for i in 0 ..< len(state.entities) {
-		if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
-			md := rl.IsMouseButtonDown(.LEFT)
-			rmd := rl.IsMouseButtonDown(.RIGHT)
-			switch state.entities[i].selected {
-			case .INACTIVE:
-				if md {
-					state.entities[i].selected = .ACTIVE
-				} else {
-					state.entities[i].selected = .HOT
-				}
-			case .ACTIVE:
-				if rmd {
-					spawn_enemy(state, state.entities[i].position)
-				}
-				if !md {
-					state.entities[i].selected = .HOT
-					place_tower(state, state.entities[i].position)
-				}
-			case .HOT:
-				if md {
-					state.entities[i].selected = .ACTIVE
-				}
-			}
-		} else {
-			state.entities[i].selected = .INACTIVE
+	switch state.state {
+	case .GAME_OVER:
+	case .PLAYING:
+		if state.time.tick % 20 == 0 {
+			spawn_enemy_rand(state)
 		}
-	}
+
+		rayHit := get_ray_hits(state, graphics_state)
 
 
-	#reverse for &g in state.entities {
-		#partial switch entity in g.entity {
-		case Enemy:
-			remaining_dist := entity.speed
-
-			for remaining_dist > 0 {
-				if g.position == (Vec2i{0, 0}) {
-					delete_e(state, g.id)
-					break
+		for i in 0 ..< len(state.entities) {
+			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
+				md := rl.IsMouseButtonDown(.LEFT)
+				rmd := rl.IsMouseButtonDown(.RIGHT)
+				switch state.entities[i].selected {
+				case .INACTIVE:
+					if md {
+						state.entities[i].selected = .ACTIVE
+					} else {
+						state.entities[i].selected = .HOT
+					}
+				case .ACTIVE:
+					if rmd {
+						spawn_enemy(state, state.entities[i].position)
+					}
+					if !md {
+						state.entities[i].selected = .HOT
+						place_tower(state, state.entities[i].position)
+					}
+				case .HOT:
+					if md {
+						state.entities[i].selected = .ACTIVE
+					}
 				}
-				dir, dist := path_find(state, g.position)
-				travel_dist := math.min(remaining_dist, dist)
-				g.position += travel_dist * dir
-				remaining_dist -= travel_dist
-
+			} else {
+				state.entities[i].selected = .INACTIVE
 			}
 		}
-	}
 
+
+		#reverse for &g in state.entities {
+			#partial switch entity in g.entity {
+			case Enemy:
+				remaining_dist := entity.speed
+
+				for remaining_dist > 0 {
+					if g.position == (Vec2i{0, 0}) {
+						delete_e(state, g.id)
+						state.lives -= 1
+						if state.lives <= 0 {
+							gameOver(state)
+						}
+						break
+					}
+					dir, dist := path_find(state, g.position)
+					travel_dist := math.min(remaining_dist, dist)
+					g.position += travel_dist * dir
+					remaining_dist -= travel_dist
+
+				}
+			}
+		}
+	}
 
 	mp_2d := rl.GetMousePosition() * SCREEN_SIZE / f32(WINDOW_SIZE)
 	md := rl.IsMouseButtonDown(.LEFT)
@@ -506,13 +531,14 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 					case .Increment:
 						state.score.value += 1
 						state.score.last_changed = state.time.frame
+					case .NewGame:
+						newGame(state)
 					}
 				}
 
 			}
 		}
 	}
-	clear(&clickedOn)
 }
 
 
@@ -623,6 +649,30 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			}
 
 			gui.render_button(gui.Button{color = button_color, position = e.position})
+			switch elem.type {
+			case .Increment:
+				gui.render_text_box(
+					gui.TextBox {
+						position = rl.Vector2 {
+							e.position.x + e.position.width / 2,
+							e.position.y + e.position.height / 2,
+						},
+						font_size = 14,
+						text_val = "Increment",
+					},
+				)
+			case .NewGame:
+				gui.render_text_box(
+					gui.TextBox {
+						position = rl.Vector2 {
+							e.position.x + e.position.width / 2,
+							e.position.y + e.position.height / 2,
+						},
+						font_size = 14,
+						text_val = "New Game",
+					},
+				)
+			}
 		}
 	}
 
@@ -630,7 +680,12 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	frames_since_change := state.time.frame - state.score.last_changed
 	font_size := f32(math.max(14, 40 - 3 * frames_since_change))
 	gui.render_text_box(
-		gui.TextBox{position = rl.Vector2{220, 20}, font_size = font_size, text_val = text_val},
+		gui.TextBox {
+			position = rl.Vector2{220, 20},
+			font_size = font_size,
+			text_val = text_val,
+			color = oklab.OkLab{1, 0, 0, 1},
+		},
 	)
 
 	gui.render_text_box(
@@ -638,6 +693,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			position = rl.Vector2{20, 20},
 			font_size = 20,
 			text_val = fmt.ctprint(state.lives),
+			color = oklab.OkLab{1, 0, 0, 1},
 		},
 	)
 

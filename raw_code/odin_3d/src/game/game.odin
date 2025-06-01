@@ -218,7 +218,6 @@ path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
 
 	}
 
-
 	return Vec2i{1, 0}, 1
 }
 

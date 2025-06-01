@@ -17,7 +17,10 @@ TICK_TO_SPAWN :: 200
 TOWER_RANGE :: 400
 TOWER_RELOAD_TICKS :: 50
 ENEMY_SPEED :: 5
+GRAVITY_PER_TICK :: 0.1
 ENEMY_HEALTH :: 2
+PARTICLE_SCALE :: 0.2
+PARTICLE_MAX_TICKS :: 40
 Vec2i :: [2]int
 
 // Mouse buttons
@@ -51,6 +54,14 @@ Enemy :: struct {
 Town :: struct {
 }
 
+// follows a parabolic arc, stops at ground
+Particle :: struct {
+	start:       rl.Vector3,
+	velocity:    rl.Vector3,
+	created_at:  GameTime,
+	clean_ticks: int,
+}
+
 Ray :: struct {
 	created_at:  GameTime,
 	clean_ticks: int,
@@ -64,6 +75,7 @@ EntityType :: union {
 	Enemy,
 	Town,
 	Ray,
+	Particle,
 }
 
 GameEntity :: struct {
@@ -178,9 +190,6 @@ delete_ui :: proc(game: ^Game, entityId: int) {
 }
 
 restart :: proc(game: ^Game) {
-	for len(game.entities) > 0 {
-		delete_e(game, game.entities[0].id)
-	}
 	for len(game.ui_entities) > 0 {
 		delete_ui(game, game.ui_entities[0].id)
 	}
@@ -201,20 +210,20 @@ restart :: proc(game: ^Game) {
 	game.score.value = 0
 	game.score.last_changed = game.time
 
-	for x in -10 ..< 11 {
-		for y in -10 ..< 11 {
-			g := entity(game)
-			g.entity = Ground{}
-			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
-		}
-	}
-
 	town := entity(game)
 	town.entity = Town{}
 }
 
 init :: proc() -> Game {
 	state := Game{}
+
+	for x in -10 ..< 11 {
+		for y in -10 ..< 11 {
+			g := entity(&state)
+			g.entity = Ground{}
+			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
+		}
+	}
 	// test deletion
 	restart(&state)
 	return state
@@ -477,6 +486,20 @@ ClickedOn :: union {
 	UIElement,
 }
 
+spawn_particle :: proc(game: ^Game, pos: Vec2i) {
+	e := entity(game)
+	e.entity = Particle {
+		start       = rl.Vector3{f32(pos.x) / GRID_SIZE, 1, f32(pos.y) / GRID_SIZE},
+		velocity    = rl.Vector3 {
+			rand.float32_range(-0.1, 0.1),
+			rand.float32_range(-0.1, 0.4),
+			rand.float32_range(-0.1, 0.1),
+		},
+		created_at  = game.time,
+		clean_ticks = PARTICLE_MAX_TICKS,
+	}
+}
+
 tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
@@ -541,10 +564,13 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 
 		#reverse for &g in state.entities {
-			#partial switch entity in g.entity {
+			#partial switch &entity in g.entity {
 			case Enemy:
 				if entity.health <= 0 {
 
+					for _ in 0 ..< 10 {
+						spawn_particle(state, g.position)
+					}
 					delete_e(state, g.id)
 				} else {
 					remaining_dist := entity.speed
@@ -566,6 +592,21 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 					}
 				}
 			case Ray:
+				if entity.clean_ticks + entity.created_at.tick <= state.time.tick {
+					delete_e(state, g.id)
+				}
+
+			case Particle:
+				entity.start += entity.velocity
+				entity.velocity.y -= GRAVITY_PER_TICK
+				if entity.start.y < PARTICLE_SCALE + 0.5 {
+					entity.start.y = PARTICLE_SCALE + 0.5
+					entity.velocity.y = math.abs(entity.velocity.y)
+					entity.velocity *= 0.5
+					if rl.Vector3Length(entity.velocity) < 0.23 {
+						entity.velocity *= 0
+					}
+				}
 				if entity.clean_ticks + entity.created_at.tick <= state.time.tick {
 					delete_e(state, g.id)
 				}
@@ -658,13 +699,22 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			scale.y = 0.1
 			scale.z = 0.1
 			rotation.y = math.atan2(entity.start.z - entity.end.z, entity.end.x - entity.start.x)
-			fmt.println(pos, scale, rotation)
-
 			color = oklab.color(
 				{
 					0.4,
 					0.4,
 					0.9,
+					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
+				},
+			)
+		case Particle:
+			pos = entity.start
+			scale *= PARTICLE_SCALE
+			color = oklab.color(
+				{
+					0.6,
+					0.6,
+					0.7,
 					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
 				},
 			)

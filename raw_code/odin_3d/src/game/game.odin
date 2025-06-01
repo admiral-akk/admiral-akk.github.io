@@ -112,7 +112,6 @@ GameState :: enum int {
 	PLAYING   = 0,
 	GAME_OVER = 1,
 }
-
 Game :: struct {
 	state:       GameState,
 	time:        GameTime,
@@ -660,7 +659,15 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 			scale.z = 0.1
 			rotation.y = math.atan2(entity.start.z - entity.end.z, entity.end.x - entity.start.x)
 			fmt.println(pos, scale, rotation)
-			color = oklab.color({0.4, 0.4, 0.9, 1.})
+
+			color = oklab.color(
+				{
+					0.4,
+					0.4,
+					0.9,
+					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
+				},
+			)
 		}
 
 		switch e.selected {

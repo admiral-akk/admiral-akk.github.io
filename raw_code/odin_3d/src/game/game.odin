@@ -282,7 +282,6 @@ path_find :: proc(state: ^GameState, pos: Vec2i) -> (Vec2i, int) {
 
 	// pick direction at random
 	selected := nextPoints[rand.choice(closest[:])]
-	fmt.println(selected, pos)
 	dir_distance := selected - pos
 
 	return sign(dir_distance), length(dir_distance)
@@ -374,7 +373,7 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 	update_time(state)
 
 	if state.time.tick % 200 == 0 {
-		//spawn_enemy_rand(state)
+		spawn_enemy_rand(state)
 	}
 
 	rayHit := get_ray_hits(state, graphics_state)
@@ -409,14 +408,15 @@ tick :: proc(state: ^GameState, graphics_state: ^graphics.GraphicsState) -> Comm
 		}
 	}
 
-	for i in 0 ..< len(state.entities) {
-		g := &state.entities[i]
+
+	#reverse for &g in state.entities {
 		#partial switch entity in g.entity {
 		case Enemy:
 			remaining_dist := entity.speed
 
 			for remaining_dist > 0 {
 				if g.position == (Vec2i{0, 0}) {
+					delete_e(state, g.id)
 					break
 				}
 				dir, dist := path_find(state, g.position)

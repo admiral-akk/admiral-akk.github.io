@@ -22,7 +22,6 @@ GameMemory :: struct {
 	audio_buffer:    [BUFFER_SIZE]f32,
 	game_memory:     game.GameState,
 	graphics_memory: graphics.GraphicsState,
-	current:         game.Command,
 }
 
 

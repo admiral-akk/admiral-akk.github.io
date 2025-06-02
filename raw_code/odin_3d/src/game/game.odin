@@ -189,6 +189,16 @@ delete_ui :: proc(game: ^Game, entityId: int) {
 	}
 }
 
+makeGround :: proc(game: ^Game) {
+	for x in -10 ..< 11 {
+		for y in -10 ..< 11 {
+			g := entity(game)
+			g.entity = Ground{}
+			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
+		}
+	}
+}
+
 restart :: proc(game: ^Game) {
 	for len(game.ui_entities) > 0 {
 		delete_ui(game, game.ui_entities[0].id)
@@ -216,19 +226,16 @@ restart :: proc(game: ^Game) {
 
 init :: proc() -> Game {
 	state := Game{}
-
-	for x in -10 ..< 11 {
-		for y in -10 ..< 11 {
-			g := entity(&state)
-			g.entity = Ground{}
-			g.position = Vec2i{x * GRID_SIZE, y * GRID_SIZE}
-		}
-	}
+	makeGround(&state)
 	// test deletion
 	restart(&state)
 	return state
 }
 newGame :: proc(game: ^Game) {
+	for len(game.entities) > 0 {
+		delete_e(game, game.entities[0].id)
+	}
+	makeGround(game)
 	restart(game)
 }
 

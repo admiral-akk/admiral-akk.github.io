@@ -1,9 +1,11 @@
 package reload
 
+import "base:runtime"
 import "core:fmt"
 import "core:math"
 import "game"
 import "graphics"
+import mini "vendor:miniaudio"
 import rl "vendor:raylib"
 
 WINDOW_SIZE :: 720
@@ -24,8 +26,28 @@ GameMemory :: struct {
 	graphics_memory: graphics.GraphicsState,
 }
 
+AUDIO_CHANNELS :: 0
+AUDIO_SAMPLE_RATE :: 0
 
 g_mem: ^GameMemory
+
+play_audio :: proc "c" () {
+	context = runtime.default_context()
+	engine := mini.engine{}
+	fmt.println("mini engine", engine)
+	config := mini.engine_config_init()
+	fmt.println("mini config", config)
+	config.channels = AUDIO_CHANNELS
+	config.sampleRate = AUDIO_SAMPLE_RATE
+	config.listenerCount = 1
+	result := mini.engine_init(&config, &engine)
+	fmt.println("mini result", result)
+	engine_start_result := mini.engine_start(&engine)
+	fmt.println("mini start result", engine_start_result)
+	if engine_start_result != .SUCCESS {
+		fmt.panicf("failed to start miniaudio engine: %v", engine_start_result)
+	}
+}
 
 restart :: proc() {
 	game.restart(&g_mem.game_memory)
@@ -136,7 +158,7 @@ audio_callback :: proc "c" (b: rawptr, frames: u32) {
 
 @(export)
 game_reload :: proc() {
-
+	play_audio()
 	g_mem.audio_frame = 0
 	rl.SetAudioStreamCallback(g_mem.game_memory.audio_stream, audio_callback)
 	//rl.PlayAudioStream(g_mem.audio_stream)

@@ -1,6 +1,7 @@
 package game
 
 import "../graphics"
+import "base:runtime"
 import "core:fmt"
 import "core:math"
 import "core:math/rand"
@@ -145,17 +146,41 @@ Game :: struct {
 	camera:       rl.Camera3D,
 }
 
+calulateValue :: proc "c" (env: Envelope, t: f32, start: f32, release_time: f32) -> f32 {
+	true_release_time := math.max(release_time, start + env.attack + env.decay)
+	if t < start || t > true_release_time + env.release {
+		return 0.
+	}
+
+	if t < start + env.attack {
+		// in attack
+		return 1.0 - (start + env.attack - t) / env.attack
+	}
+
+	if t < start + env.attack + env.decay {
+		progress := (start + env.attack + env.decay - t) / env.decay
+		return (1. - progress) * env.sustain_level + progress
+
+	}
+
+	if t > true_release_time {
+		progress := (true_release_time + env.release - t) / env.release
+		return progress * env.sustain_level
+	}
+
+	return env.sustain_level
+}
+
 audioCallback :: proc "c" (game: ^Game, ptr: [^]f32, frames: u32) {
+	context = runtime.default_context()
 	for i in 0 ..< frames {
 		t := f32(i + game.audio_frame) / SAMPLE_RATE
 		for j in 0 ..< len(game.sounds) {
 			sound := game.sounds[j]
-			if sound.end > t && sound.start < t {
-				volume :=
-					sound.volume * math.min(1.0, 10.0 * math.max(t - sound.start, sound.end - t))
+			volume := sound.volume * calulateValue(sound.env, t, sound.start, sound.release_time)
+			fmt.println(volume)
 
-				ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
-			}
+			ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
 		}
 	}
 	game.audio_frame += frames
@@ -166,11 +191,19 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
+Envelope :: struct {
+	attack:        f32,
+	decay:         f32,
+	sustain_level: f32,
+	release:       f32,
+}
+
 Sound :: struct {
-	start:  f32,
-	end:    f32,
-	freq:   f32,
-	volume: f32,
+	env:          Envelope,
+	start:        f32,
+	release_time: f32,
+	freq:         f32,
+	volume:       f32,
 }
 
 spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
@@ -260,9 +293,6 @@ restart :: proc(game: ^Game) {
 init :: proc() -> Game {
 	state := Game{}
 
-
-	state.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
-	rl.PlayAudioStream(state.audio_stream)
 	makeGround(&state)
 	// test deletion
 	restart(&state)
@@ -312,17 +342,36 @@ place_tower :: proc(state: ^Game, pos: Vec2i) {
 		range        = TOWER_RANGE,
 	}
 
-	for i in 0 ..< 4 {
-		append(
-			&state.sounds,
-			Sound {
-				start = f32(state.audio_frame) / SAMPLE_RATE + f32(i) * 0.1,
-				end = f32(state.audio_frame) / SAMPLE_RATE + f32(i) * 0.1 + 0.1,
-				volume = 0.2,
-				freq = FREQUENCY * (1.0 + f32(i) / 12.0),
-			},
-		)
-	}
+	data: [5]int = {2, -1, 0, 1, 2}
+	base_note := rand.choice(data[:])
+
+	append(
+		&state.sounds,
+		Sound {
+			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
+			start = f32(state.audio_frame) / SAMPLE_RATE,
+			volume = 0.1,
+			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 0) / 12.),
+		},
+	)
+	append(
+		&state.sounds,
+		Sound {
+			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
+			start = f32(state.audio_frame) / SAMPLE_RATE,
+			volume = 0.1,
+			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 3) / 12.),
+		},
+	)
+	append(
+		&state.sounds,
+		Sound {
+			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
+			start = f32(state.audio_frame) / SAMPLE_RATE,
+			volume = 0.1,
+			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 7) / 12.),
+		},
+	)
 }
 
 sign :: proc(v: Vec2i) -> Vec2i {
@@ -560,10 +609,16 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
 	for j := len(state.sounds) - 1; j >= 0; j -= 1 {
-		if (state.sounds[j].end <= f32(state.audio_frame) / SAMPLE_RATE) {
+		sound := state.sounds[j]
+		true_release_time := math.max(
+			sound.release_time,
+			sound.start + sound.env.attack + sound.env.decay,
+		)
+		if (true_release_time + sound.env.release <= f32(state.audio_frame) / SAMPLE_RATE) {
 			unordered_remove(&state.sounds, j)
 		}
 	}
+
 	switch state.state {
 	case .GAME_OVER:
 	case .PLAYING:

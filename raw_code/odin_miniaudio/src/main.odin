@@ -32,12 +32,13 @@ main :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Odin 3D")
 	rl.SetTargetFPS(500)
 
-	sounds := sounds.init()
+	soundManager := sounds.init()
 
 	frameCount := SAMPLE_RATE * DURATION_SECONDS
 
+	_, sound, _, _ := map_entry(&soundManager.sounds, "base")
 
-	mini.sound_start(&sounds.sound)
+	mini.sound_start(&sound.sound)
 
 	g := game.init()
 	graphics := graphics.init()

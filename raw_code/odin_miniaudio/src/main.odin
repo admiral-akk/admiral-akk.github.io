@@ -34,15 +34,9 @@ main :: proc() {
 
 	soundManager := sounds.init()
 
-	frameCount := SAMPLE_RATE * DURATION_SECONDS
-
-	_, sound, _, _ := map_entry(&soundManager.sounds, "base")
-
-	mini.sound_start(&sound.sound)
 
 	g := game.init()
 	graphics := graphics.init()
-	//	time.sleep(time.Second * 2)
 
 
 	// Tell the game to start itself up!
@@ -52,9 +46,8 @@ main :: proc() {
 		/* This updates and renders the game. It
     returns false when we want to exit the
     program (break the main loop). */
-		game.tick(&g, &graphics)
+		game.tick(&g, &graphics, soundManager)
 		game.render(&g, &graphics)
-		free_all(context.temp_allocator)
 
 	}
 }

@@ -15,25 +15,41 @@ DURATION_SECONDS :: 2
 CHANNELS :: 1
 
 SoundManager :: struct {
-	engine: mini.engine,
-	sounds: map[string]Sound,
+	engine:     mini.engine,
+	// need to avoid reallocation
+	sounds:     []Sound,
+	sounds_len: int,
 }
 
 Sound :: struct {
-	pcm:    []f32,
-	buffer: mini.audio_buffer,
-	sound:  mini.sound,
+	name:         string,
+	pcm:          []f32,
+	bufferConfig: mini.audio_buffer_config,
+	buffer:       mini.audio_buffer,
+	sound:        mini.sound,
 }
 
 SoundParams :: struct {
-	freq:   f32,
-	attack: f32,
-	decay:  f32,
+	freq:    f32,
+	attack:  f32,
+	sustain: f32,
+	decay:   f32,
+}
+
+playSound :: proc(manager: ^SoundManager, name: string) {
+	for i in 0 ..< manager.sounds_len {
+		if manager.sounds[i].name == name {
+			mini.sound_start(&manager.sounds[i].sound)
+			return
+		}
+	}
 }
 
 addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^Sound {
-	frameCount := int(SAMPLE_RATE * (params.attack + params.decay))
-	_, sounds, _, _ := map_entry(&manager.sounds, name)
+	frameCount := int(SAMPLE_RATE * (params.attack + params.decay + params.sustain))
+	sounds := &manager.sounds[manager.sounds_len]
+	manager.sounds_len += 1
+	sounds.name = name
 	sounds.pcm = make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
 
@@ -41,14 +57,16 @@ addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^
 		volume: f32 = 0
 		if t <= params.attack {
 			volume = 1. - (params.attack - t) / params.attack
-		} else if t <= params.attack + params.decay {
-			volume = (params.attack + params.decay - t) / params.decay
+		} else if t <= params.attack + params.sustain {
+			volume = 1.0
+		} else if t <= params.attack + params.sustain + params.decay {
+			volume = (params.attack + params.sustain + params.decay - t) / params.decay
 		}
 		sounds.pcm[i] = 0.1 * volume * math.sin(math.TAU * params.freq * t)
 	}
 
 
-	bufferConfig := mini.audio_buffer_config_init(
+	sounds.bufferConfig = mini.audio_buffer_config_init(
 		.f32,
 		CHANNELS,
 		u64(frameCount),
@@ -56,27 +74,33 @@ addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^
 		nil,
 	)
 
+	dataSourceConfig := mini.data_source_config_init()
+	dataSource := transmute(^mini.data_source)(&sounds.buffer)
+	mini.data_source_init(&dataSourceConfig, dataSource)
 
-	result := mini.audio_buffer_init(&bufferConfig, &sounds.buffer)
-	fmt.println("buffer result", result)
+	result := mini.audio_buffer_init(&sounds.bufferConfig, &sounds.buffer)
 
 	flags: bit_set[mini.sound_flag;u32]
 	flags = {}
 
 	result = mini.sound_init_from_data_source(
 		&manager.engine,
-		transmute(^mini.data_source)(&sounds.buffer),
+		dataSource,
 		flags,
 		nil,
 		&sounds.sound,
 	)
-	fmt.println("Sound result", result)
+	fmt.println("Sound result", name, result)
+	fmt.println("buffer result", sounds.buffer.ownsData)
 	return sounds
 }
 
 
 init :: proc() -> ^SoundManager {
+
 	soundManager := new(SoundManager)
+	soundManager.sounds_len = 0
+	soundManager.sounds = make([]Sound, 100)
 	soundManager.engine = mini.engine{}
 	config := mini.engine_config_init()
 	config.channels = CHANNELS
@@ -87,7 +111,80 @@ init :: proc() -> ^SoundManager {
 	engine_start_result := mini.engine_start(&soundManager.engine)
 	fmt.println("start", engine_start_result)
 
-	sounds := addSound(soundManager, "base", SoundParams{attack = 0.5, decay = 0.5, freq = 440.})
-
+	addSound(
+		soundManager,
+		"C",
+		SoundParams{attack = 0.05, decay = 0.05, sustain = 0.1, freq = 440.},
+	)
+	addSound(
+		soundManager,
+		"C#",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 1. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"D",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 2. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"D#",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 3. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"E",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 4. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"F",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 5. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"F#",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 6. / 12.),
+		},
+	)
+	addSound(
+		soundManager,
+		"G",
+		SoundParams {
+			attack = 0.05,
+			decay = 0.05,
+			sustain = 0.1,
+			freq = 440. * math.pow_f32(2., 7. / 12.),
+		},
+	)
 	return soundManager
 }

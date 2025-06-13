@@ -1,6 +1,7 @@
 package game
 
 import "../graphics"
+import "../sounds"
 import "base:runtime"
 import "core:fmt"
 import "core:math"
@@ -325,7 +326,7 @@ RayHit :: struct {
 	hit: rl.RayCollision,
 }
 
-place_tower :: proc(state: ^Game, pos: Vec2i) {
+place_tower :: proc(state: ^Game, pos: Vec2i, sound: ^sounds.SoundManager) {
 	#reverse for &e in state.entities {
 		#partial switch entity in e.entity {
 		case Tower:
@@ -341,37 +342,9 @@ place_tower :: proc(state: ^Game, pos: Vec2i) {
 		reload_ticks = TOWER_RELOAD_TICKS,
 		range        = TOWER_RANGE,
 	}
+	sounds.playSound(sound, "C")
 
-	data: [5]int = {2, -1, 0, 1, 2}
-	base_note := rand.choice(data[:])
 
-	append(
-		&state.sounds,
-		Sound {
-			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
-			start = f32(state.audio_frame) / SAMPLE_RATE,
-			volume = 0.1,
-			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 0) / 12.),
-		},
-	)
-	append(
-		&state.sounds,
-		Sound {
-			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
-			start = f32(state.audio_frame) / SAMPLE_RATE,
-			volume = 0.1,
-			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 3) / 12.),
-		},
-	)
-	append(
-		&state.sounds,
-		Sound {
-			env = Envelope{attack = 0.14, decay = 0.4, sustain_level = 0., release = 0.04},
-			start = f32(state.audio_frame) / SAMPLE_RATE,
-			volume = 0.1,
-			freq = FREQUENCY * math.pow(2.0, 1. + f32(base_note + 7) / 12.),
-		},
-	)
 }
 
 sign :: proc(v: Vec2i) -> Vec2i {
@@ -605,19 +578,8 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 	}
 }
 
-tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
+tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState, sound: ^sounds.SoundManager) {
 	update_time(state)
-
-	for j := len(state.sounds) - 1; j >= 0; j -= 1 {
-		sound := state.sounds[j]
-		true_release_time := math.max(
-			sound.release_time,
-			sound.start + sound.env.attack + sound.env.decay,
-		)
-		if (true_release_time + sound.env.release <= f32(state.audio_frame) / SAMPLE_RATE) {
-			unordered_remove(&state.sounds, j)
-		}
-	}
 
 	switch state.state {
 	case .GAME_OVER:
@@ -646,7 +608,7 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 					}
 					if !md {
 						state.entities[i].selected = .HOT
-						place_tower(state, state.entities[i].position)
+						place_tower(state, state.entities[i].position, sound)
 					}
 				case .HOT:
 					if md {

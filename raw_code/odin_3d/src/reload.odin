@@ -131,20 +131,15 @@ fill_audio :: proc() {
 }
 
 audio_callback :: proc "c" (b: rawptr, frames: u32) {
-	ptr: [^]f32 = cast([^]f32)(b)
-	for i in 0 ..< frames {
-		ptr[i] = math.sin(FREQUENCY * math.TAU * f32(i + g_mem.audio_frame) / SAMPLE_RATE)
-	}
-	g_mem.audio_frame += frames
+	game.audioCallback(&g_mem.game_memory, cast([^]f32)(b), frames)
 }
 
 @(export)
 game_reload :: proc() {
 
-	g_mem.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
-	rl.SetAudioStreamCallback(g_mem.audio_stream, audio_callback)
-	//rl.PlayAudioStream(g_mem.audio_stream)
 	g_mem.audio_frame = 0
+	rl.SetAudioStreamCallback(g_mem.game_memory.audio_stream, audio_callback)
+	//rl.PlayAudioStream(g_mem.audio_stream)
 
 	//g_mem.graphics_memory.meshes["base"] = generate_mesh()
 	restart()

@@ -23,6 +23,8 @@ PARTICLE_SCALE :: 0.2
 PARTICLE_MAX_TICKS :: 40
 Vec2i :: [2]int
 
+// add some sound effects using the 8-bit midi sound effect thing where you draw them using notes
+
 // Mouse buttons
 TargetState :: enum int {
 	INACTIVE = 0,
@@ -124,20 +126,48 @@ GameState :: enum int {
 	PLAYING   = 0,
 	GAME_OVER = 1,
 }
+
+SAMPLE_RATE :: 44100
+BUFFER_SIZE :: 512
+FREQUENCY :: 440
+
 Game :: struct {
-	state:       GameState,
-	time:        GameTime,
-	score:       Score,
-	lives:       int,
-	entityId:    int,
-	entities:    [dynamic]GameEntity,
-	ui_entities: [dynamic]UIEntity,
-	camera:      rl.Camera3D,
+	state:        GameState,
+	time:         GameTime,
+	score:        Score,
+	lives:        int,
+	audio_frame:  u32,
+	audio_stream: rl.AudioStream,
+	sounds:       [dynamic]Sound,
+	entityId:     int,
+	entities:     [dynamic]GameEntity,
+	ui_entities:  [dynamic]UIEntity,
+	camera:       rl.Camera3D,
+}
+
+audioCallback :: proc "c" (game: ^Game, ptr: [^]f32, frames: u32) {
+	for i in 0 ..< frames {
+		t := f32(i + game.audio_frame) / SAMPLE_RATE
+		for j in 0 ..< len(game.sounds) {
+			sound := game.sounds[j]
+			volume := sound.volume * math.min(1.0, 10.0 * math.max(t - sound.start, sound.end - t))
+
+			ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
+		}
+	}
+	game.audio_frame += frames
 }
 
 Command :: enum int {
 	NONE    = 0,
 	CLICKED = 1,
+}
+
+Sound :: struct {
+	start:  f32,
+	end:    f32,
+	freq:   f32,
+	volume: f32,
 }
 
 spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
@@ -148,6 +178,15 @@ spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
 		start       = rl.Vector3{f32(start.x) / GRID_SIZE, 1, f32(start.y) / GRID_SIZE},
 		end         = rl.Vector3{f32(end.x) / GRID_SIZE, 1, f32(end.y) / GRID_SIZE},
 	}
+	append(
+		&game.sounds,
+		Sound {
+			start = f32(game.audio_frame) / SAMPLE_RATE,
+			end = f32(game.audio_frame) / SAMPLE_RATE + 0.2,
+			volume = 0.2,
+			freq = FREQUENCY,
+		},
+	)
 	return e
 }
 
@@ -226,6 +265,10 @@ restart :: proc(game: ^Game) {
 
 init :: proc() -> Game {
 	state := Game{}
+
+
+	state.audio_stream = rl.LoadAudioStream(SAMPLE_RATE, 32, 1)
+	rl.PlayAudioStream(state.audio_stream)
 	makeGround(&state)
 	// test deletion
 	restart(&state)
@@ -510,6 +553,11 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 	update_time(state)
 
+	for j := len(state.sounds) - 1; j >= 0; j -= 1 {
+		if (state.sounds[j].end <= f32(state.audio_frame) / SAMPLE_RATE) {
+			unordered_remove(&state.sounds, j)
+		}
+	}
 	switch state.state {
 	case .GAME_OVER:
 	case .PLAYING:
@@ -687,13 +735,13 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
 		case Ground:
-			color = oklab.color({0.2, 0.2, 0.5, 1.})
+			color = oklab.color({0.2, 0.2, 0.45, 1.})
 		case Tower:
-			color = oklab.color({0.5, 0.4, 0.3, 1.})
+			color = oklab.color({0.5, 0.5, 0.5, 1.})
 			pos[1] = 1
 			scale *= 0.8
 		case Enemy:
-			color = oklab.color({0.5, 0.5, 0., 1.})
+			color = oklab.color({0.5, 0.5, 0.5, 1.})
 			pos[1] = 1
 			scale *= 0.8
 		case Town:
@@ -710,7 +758,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 				{
 					0.4,
 					0.4,
-					0.9,
+					0.5,
 					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
 				},
 			)
@@ -721,7 +769,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 				{
 					0.6,
 					0.6,
-					0.7,
+					0.525,
 					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
 				},
 			)

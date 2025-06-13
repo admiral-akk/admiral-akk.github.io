@@ -7,6 +7,8 @@ import "core:fmt"
 import "core:math"
 import "core:os"
 import "core:time"
+import "game"
+import "graphics"
 import mini "vendor:miniaudio"
 import rl "vendor:raylib"
 
@@ -19,18 +21,6 @@ FREQUENCY :: 440
 DURATION_SECONDS :: 2
 CHANNELS :: 1
 
-/* Simulation and rendering goes here. Return
-  false when you wish to terminate the program. */
-game_update :: proc() -> bool {
-
-	// game state
-	rl.BeginDrawing()
-	rl.ClearBackground({76, 53, 83, 255})
-	rl.EndDrawing()
-
-	free_all(context.temp_allocator)
-	return true
-}
 
 /* The main program loads a game DLL and checks
 once per frame if it changed. If changed, then
@@ -58,7 +48,7 @@ main :: proc() {
 	pcm := make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
 		t := f32(i) / SAMPLE_RATE
-		pcm[i] = 1.0 * math.sin(math.TAU * FREQUENCY * t)
+		pcm[i] = 0.01 * math.sin(math.TAU * FREQUENCY * t)
 	}
 	bufferConfig := mini.audio_buffer_config_init(.f32, CHANNELS, u64(frameCount), &pcm[0], nil)
 
@@ -82,6 +72,8 @@ main :: proc() {
 
 	mini.sound_start(&sound)
 
+	g := game.init()
+	graphics := graphics.init()
 	//	time.sleep(time.Second * 2)
 
 
@@ -92,9 +84,9 @@ main :: proc() {
 		/* This updates and renders the game. It
     returns false when we want to exit the
     program (break the main loop). */
-		if game_update() == false {
-			break
-		}
+		game.tick(&g, &graphics)
+		game.render(&g, &graphics)
+		free_all(context.temp_allocator)
 
 	}
 }

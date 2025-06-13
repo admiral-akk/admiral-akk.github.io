@@ -150,9 +150,12 @@ audioCallback :: proc "c" (game: ^Game, ptr: [^]f32, frames: u32) {
 		t := f32(i + game.audio_frame) / SAMPLE_RATE
 		for j in 0 ..< len(game.sounds) {
 			sound := game.sounds[j]
-			volume := sound.volume * math.min(1.0, 10.0 * math.max(t - sound.start, sound.end - t))
+			if sound.end > t && sound.start < t {
+				volume :=
+					sound.volume * math.min(1.0, 10.0 * math.max(t - sound.start, sound.end - t))
 
-			ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
+				ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
+			}
 		}
 	}
 	game.audio_frame += frames
@@ -178,15 +181,6 @@ spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
 		start       = rl.Vector3{f32(start.x) / GRID_SIZE, 1, f32(start.y) / GRID_SIZE},
 		end         = rl.Vector3{f32(end.x) / GRID_SIZE, 1, f32(end.y) / GRID_SIZE},
 	}
-	append(
-		&game.sounds,
-		Sound {
-			start = f32(game.audio_frame) / SAMPLE_RATE,
-			end = f32(game.audio_frame) / SAMPLE_RATE + 0.2,
-			volume = 0.2,
-			freq = FREQUENCY,
-		},
-	)
 	return e
 }
 
@@ -316,6 +310,18 @@ place_tower :: proc(state: ^Game, pos: Vec2i) {
 		attack       = TOWER_ATTACK,
 		reload_ticks = TOWER_RELOAD_TICKS,
 		range        = TOWER_RANGE,
+	}
+
+	for i in 0 ..< 4 {
+		append(
+			&state.sounds,
+			Sound {
+				start = f32(state.audio_frame) / SAMPLE_RATE + f32(i) * 0.1,
+				end = f32(state.audio_frame) / SAMPLE_RATE + f32(i) * 0.1 + 0.1,
+				volume = 0.2,
+				freq = FREQUENCY * (1.0 + f32(i) / 12.0),
+			},
+		)
 	}
 }
 

@@ -32,12 +32,19 @@ SoundParams :: struct {
 }
 
 addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^Sound {
-	frameCount := SAMPLE_RATE * DURATION_SECONDS
+	frameCount := int(SAMPLE_RATE * (params.attack + params.decay))
 	_, sounds, _, _ := map_entry(&manager.sounds, "base")
 	sounds.pcm = make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
+
 		t := f32(i) / SAMPLE_RATE
-		sounds.pcm[i] = 0.1 * math.sin(math.TAU * FREQUENCY * t)
+		volume: f32 = 0
+		if t <= params.attack {
+			volume = 1. - (params.attack - t) / params.attack
+		} else if t <= params.attack + params.decay {
+			volume = (params.attack + params.decay - t) / params.decay
+		}
+		sounds.pcm[i] = 0.1 * volume * math.sin(math.TAU * params.freq * t)
 	}
 
 
@@ -82,7 +89,7 @@ init :: proc() -> ^SoundManager {
 
 	frameCount := SAMPLE_RATE * DURATION_SECONDS
 
-	sounds := addSound(soundManager, "base", SoundParams{})
+	sounds := addSound(soundManager, "base", SoundParams{attack = 0.5, decay = 0.5, freq = 440.})
 
 	return soundManager
 }

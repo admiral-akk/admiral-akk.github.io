@@ -1,5 +1,7 @@
-./scripts/watch_build.sh &
+#./scripts/watch_build.sh &
 
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+#trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-wait
+#wait
+
+odin run src/main.odin -file -out:dist/main -debug

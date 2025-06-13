@@ -9,6 +9,7 @@ import "core:os"
 import "core:time"
 import "game"
 import "graphics"
+import "sounds"
 import mini "vendor:miniaudio"
 import rl "vendor:raylib"
 
@@ -31,15 +32,7 @@ main :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Odin 3D")
 	rl.SetTargetFPS(500)
 
-	engine := mini.engine{}
-	config := mini.engine_config_init()
-	config.channels = CHANNELS
-	config.sampleRate = SAMPLE_RATE
-	config.listenerCount = 1
-	result := mini.engine_init(&config, &engine)
-	fmt.println("result", result)
-	engine_start_result := mini.engine_start(&engine)
-	fmt.println("start", engine_start_result)
+	sounds := sounds.init()
 
 
 	// Step 2: Generate audio samples
@@ -48,20 +41,20 @@ main :: proc() {
 	pcm := make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
 		t := f32(i) / SAMPLE_RATE
-		pcm[i] = 0.01 * math.sin(math.TAU * FREQUENCY * t)
+		pcm[i] = 0.1 * math.sin(math.TAU * FREQUENCY * t)
 	}
 	bufferConfig := mini.audio_buffer_config_init(.f32, CHANNELS, u64(frameCount), &pcm[0], nil)
 
 	buffer: mini.audio_buffer
 
-	result = mini.audio_buffer_init(&bufferConfig, &buffer)
+	result := mini.audio_buffer_init(&bufferConfig, &buffer)
 	flags: bit_set[mini.sound_flag;u32]
 	flags = {}
 	fmt.println("buffer result", result)
 
 	sound: mini.sound
 	result = mini.sound_init_from_data_source(
-		&engine,
+		&sounds.engine,
 		transmute(^mini.data_source)(&buffer),
 		flags,
 		nil,

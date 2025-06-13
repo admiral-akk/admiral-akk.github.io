@@ -25,21 +25,15 @@ Sound :: struct {
 	sound:  mini.sound,
 }
 
-init :: proc() -> ^SoundManager {
-	soundManager := new(SoundManager)
-	soundManager.engine = mini.engine{}
-	config := mini.engine_config_init()
-	config.channels = CHANNELS
-	config.sampleRate = SAMPLE_RATE
-	config.listenerCount = 1
-	result := mini.engine_init(&config, &soundManager.engine)
-	fmt.println("result", result)
-	engine_start_result := mini.engine_start(&soundManager.engine)
-	fmt.println("start", engine_start_result)
+SoundParams :: struct {
+	freq:   f32,
+	attack: f32,
+	decay:  f32,
+}
 
+addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^Sound {
 	frameCount := SAMPLE_RATE * DURATION_SECONDS
-
-	_, sounds, _, _ := map_entry(&soundManager.sounds, "base")
+	_, sounds, _, _ := map_entry(&manager.sounds, "base")
 	sounds.pcm = make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
 		t := f32(i) / SAMPLE_RATE
@@ -56,20 +50,39 @@ init :: proc() -> ^SoundManager {
 	)
 
 
-	result = mini.audio_buffer_init(&bufferConfig, &sounds.buffer)
+	result := mini.audio_buffer_init(&bufferConfig, &sounds.buffer)
 	fmt.println("buffer result", result)
 
 	flags: bit_set[mini.sound_flag;u32]
 	flags = {}
 
 	result = mini.sound_init_from_data_source(
-		&soundManager.engine,
+		&manager.engine,
 		transmute(^mini.data_source)(&sounds.buffer),
 		flags,
 		nil,
 		&sounds.sound,
 	)
 	fmt.println("Sound result", result)
+	return sounds
+}
+
+
+init :: proc() -> ^SoundManager {
+	soundManager := new(SoundManager)
+	soundManager.engine = mini.engine{}
+	config := mini.engine_config_init()
+	config.channels = CHANNELS
+	config.sampleRate = SAMPLE_RATE
+	config.listenerCount = 1
+	result := mini.engine_init(&config, &soundManager.engine)
+	fmt.println("result", result)
+	engine_start_result := mini.engine_start(&soundManager.engine)
+	fmt.println("start", engine_start_result)
+
+	frameCount := SAMPLE_RATE * DURATION_SECONDS
+
+	sounds := addSound(soundManager, "base", SoundParams{})
 
 	return soundManager
 }

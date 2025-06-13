@@ -34,16 +34,15 @@ main :: proc() {
 
 	sounds := sounds.init()
 
-
-	// Step 2: Generate audio samples
 	frameCount := SAMPLE_RATE * DURATION_SECONDS
 
-	pcm := make([]f32, frameCount * CHANNELS)
-	for i in 0 ..< frameCount {
-		t := f32(i) / SAMPLE_RATE
-		pcm[i] = 0.1 * math.sin(math.TAU * FREQUENCY * t)
-	}
-	bufferConfig := mini.audio_buffer_config_init(.f32, CHANNELS, u64(frameCount), &pcm[0], nil)
+	bufferConfig := mini.audio_buffer_config_init(
+		.f32,
+		CHANNELS,
+		u64(frameCount),
+		&sounds.pcm[0],
+		nil,
+	)
 
 	buffer: mini.audio_buffer
 

@@ -16,19 +16,27 @@ CHANNELS :: 1
 
 Sound :: struct {
 	engine: mini.engine,
-	config: mini.engine_config,
+	pcm:    []f32,
 }
 
 init :: proc() -> ^Sound {
 	sounds := new(Sound)
 	sounds.engine = mini.engine{}
-	sounds.config = mini.engine_config_init()
-	sounds.config.channels = CHANNELS
-	sounds.config.sampleRate = SAMPLE_RATE
-	sounds.config.listenerCount = 1
-	result := mini.engine_init(&sounds.config, &sounds.engine)
+	config := mini.engine_config_init()
+	config.channels = CHANNELS
+	config.sampleRate = SAMPLE_RATE
+	config.listenerCount = 1
+	result := mini.engine_init(&config, &sounds.engine)
 	fmt.println("result", result)
 	engine_start_result := mini.engine_start(&sounds.engine)
 	fmt.println("start", engine_start_result)
+
+	frameCount := SAMPLE_RATE * DURATION_SECONDS
+
+	sounds.pcm = make([]f32, frameCount * CHANNELS)
+	for i in 0 ..< frameCount {
+		t := f32(i) / SAMPLE_RATE
+		sounds.pcm[i] = 0.1 * math.sin(math.TAU * FREQUENCY * t)
+	}
 	return sounds
 }

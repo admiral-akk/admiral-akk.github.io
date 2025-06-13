@@ -33,7 +33,7 @@ SoundParams :: struct {
 
 addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^Sound {
 	frameCount := int(SAMPLE_RATE * (params.attack + params.decay))
-	_, sounds, _, _ := map_entry(&manager.sounds, "base")
+	_, sounds, _, _ := map_entry(&manager.sounds, name)
 	sounds.pcm = make([]f32, frameCount * CHANNELS)
 	for i in 0 ..< frameCount {
 
@@ -86,8 +86,6 @@ init :: proc() -> ^SoundManager {
 	fmt.println("result", result)
 	engine_start_result := mini.engine_start(&soundManager.engine)
 	fmt.println("start", engine_start_result)
-
-	frameCount := SAMPLE_RATE * DURATION_SECONDS
 
 	sounds := addSound(soundManager, "base", SoundParams{attack = 0.5, decay = 0.5, freq = 440.})
 

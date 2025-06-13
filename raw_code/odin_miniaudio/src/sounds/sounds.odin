@@ -17,6 +17,8 @@ CHANNELS :: 1
 Sound :: struct {
 	engine: mini.engine,
 	pcm:    []f32,
+	buffer: mini.audio_buffer,
+	sound:  mini.sound,
 }
 
 init :: proc() -> ^Sound {
@@ -38,5 +40,31 @@ init :: proc() -> ^Sound {
 		t := f32(i) / SAMPLE_RATE
 		sounds.pcm[i] = 0.1 * math.sin(math.TAU * FREQUENCY * t)
 	}
+
+
+	bufferConfig := mini.audio_buffer_config_init(
+		.f32,
+		CHANNELS,
+		u64(frameCount),
+		&sounds.pcm[0],
+		nil,
+	)
+
+
+	result = mini.audio_buffer_init(&bufferConfig, &sounds.buffer)
+	fmt.println("buffer result", result)
+
+	flags: bit_set[mini.sound_flag;u32]
+	flags = {}
+
+	result = mini.sound_init_from_data_source(
+		&sounds.engine,
+		transmute(^mini.data_source)(&sounds.buffer),
+		flags,
+		nil,
+		&sounds.sound,
+	)
+	fmt.println("Sound result", result)
+
 	return sounds
 }

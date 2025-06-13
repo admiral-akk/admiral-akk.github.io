@@ -36,33 +36,8 @@ main :: proc() {
 
 	frameCount := SAMPLE_RATE * DURATION_SECONDS
 
-	bufferConfig := mini.audio_buffer_config_init(
-		.f32,
-		CHANNELS,
-		u64(frameCount),
-		&sounds.pcm[0],
-		nil,
-	)
 
-	buffer: mini.audio_buffer
-
-	result := mini.audio_buffer_init(&bufferConfig, &buffer)
-	flags: bit_set[mini.sound_flag;u32]
-	flags = {}
-	fmt.println("buffer result", result)
-
-	sound: mini.sound
-	result = mini.sound_init_from_data_source(
-		&sounds.engine,
-		transmute(^mini.data_source)(&buffer),
-		flags,
-		nil,
-		&sound,
-	)
-
-	fmt.println("Sound result", result)
-
-	mini.sound_start(&sound)
+	mini.sound_start(&sounds.sound)
 
 	g := game.init()
 	graphics := graphics.init()

@@ -880,17 +880,17 @@ render :: proc(state: ^Game) {
 					button_color = rl.Color{0, 200, 200, 255}
 				case .ACTIVE:
 					button_color = rl.Color{200, 0, 200, 255}
+					// check if click and drage
+					drawRect(
+						rl.Vector2 {
+							renderer.position.x + renderer.position.width / 2,
+							renderer.position.y + renderer.position.height / 2,
+						},
+						mp_2d,
+						20,
+						rl.Color{0, 200, 0, 255},
+					)
 				}
-				// check if click and drage
-				drawRect(
-					rl.Vector2 {
-						renderer.position.x + renderer.position.width / 2,
-						renderer.position.y + renderer.position.height / 2,
-					},
-					mp_2d,
-					20,
-					rl.Color{0, 200, 0, 255},
-				)
 				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 				gui.render_text_box(
 					gui.TextBox {

@@ -266,7 +266,7 @@ restart :: proc(game: ^Game) {
 		type = .Increment,
 	}
 	button2 := ui_e(game)
-	button2.position = rl.Rectangle{200, 240, 200, 50}
+	button2.position = rl.Rectangle{200, 240, 100, 50}
 	button2.element = Button {
 		type = .Increment,
 	}
@@ -348,7 +348,6 @@ length_2 :: proc(v: Vec2i) -> int {
 	return int(math.sqrt(f32(v.x * v.x + v.y * v.y)))
 }
 
-// 
 find_nearest_enemy :: proc(state: ^Game, pos: Vec2i) -> Maybe(^GameEntity) {
 	closest := -1
 	ent: ^GameEntity
@@ -584,11 +583,11 @@ tick :: proc(state: ^Game) {
 		rayHit := get_ray_hits(state)
 
 
+		left_pressed := rl.IsMouseButtonPressed(.LEFT)
+		left_released := rl.IsMouseButtonReleased(.LEFT)
 		for i in 0 ..< len(state.entities) {
 			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
 				md := rl.IsMouseButtonDown(.LEFT)
-				left_pressed := rl.IsMouseButtonPressed(.LEFT)
-				left_released := rl.IsMouseButtonReleased(.LEFT)
 				rmd := rl.IsMouseButtonDown(.RIGHT)
 				switch state.entities[i].selected {
 				case .INACTIVE:
@@ -612,7 +611,13 @@ tick :: proc(state: ^Game) {
 					}
 				}
 			} else {
-				state.entities[i].selected = .INACTIVE
+				if left_released {
+					state.entities[i].selected = .INACTIVE
+				}
+				if state.entities[i].selected != .ACTIVE {
+
+					state.entities[i].selected = .INACTIVE
+				}
 			}
 		}
 		#reverse for &g in state.entities {

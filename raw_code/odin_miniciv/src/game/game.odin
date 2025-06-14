@@ -628,7 +628,40 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 				// add both
 				append(&s.outputIds, end.id)
 				append(&e.inputIds, start.id)
+				checkUpgrade(game, &e)
 			}
+		}
+	}
+}
+
+checkUpgrade :: proc(game: ^Game, building: ^Building) {
+	v, ok := building.upgrade.?
+	if ok {
+		fmt.println("checking upgrade")
+		// list of requirements
+		reqs := make([dynamic]Resource, context.temp_allocator)
+		for requirement in v.requires {
+			append(&reqs, requirement)
+		}
+		fmt.println("requirements", reqs)
+		for inputId in building.inputIds {
+			input := e_get(game, inputId)
+			if input != nil {
+				b, ok := input.entity.(Building)
+				if ok {
+					fmt.println("outputs", b)
+					for output in b.output {
+						inputIdx := find_first_matching(Resource, reqs[:], output)
+						if inputIdx > -1 {
+							unordered_remove(&reqs, inputIdx)
+						}
+					}
+				}
+			}
+		}
+		fmt.println("requirements", reqs)
+		if len(reqs) == 0 {
+			building.base = v.base
 		}
 	}
 }
@@ -649,6 +682,8 @@ tick :: proc(state: ^Game) {
 	// TODO: add a "upgrade" mechanic?
 	// TODO: actually flow input to output
 	// TODO: add ability for forest to upgrade to farm
+
+	// TODO: trigger upgrade on conditions being met
 
 	switch state.state {
 	case .GAME_OVER:
@@ -1105,10 +1140,13 @@ render :: proc(state: ^Game) {
 makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	g := entity(game)
 	g.entity = Building {
-		name   = "Village",
-		input  = []Resource{Resource{class = .Food, domain = .Base}},
-		output = []Resource{Resource{class = .Person, domain = .Base}},
+		base = Blueprint {
+			name = "Village",
+			input = []Resource{Resource{class = .Food, domain = .Base}},
+			output = []Resource{Resource{class = .Person, domain = .Base}},
+		},
 	}
+	fmt.println("village", g)
 	g.renderer = UIEntity {
 		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},

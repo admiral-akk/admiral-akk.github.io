@@ -39,7 +39,8 @@ SoundParams :: struct {
 	decay:   f32,
 }
 
-playSound :: proc(manager: ^SoundManager, name: string, delay: u64) {
+playSound :: proc(name: string, delay: u64) {
+	manager := &manager
 	for i in 0 ..< manager.sounds_len {
 		if manager.sounds[i].name == name {
 

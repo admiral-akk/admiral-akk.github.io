@@ -333,7 +333,7 @@ place_tower :: proc(state: ^Game, pos: Vec2i, sound: ^sounds.SoundManager) {
 		reload_ticks = TOWER_RELOAD_TICKS,
 		range        = TOWER_RANGE,
 	}
-	sounds.playSound(&sounds.manager, "C", 0)
+	sounds.playSound("C", 0)
 
 }
 

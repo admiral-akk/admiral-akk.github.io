@@ -62,7 +62,7 @@ restart :: proc(state: ^GraphicsManager) {
 	state.meshes["base"] = rl.GenMeshCube(1, 1, 1)
 }
 
-init :: proc() -> GraphicsManager {
+init :: proc() -> ^GraphicsManager {
 	restart(&manager)
-	return manager
+	return &manager
 }

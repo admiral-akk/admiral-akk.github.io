@@ -39,7 +39,7 @@ main :: proc() {
 	// Tell the game to start itself up!
 	// same as while(true) in C
 	for {
-		game.tick(&g, &graphics, soundManager)
-		game.render(&g, &graphics)
+		game.tick(&g, soundManager)
+		game.render(&g)
 	}
 }

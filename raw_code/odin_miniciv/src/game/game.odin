@@ -507,7 +507,7 @@ apply :: proc(state: ^Game, command: Command) {
 	}
 }
 
-get_ray_hits :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) -> [dynamic]RayHit {
+get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
@@ -525,7 +525,7 @@ get_ray_hits :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) ->
 
 			collision := rl.GetRayCollisionMesh(
 				ray,
-				graphics_state.meshes[g.mesh],
+				graphics.manager.meshes[g.mesh],
 				transform_matrix,
 			)
 
@@ -568,11 +568,7 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 	}
 }
 
-tick :: proc(
-	state: ^Game,
-	graphics_state: ^graphics.GraphicsManager,
-	sound: ^sounds.SoundManager,
-) {
+tick :: proc(state: ^Game, sound: ^sounds.SoundManager) {
 	update_time(state)
 
 	switch state.state {
@@ -582,7 +578,7 @@ tick :: proc(
 			spawn_enemy_rand(state)
 		}
 
-		rayHit := get_ray_hits(state, graphics_state)
+		rayHit := get_ray_hits(state)
 
 
 		for i in 0 ..< len(state.entities) {
@@ -739,7 +735,7 @@ tick :: proc(
 }
 
 
-render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) {
+render :: proc(state: ^Game) {
 	// game state
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
@@ -752,7 +748,7 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) {
 		scale := [3]f32{1, 1, 1}
 
 		rotation: rl.Vector3
-		loc := rl.GetShaderLocation(graphics_state.materials[e.material].shader, "colDiffuse2")
+		loc := rl.GetShaderLocation(graphics.manager.materials[e.material].shader, "colDiffuse2")
 		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
 		case Ground:
@@ -813,14 +809,14 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) {
 			rl.MatrixScale(scale.x, scale.y, scale.z)
 
 		rl.SetShaderValue(
-			graphics_state.materials[e.material].shader,
+			graphics.manager.materials[e.material].shader,
 			loc,
 			raw_data(color[:]),
 			.VEC4,
 		)
 		rl.DrawMesh(
-			graphics_state.meshes[e.mesh],
-			graphics_state.materials[e.material],
+			graphics.manager.meshes[e.mesh],
+			graphics.manager.materials[e.material],
 			transform_matrix,
 		)
 

@@ -89,12 +89,22 @@ Resource :: struct {
 	domain: ResourceDomain,
 }
 
+Upgrade :: struct {
+	using base: Blueprint,
+	requires:   []Resource,
+}
+
+Blueprint :: struct {
+	name:   string,
+	input:  []Resource,
+	output: []Resource,
+}
+
 Building :: struct {
-	name:      string,
-	input:     Resource,
-	output:    Resource,
-	inputIds:  [dynamic]int,
-	outputIds: [dynamic]int,
+	using base: Blueprint,
+	upgrade:    Maybe(Upgrade),
+	inputIds:   [dynamic]int,
+	outputIds:  [dynamic]int,
 }
 
 EntityType :: union {
@@ -635,7 +645,6 @@ tick :: proc(state: ^Game) {
 	state.camera2d.zoom += rl.GetMouseWheelMove() / 10
 	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
 
-	// TODO: add abiity to connect and disconnect
 	// TODO: add a spawning mechanic?
 	// TODO: add a "upgrade" mechanic?
 	// TODO: actually flow input to output
@@ -1096,7 +1105,9 @@ render :: proc(state: ^Game) {
 makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	g := entity(game)
 	g.entity = Building {
-		name = "Village",
+		name   = "Village",
+		input  = []Resource{Resource{class = .Food, domain = .Base}},
+		output = []Resource{Resource{class = .Person, domain = .Base}},
 	}
 	g.renderer = UIEntity {
 		element  = Button{},
@@ -1104,7 +1115,13 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	}
 	g2 := entity(game)
 	g2.entity = Building {
-		name = "Village",
+		name = "Field",
+		upgrade = Upgrade {
+			requires = []Resource{Resource{class = .Person, domain = .Base}},
+			name = "Farm",
+			input = []Resource{Resource{class = .Person, domain = .Base}},
+			output = []Resource{Resource{class = .Food, domain = .Base}},
+		},
 	}
 	g2.renderer = UIEntity {
 		element  = Button{},

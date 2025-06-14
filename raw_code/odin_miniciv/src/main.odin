@@ -22,32 +22,24 @@ FREQUENCY :: 440
 DURATION_SECONDS :: 2
 CHANNELS :: 1
 
-
-/* The main program loads a game DLL and checks
-once per frame if it changed. If changed, then
-it loads it as a new game DLL. It will feed the
-new DLL the memory the old one used. */
+// This manages any global managers, like graphics, sound effects, images, networking, and the
+// game state itself.
+//
+// It also coordinates the main game loop.
 main :: proc() {
 	rl.SetConfigFlags(({.VSYNC_HINT}))
-	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Odin 3D")
+	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Mini Civ")
 	rl.SetTargetFPS(500)
 
 	soundManager := sounds.init()
 
-
 	g := game.init()
 	graphics := graphics.init()
 
-
 	// Tell the game to start itself up!
-
 	// same as while(true) in C
 	for {
-		/* This updates and renders the game. It
-    returns false when we want to exit the
-    program (break the main loop). */
 		game.tick(&g, &graphics, soundManager)
 		game.render(&g, &graphics)
-
 	}
 }

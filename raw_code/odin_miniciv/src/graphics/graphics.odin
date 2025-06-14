@@ -1,4 +1,4 @@
-package graphics
+package manager
 
 import rl "vendor:raylib"
 
@@ -39,14 +39,16 @@ void main()
 	`
 
 
-GraphicsState :: struct {
+manager := GraphicsManager{}
+
+GraphicsManager :: struct {
 	meshes:    map[string]rl.Mesh,
 	materials: map[string]rl.Material,
 	textures:  map[string]rl.Texture2D,
 	shaders:   map[string]rl.Shader,
 }
-restart :: proc(state: ^GraphicsState) {
 
+restart :: proc(state: ^GraphicsManager) {
 	material := rl.LoadMaterialDefault()
 	state.shaders["base"] = rl.LoadShaderFromMemory(VERT_SHADER, FRAG_SHADER)
 	material.shader = state.shaders["base"]
@@ -60,8 +62,7 @@ restart :: proc(state: ^GraphicsState) {
 	state.meshes["base"] = rl.GenMeshCube(1, 1, 1)
 }
 
-init :: proc() -> GraphicsState {
-	state := GraphicsState{}
-	restart(&state)
-	return state
+init :: proc() -> GraphicsManager {
+	restart(&manager)
+	return manager
 }

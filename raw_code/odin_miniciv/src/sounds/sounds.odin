@@ -14,6 +14,8 @@ FREQUENCY :: 440
 DURATION_SECONDS :: 2
 CHANNELS :: 1
 
+manager := SoundManager{}
+
 SoundManager :: struct {
 	engine:       mini.engine,
 	// need to avoid reallocation
@@ -133,26 +135,21 @@ addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^
 
 init :: proc() -> ^SoundManager {
 
-	soundManager := new(SoundManager)
-	soundManager.sounds_len = 0
-	soundManager.sounds = make([]Sound, 100)
-	soundManager.engine = mini.engine{}
+	manager.sounds_len = 0
+	manager.sounds = make([]Sound, 100)
+	manager.engine = mini.engine{}
 	config := mini.engine_config_init()
 	config.channels = CHANNELS
 	config.sampleRate = SAMPLE_RATE
 	config.listenerCount = 1
-	result := mini.engine_init(&config, &soundManager.engine)
+	result := mini.engine_init(&config, &manager.engine)
 	fmt.println("result", result)
-	engine_start_result := mini.engine_start(&soundManager.engine)
+	engine_start_result := mini.engine_start(&manager.engine)
 	fmt.println("start", engine_start_result)
 
+	addSound(&manager, "C", SoundParams{attack = 0.05, decay = 0.05, sustain = 0.02, freq = 440.})
 	addSound(
-		soundManager,
-		"C",
-		SoundParams{attack = 0.05, decay = 0.05, sustain = 0.02, freq = 440.},
-	)
-	addSound(
-		soundManager,
+		&manager,
 		"C#",
 		SoundParams {
 			attack = 0.05,
@@ -162,7 +159,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"D",
 		SoundParams {
 			attack = 0.05,
@@ -172,7 +169,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"D#",
 		SoundParams {
 			attack = 0.05,
@@ -182,7 +179,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"E",
 		SoundParams {
 			attack = 0.05,
@@ -192,7 +189,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"F",
 		SoundParams {
 			attack = 0.05,
@@ -202,7 +199,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"F#",
 		SoundParams {
 			attack = 0.05,
@@ -212,7 +209,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"G",
 		SoundParams {
 			attack = 0.05,
@@ -222,7 +219,7 @@ init :: proc() -> ^SoundManager {
 		},
 	)
 	addSound(
-		soundManager,
+		&manager,
 		"C6",
 		SoundParams {
 			attack = 0.02,
@@ -231,5 +228,5 @@ init :: proc() -> ^SoundManager {
 			freq = 440. * math.pow_f32(2., 24. / 12.),
 		},
 	)
-	return soundManager
+	return &manager
 }

@@ -290,15 +290,6 @@ restart :: proc(game: ^Game) {
 	town := entity(game)
 	town.entity = Town{}
 }
-
-init :: proc() -> Game {
-	state := Game{}
-
-	makeGround(&state)
-	// test deletion
-	restart(&state)
-	return state
-}
 newGame :: proc(game: ^Game) {
 	for len(game.entities) > 0 {
 		delete_e(game, game.entities[0].id)
@@ -516,7 +507,7 @@ apply :: proc(state: ^Game, command: Command) {
 	}
 }
 
-get_ray_hits :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) -> [dynamic]RayHit {
+get_ray_hits :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
@@ -577,7 +568,11 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 	}
 }
 
-tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState, sound: ^sounds.SoundManager) {
+tick :: proc(
+	state: ^Game,
+	graphics_state: ^graphics.GraphicsManager,
+	sound: ^sounds.SoundManager,
+) {
 	update_time(state)
 
 	switch state.state {
@@ -744,7 +739,7 @@ tick :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState, sound: ^soun
 }
 
 
-render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
+render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsManager) {
 	// game state
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
@@ -901,4 +896,17 @@ render :: proc(state: ^Game, graphics_state: ^graphics.GraphicsState) {
 
 	rl.EndMode2D()
 	rl.EndDrawing()
+}
+
+
+init :: proc() -> Game {
+	rl.SetConfigFlags(({.VSYNC_HINT}))
+	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Mini Civ")
+	rl.SetTargetFPS(500)
+	state := Game{}
+
+	makeGround(&state)
+	// test deletion
+	restart(&state)
+	return state
 }

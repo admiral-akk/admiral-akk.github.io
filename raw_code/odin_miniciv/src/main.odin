@@ -34,7 +34,7 @@ main :: proc() {
 	soundManager := sounds.init()
 
 	g := game.init()
-	graphics := graphics.init()
+	graphics.init()
 
 	// Tell the game to start itself up!
 	// same as while(true) in C

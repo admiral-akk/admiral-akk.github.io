@@ -596,6 +596,7 @@ find_first_matching :: proc($T: typeid, arr: []T, target: T) -> int {
 	return -1
 }
 
+// TODO: enforce rules around what can connect to what
 updateConnection :: proc(game: ^Game, startId, endId: int) {
 	start := e_get(game, startId)
 	end := e_get(game, endId)
@@ -996,6 +997,7 @@ render :: proc(state: ^Game) {
 					button_color = rl.Color{200, 0, 200, 255}
 					// check if click and drage
 					// TODO: render this either consistently behind or in front of buildings
+					// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
 					drawRect(
 						rl.Vector2 {
 							renderer.position.x + renderer.position.width / 2,

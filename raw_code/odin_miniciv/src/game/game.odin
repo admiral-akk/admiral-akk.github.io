@@ -680,12 +680,8 @@ tick :: proc(state: ^Game) {
 	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
 
 	// TODO: add a spawning mechanic?
-	// TODO: add a "upgrade" mechanic?
 	// TODO: actually flow input to output
-	// TODO: add ability for forest to upgrade to farm
 
-	// TODO: trigger upgrade on conditions being met
-	// TODO: fix dragging when zooming in
 
 	switch state.state {
 	case .GAME_OVER:

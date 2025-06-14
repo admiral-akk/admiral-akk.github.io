@@ -1022,6 +1022,17 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
+	g2 := entity(game)
+	outputIds := make([dynamic]int)
+	append_elem(&outputIds, g.id)
+	g2.entity = Building {
+		name      = "Village",
+		outputIds = outputIds,
+	}
+	g2.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{300, 20, 100, 100},
+	}
 	return g
 }
 

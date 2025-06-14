@@ -1,6 +1,6 @@
 package game
 
-import "../graphics"
+import gfx "../graphics"
 import "../sounds"
 import "base:runtime"
 import "core:fmt"
@@ -523,11 +523,7 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 				f32(g.position[1]) / GRID_SIZE,
 			)
 
-			collision := rl.GetRayCollisionMesh(
-				ray,
-				graphics.manager.meshes[g.mesh],
-				transform_matrix,
-			)
+			collision := rl.GetRayCollisionMesh(ray, gfx.manager.meshes[g.mesh], transform_matrix)
 
 			if collision.hit {
 				append(&rayHit, RayHit{hit = collision, id = g.id})
@@ -748,7 +744,7 @@ render :: proc(state: ^Game) {
 		scale := [3]f32{1, 1, 1}
 
 		rotation: rl.Vector3
-		loc := rl.GetShaderLocation(graphics.manager.materials[e.material].shader, "colDiffuse2")
+		loc := rl.GetShaderLocation(gfx.manager.materials[e.material].shader, "colDiffuse2")
 		color := [4]f32{0, 0, 0, 0}
 		switch entity in e.entity {
 		case Ground:
@@ -808,15 +804,10 @@ render :: proc(state: ^Game) {
 			rl.MatrixRotateXYZ(rotation) *
 			rl.MatrixScale(scale.x, scale.y, scale.z)
 
-		rl.SetShaderValue(
-			graphics.manager.materials[e.material].shader,
-			loc,
-			raw_data(color[:]),
-			.VEC4,
-		)
+		rl.SetShaderValue(gfx.manager.materials[e.material].shader, loc, raw_data(color[:]), .VEC4)
 		rl.DrawMesh(
-			graphics.manager.meshes[e.mesh],
-			graphics.manager.materials[e.material],
+			gfx.manager.meshes[e.mesh],
+			gfx.manager.materials[e.material],
 			transform_matrix,
 		)
 

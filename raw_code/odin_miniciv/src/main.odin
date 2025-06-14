@@ -8,8 +8,8 @@ import "core:math"
 import "core:os"
 import "core:time"
 import "game"
-import "graphics"
-import "sounds"
+import gfx "graphics"
+import s "sounds"
 import mini "vendor:miniaudio"
 import rl "vendor:raylib"
 
@@ -31,10 +31,10 @@ main :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Mini Civ")
 	rl.SetTargetFPS(500)
 
-	sounds.init()
+	s.init()
 
 	g := game.init()
-	graphics.init()
+	gfx.init()
 
 	// Tell the game to start itself up!
 	// same as while(true) in C

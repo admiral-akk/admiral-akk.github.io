@@ -114,6 +114,7 @@ GameEntity :: struct {
 	position: Vec2i,
 	mesh:     string,
 	material: string,
+	renderer: Renderer,
 }
 
 ButtonType :: enum int {
@@ -136,6 +137,16 @@ UIEntity :: struct {
 	element:  UIElement,
 	selected: SelectionState,
 	position: rl.Rectangle,
+}
+
+MeshRenderer :: struct {
+	mesh:     string,
+	material: string,
+}
+
+Renderer :: union {
+	UIElement,
+	MeshRenderer,
 }
 
 Score :: struct {
@@ -186,9 +197,8 @@ spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
 
 entity :: proc(game: ^Game) -> ^GameEntity {
 	e := GameEntity {
-		material = "base",
-		mesh     = "base",
-		id       = game.entityId,
+		renderer = MeshRenderer{material = "base", mesh = "base"},
+		id = game.entityId,
 	}
 	game.entityId += 1
 	append(&game.entities, e)
@@ -493,11 +503,17 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 				0,
 				f32(g.position[1]) / GRID_SIZE,
 			)
+			#partial switch renderer in g.renderer {
+			case MeshRenderer:
+				collision := rl.GetRayCollisionMesh(
+					ray,
+					gfx.manager.meshes[renderer.mesh],
+					transform_matrix,
+				)
 
-			collision := rl.GetRayCollisionMesh(ray, gfx.manager.meshes[g.mesh], transform_matrix)
-
-			if collision.hit {
-				append(&rayHit, RayHit{hit = collision, id = g.id})
+				if collision.hit {
+					append(&rayHit, RayHit{hit = collision, id = g.id})
+				}
 			}
 		}
 	}
@@ -569,7 +585,6 @@ tick :: proc(state: ^Game) {
 					if left_released {
 						state.entities[i].selected = .HOT
 						place_tower(state, state.entities[i].position)
-
 					}
 				case .HOT:
 					if left_pressed {
@@ -721,80 +736,93 @@ render :: proc(state: ^Game) {
 
 	for i in 0 ..< len(state.entities) {
 		e := state.entities[i]
-		pos := [3]f32{f32(e.position[0]) / GRID_SIZE, 0, f32(e.position[1]) / GRID_SIZE}
-		scale := [3]f32{1, 1, 1}
+		#partial switch renderer in e.renderer {
+		case MeshRenderer:
+			pos := [3]f32{f32(e.position[0]) / GRID_SIZE, 0, f32(e.position[1]) / GRID_SIZE}
+			scale := [3]f32{1, 1, 1}
 
-		rotation: rl.Vector3
-		loc := rl.GetShaderLocation(gfx.manager.materials[e.material].shader, "colDiffuse2")
-		color := [4]f32{0, 0, 0, 0}
-		#partial switch entity in e.entity {
-		case Ground:
-			color = oklab.color({0.2, 0.2, 0.45, 1.})
-		case Tower:
-			color = oklab.color({0.5, 0.5, 0.5, 1.})
-			pos[1] = 1
-			scale *= 0.8
-		case Enemy:
-			color = oklab.color({0.5, 0.5, 0.5, 1.})
-			pos[1] = 1
-			scale *= 0.8
-		case Town:
-			pos[1] = 1
-			scale *= 0.8
-			color = oklab.color({0.4, 0.4, 0.5, 1.})
-		case Ray:
-			pos = (entity.end + entity.start) / 2
-			scale.x = rl.Vector3Length(entity.end - entity.start)
-			scale.y = 0.1
-			scale.z = 0.1
-			rotation.y = math.atan2(entity.start.z - entity.end.z, entity.end.x - entity.start.x)
-			color = oklab.color(
-				{
-					0.4,
-					0.4,
-					0.5,
-					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
-				},
+			rotation: rl.Vector3
+			loc := rl.GetShaderLocation(
+				gfx.manager.materials[renderer.material].shader,
+				"colDiffuse2",
 			)
-		case Particle:
-			pos = entity.start
-			scale *= PARTICLE_SCALE
-			color = oklab.color(
-				{
-					0.6,
-					0.6,
-					0.525,
-					1 - f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
-				},
+			color := [4]f32{0, 0, 0, 0}
+			#partial switch entity in e.entity {
+			case Ground:
+				color = oklab.color({0.2, 0.2, 0.45, 1.})
+			case Tower:
+				color = oklab.color({0.5, 0.5, 0.5, 1.})
+				pos[1] = 1
+				scale *= 0.8
+			case Enemy:
+				color = oklab.color({0.5, 0.5, 0.5, 1.})
+				pos[1] = 1
+				scale *= 0.8
+			case Town:
+				pos[1] = 1
+				scale *= 0.8
+				color = oklab.color({0.4, 0.4, 0.5, 1.})
+			case Ray:
+				pos = (entity.end + entity.start) / 2
+				scale.x = rl.Vector3Length(entity.end - entity.start)
+				scale.y = 0.1
+				scale.z = 0.1
+				rotation.y = math.atan2(
+					entity.start.z - entity.end.z,
+					entity.end.x - entity.start.x,
+				)
+				color = oklab.color(
+					{
+						0.4,
+						0.4,
+						0.5,
+						1 -
+						f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
+					},
+				)
+			case Particle:
+				pos = entity.start
+				scale *= PARTICLE_SCALE
+				color = oklab.color(
+					{
+						0.6,
+						0.6,
+						0.525,
+						1 -
+						f32(state.time.tick - entity.created_at.tick) / f32(entity.clean_ticks),
+					},
+				)
+			}
+
+			switch e.selected {
+			case .INACTIVE:
+
+			case .HOT:
+				color[0] += 0.1
+				color[1] += 0.1
+			case .ACTIVE:
+				color[0] += 0.2
+				color[1] += 0.2
+			}
+
+			transform_matrix :=
+				rl.MatrixTranslate(pos.x, pos.y, pos.z) *
+				rl.MatrixRotateXYZ(rotation) *
+				rl.MatrixScale(scale.x, scale.y, scale.z)
+
+			rl.SetShaderValue(
+				gfx.manager.materials[renderer.material].shader,
+				loc,
+				raw_data(color[:]),
+				.VEC4,
+			)
+			rl.DrawMesh(
+				gfx.manager.meshes[renderer.mesh],
+				gfx.manager.materials[renderer.material],
+				transform_matrix,
 			)
 		}
-
-		switch e.selected {
-		case .INACTIVE:
-
-		case .HOT:
-			color[0] += 0.1
-			color[1] += 0.1
-		case .ACTIVE:
-			color[0] += 0.2
-			color[1] += 0.2
-		}
-
-		transform_matrix :=
-			rl.MatrixTranslate(pos.x, pos.y, pos.z) *
-			rl.MatrixRotateXYZ(rotation) *
-			rl.MatrixScale(scale.x, scale.y, scale.z)
-
-		rl.SetShaderValue(gfx.manager.materials[e.material].shader, loc, raw_data(color[:]), .VEC4)
-		rl.DrawMesh(
-			gfx.manager.meshes[e.mesh],
-			gfx.manager.materials[e.material],
-			transform_matrix,
-		)
-
 	}
-
-
 	rl.EndMode3D()
 
 	rl.BeginMode2D(rl.Camera2D{zoom = 1., offset = rl.Vector2{SCREEN_SIZE / 2, SCREEN_SIZE / 2}})

@@ -874,6 +874,44 @@ render :: proc(state: ^Game) {
 	rl.BeginMode2D(state.camera2d)
 
 	mp_2d := rl.GetMousePosition() - state.camera2d.offset
+	// render connections
+	for e in state.entities {
+		#partial switch entity in e.entity {
+		case Building:
+			#partial switch renderer in e.renderer {
+			case UIEntity:
+				// if it has any outgoing connections, draw them
+				for outId in entity.outputIds {
+					target := e_get(state, outId)
+					if target != nil {
+
+						#partial switch t_entity in target.entity {
+						case Building:
+							#partial switch t_render in target.renderer {
+							case UIEntity:
+								// check if click and drage
+								drawRect(
+									rl.Vector2 {
+										renderer.position.x + renderer.position.width / 2,
+										renderer.position.y + renderer.position.height / 2,
+									},
+									rl.Vector2 {
+										t_render.position.x + t_render.position.width / 2,
+										t_render.position.y + t_render.position.height / 2,
+									},
+									20,
+									rl.Color{220, 40, 20, 255},
+								)
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// render entities
 	for e in state.entities {
 		#partial switch entity in e.entity {
 		case Building:
@@ -899,33 +937,6 @@ render :: proc(state: ^Game) {
 						rl.Color{0, 200, 0, 255},
 					)
 				}
-				// if it has any outgoing connections, draw them
-				for outId in entity.outputIds {
-					target := e_get(state, outId)
-					if target != nil {
-
-						#partial switch t_entity in target.entity {
-						case Building:
-							#partial switch t_render in target.renderer {
-							case UIEntity:
-								// check if click and drage
-								drawRect(
-									rl.Vector2 {
-										renderer.position.x + renderer.position.width / 2,
-										renderer.position.y + renderer.position.height / 2,
-									},
-									rl.Vector2 {
-										t_render.position.x + t_render.position.width / 2,
-										t_render.position.y + t_render.position.height / 2,
-									},
-									20,
-									rl.Color{20, 40, 20, 255},
-								)
-
-							}
-						}
-					}
-				}
 
 				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 				gui.render_text_box(
@@ -941,7 +952,6 @@ render :: proc(state: ^Game) {
 				)
 			}
 		}
-
 	}
 	rl.EndMode2D()
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})

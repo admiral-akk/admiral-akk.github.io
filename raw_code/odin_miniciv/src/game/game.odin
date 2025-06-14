@@ -7,6 +7,7 @@ import "core:fmt"
 import "core:math"
 import "core:math/rand"
 import "core:slice"
+import "core:strings"
 import "gui"
 import "oklab"
 import rl "vendor:raylib"
@@ -74,6 +75,28 @@ Ray :: struct {
 	end:         rl.Vector3,
 }
 
+ResourceClass :: enum {
+	Person,
+	Food,
+}
+
+ResourceDomain :: enum {
+	Base,
+}
+
+Resource :: struct {
+	class:  ResourceClass,
+	domain: ResourceDomain,
+}
+
+Building :: struct {
+	name:      string,
+	input:     Resource,
+	output:    Resource,
+	inputIds:  [dynamic]int,
+	outputIds: [dynamic]int,
+}
+
 EntityType :: union {
 	Ground,
 	Tower,
@@ -81,6 +104,7 @@ EntityType :: union {
 	Town,
 	Ray,
 	Particle,
+	Building,
 }
 
 GameEntity :: struct {
@@ -113,6 +137,7 @@ UIEntity :: struct {
 	selected: SelectionState,
 	position: rl.Rectangle,
 }
+
 Score :: struct {
 	value:        int,
 	last_changed: GameTime,
@@ -147,7 +172,6 @@ Command :: enum int {
 	NONE    = 0,
 	CLICKED = 1,
 }
-
 
 spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
 	e := entity(game)
@@ -224,6 +248,11 @@ restart :: proc(game: ^Game) {
 	button := ui_e(game)
 	button.position = rl.Rectangle{100, 240, 100, 50}
 	button.element = Button {
+		type = .Increment,
+	}
+	button2 := ui_e(game)
+	button2.position = rl.Rectangle{200, 240, 200, 50}
+	button2.element = Button {
 		type = .Increment,
 	}
 	game.score.value = 0
@@ -522,11 +551,14 @@ tick :: proc(state: ^Game) {
 		for i in 0 ..< len(state.entities) {
 			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
 				md := rl.IsMouseButtonDown(.LEFT)
+				left_pressed := rl.IsMouseButtonPressed(.LEFT)
+				left_released := rl.IsMouseButtonReleased(.LEFT)
 				rmd := rl.IsMouseButtonDown(.RIGHT)
 				switch state.entities[i].selected {
 				case .INACTIVE:
-					if md {
+					if left_pressed {
 						state.entities[i].selected = .ACTIVE
+
 					} else {
 						state.entities[i].selected = .HOT
 					}
@@ -534,12 +566,13 @@ tick :: proc(state: ^Game) {
 					if rmd {
 						spawn_enemy(state, state.entities[i].position)
 					}
-					if !md {
+					if left_released {
 						state.entities[i].selected = .HOT
 						place_tower(state, state.entities[i].position)
+
 					}
 				case .HOT:
-					if md {
+					if left_pressed {
 						state.entities[i].selected = .ACTIVE
 					}
 				}
@@ -629,20 +662,26 @@ tick :: proc(state: ^Game) {
 		#partial switch &elem in g.element {
 		case Button:
 			over_button := rl.CheckCollisionPointRec(mp_2d, g.position)
+			left_pressed := rl.IsMouseButtonPressed(.LEFT)
+			left_released := rl.IsMouseButtonReleased(.LEFT)
 
 			switch elem.state {
 			case .INACTIVE:
 				if over_button {
-					elem.state = .HOT
+					if left_pressed {
+						elem.state = .ACTIVE
+					} else {
+						elem.state = .HOT
+					}
 				}
 			case .HOT:
 				if !over_button {
 					elem.state = .INACTIVE
-				} else if md {
+				} else if left_pressed {
 					elem.state = .ACTIVE
 				}
 			case .ACTIVE:
-				if !md {
+				if left_released {
 					elem.state = .INACTIVE
 					if over_button {
 						append(&clickedOn, elem)
@@ -688,7 +727,7 @@ render :: proc(state: ^Game) {
 		rotation: rl.Vector3
 		loc := rl.GetShaderLocation(gfx.manager.materials[e.material].shader, "colDiffuse2")
 		color := [4]f32{0, 0, 0, 0}
-		switch entity in e.entity {
+		#partial switch entity in e.entity {
 		case Ground:
 			color = oklab.color({0.2, 0.2, 0.45, 1.})
 		case Tower:
@@ -758,6 +797,23 @@ render :: proc(state: ^Game) {
 
 	rl.EndMode3D()
 
+	rl.BeginMode2D(rl.Camera2D{zoom = 1., offset = rl.Vector2{SCREEN_SIZE / 2, SCREEN_SIZE / 2}})
+
+	for e in state.entities {
+		#partial switch entity in e.entity {
+		case Building:
+			gui.render_text_box(
+				gui.TextBox {
+					position = rl.Vector2{f32(e.position.x), f32(e.position.y)},
+					font_size = 14,
+					text_val = strings.clone_to_cstring(entity.name, context.temp_allocator),
+					color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
+				},
+			)
+		}
+
+	}
+	rl.EndMode2D()
 	rl.BeginMode2D(rl.Camera2D{zoom = f32(WINDOW_SIZE) / SCREEN_SIZE})
 
 	for e in state.ui_entities {
@@ -827,10 +883,19 @@ render :: proc(state: ^Game) {
 	rl.EndDrawing()
 }
 
+makeBuilding :: proc(game: ^Game) -> ^GameEntity {
+	g := entity(game)
+	g.entity = Building {
+		name = "Village",
+	}
+	g.position = Vec2i{20, 20}
+	return g
+}
 
 init :: proc() -> Game {
 	state := Game{}
 
+	makeBuilding(&state)
 	makeGround(&state)
 	// test deletion
 	restart(&state)

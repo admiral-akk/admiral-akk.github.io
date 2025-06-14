@@ -10,6 +10,7 @@ import "core:slice"
 import "gui"
 import "oklab"
 import rl "vendor:raylib"
+
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
@@ -887,9 +888,6 @@ render :: proc(state: ^Game) {
 
 
 init :: proc() -> Game {
-	rl.SetConfigFlags(({.VSYNC_HINT}))
-	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Mini Civ")
-	rl.SetTargetFPS(500)
 	state := Game{}
 
 	makeGround(&state)

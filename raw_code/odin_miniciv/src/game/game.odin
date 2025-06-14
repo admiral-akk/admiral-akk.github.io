@@ -581,6 +581,13 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 
 tick :: proc(state: ^Game) {
 	update_time(state)
+	// handle scrolling
+	if rl.IsMouseButtonDown(.RIGHT) {
+		state.camera2d.offset += rl.GetMouseDelta()
+	}
+
+	state.camera2d.zoom += rl.GetMouseWheelMove() / 10
+	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
 
 	switch state.state {
 	case .GAME_OVER:

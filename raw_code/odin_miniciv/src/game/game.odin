@@ -130,10 +130,6 @@ GameState :: enum int {
 	GAME_OVER = 1,
 }
 
-SAMPLE_RATE :: 44100
-BUFFER_SIZE :: 512
-FREQUENCY :: 440
-
 Game :: struct {
 	state:        GameState,
 	time:         GameTime,
@@ -141,51 +137,10 @@ Game :: struct {
 	lives:        int,
 	audio_frame:  u32,
 	audio_stream: rl.AudioStream,
-	sounds:       [dynamic]Sound,
 	entityId:     int,
 	entities:     [dynamic]GameEntity,
 	ui_entities:  [dynamic]UIEntity,
 	camera:       rl.Camera3D,
-}
-
-calulateValue :: proc "c" (env: Envelope, t: f32, start: f32, release_time: f32) -> f32 {
-	true_release_time := math.max(release_time, start + env.attack + env.decay)
-	if t < start || t > true_release_time + env.release {
-		return 0.
-	}
-
-	if t < start + env.attack {
-		// in attack
-		return 1.0 - (start + env.attack - t) / env.attack
-	}
-
-	if t < start + env.attack + env.decay {
-		progress := (start + env.attack + env.decay - t) / env.decay
-		return (1. - progress) * env.sustain_level + progress
-
-	}
-
-	if t > true_release_time {
-		progress := (true_release_time + env.release - t) / env.release
-		return progress * env.sustain_level
-	}
-
-	return env.sustain_level
-}
-
-audioCallback :: proc "c" (game: ^Game, ptr: [^]f32, frames: u32) {
-	context = runtime.default_context()
-	for i in 0 ..< frames {
-		t := f32(i + game.audio_frame) / SAMPLE_RATE
-		for j in 0 ..< len(game.sounds) {
-			sound := game.sounds[j]
-			volume := sound.volume * calulateValue(sound.env, t, sound.start, sound.release_time)
-			fmt.println(volume)
-
-			ptr[i] += volume * math.sin(sound.freq * math.TAU * t)
-		}
-	}
-	game.audio_frame += frames
 }
 
 Command :: enum int {
@@ -193,20 +148,6 @@ Command :: enum int {
 	CLICKED = 1,
 }
 
-Envelope :: struct {
-	attack:        f32,
-	decay:         f32,
-	sustain_level: f32,
-	release:       f32,
-}
-
-Sound :: struct {
-	env:          Envelope,
-	start:        f32,
-	release_time: f32,
-	freq:         f32,
-	volume:       f32,
-}
 
 spawn_ray :: proc(game: ^Game, start: Vec2i, end: Vec2i) -> ^GameEntity {
 	e := entity(game)

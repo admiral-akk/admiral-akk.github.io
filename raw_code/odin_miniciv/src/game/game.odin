@@ -204,6 +204,16 @@ entity :: proc(game: ^Game) -> ^GameEntity {
 	return &game.entities[len(game.entities) - 1]
 }
 
+e_get :: proc(game: ^Game, id: int) -> ^GameEntity {
+	for i in 0 ..< len(game.entities) {
+		if game.entities[i].id == id {
+			return &game.entities[i]
+		}
+	}
+
+	return nil
+}
+
 ui_e :: proc(game: ^Game) -> ^UIEntity {
 	e := UIEntity {
 		id = game.entityId,
@@ -526,7 +536,6 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 			case UIEntity:
 				#partial switch ui in renderer.element {
 				case Button:
-					fmt.println(mp_2d, renderer.position)
 					over_button := rl.CheckCollisionPointRec(mp_2d, renderer.position)
 					if over_button {
 						append(&rayHit, RayHit{distance = -1, id = g.id})
@@ -753,7 +762,6 @@ tick :: proc(state: ^Game) {
 
 drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	angle := -rl.Vector2LineAngle(end - start, rl.Vector2{0, 1})
-	fmt.println("start", start, end)
 	length := rl.Vector2Length(end - start)
 	midpoint := (end - start) / 2
 	rl.DrawRectanglePro(
@@ -891,6 +899,34 @@ render :: proc(state: ^Game) {
 						rl.Color{0, 200, 0, 255},
 					)
 				}
+				// if it has any outgoing connections, draw them
+				for outId in entity.outputIds {
+					target := e_get(state, outId)
+					if target != nil {
+
+						#partial switch t_entity in target.entity {
+						case Building:
+							#partial switch t_render in target.renderer {
+							case UIEntity:
+								// check if click and drage
+								drawRect(
+									rl.Vector2 {
+										renderer.position.x + renderer.position.width / 2,
+										renderer.position.y + renderer.position.height / 2,
+									},
+									rl.Vector2 {
+										t_render.position.x + t_render.position.width / 2,
+										t_render.position.y + t_render.position.height / 2,
+									},
+									20,
+									rl.Color{20, 40, 20, 255},
+								)
+
+							}
+						}
+					}
+				}
+
 				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 				gui.render_text_box(
 					gui.TextBox {

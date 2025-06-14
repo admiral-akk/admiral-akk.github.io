@@ -394,7 +394,6 @@ path_find :: proc(state: ^Game, pos: Vec2i) -> (Vec2i, int) {
 	onY := math.abs(pos.y) % GRID_SIZE == 0
 	onX := math.abs(pos.x) % GRID_SIZE == 0
 
-
 	if onY && onX {
 		// on a grid point, can move in all 4 orthogonal directions
 		append(&nextPoints, Vec2i{pos.x + GRID_SIZE, pos.y})
@@ -581,13 +580,21 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 
 tick :: proc(state: ^Game) {
 	update_time(state)
+
 	// handle scrolling
 	if rl.IsMouseButtonDown(.RIGHT) {
 		state.camera2d.offset += rl.GetMouseDelta()
 	}
 
+	// TODO: zoom into mouse pointer
 	state.camera2d.zoom += rl.GetMouseWheelMove() / 10
 	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
+
+	// TODO: add abiity to connect and disconnect
+	// TODO: add a spawning mechanic?
+	// TODO: add a "upgrade" mechanic?
+	// TODO: actually flow input to output
+	// TODO: add ability for forest to upgrade to farm
 
 	switch state.state {
 	case .GAME_OVER:
@@ -934,6 +941,7 @@ render :: proc(state: ^Game) {
 				case .ACTIVE:
 					button_color = rl.Color{200, 0, 200, 255}
 					// check if click and drage
+					// TODO: render this either consistently behind or in front of buildings
 					drawRect(
 						rl.Vector2 {
 							renderer.position.x + renderer.position.width / 2,
@@ -1042,6 +1050,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	g2 := entity(game)
 	outputIds := make([dynamic]int)
 	append_elem(&outputIds, g.id)
+
 	g2.entity = Building {
 		name      = "Village",
 		outputIds = outputIds,

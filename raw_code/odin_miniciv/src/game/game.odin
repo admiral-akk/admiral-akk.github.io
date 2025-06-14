@@ -958,7 +958,7 @@ render :: proc(state: ^Game) {
 						case Building:
 							#partial switch t_render in target.renderer {
 							case UIEntity:
-								// check if click and drage
+								// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
 								drawRect(
 									rl.Vector2 {
 										renderer.position.x + renderer.position.width / 2,
@@ -997,7 +997,6 @@ render :: proc(state: ^Game) {
 					button_color = rl.Color{200, 0, 200, 255}
 					// check if click and drage
 					// TODO: render this either consistently behind or in front of buildings
-					// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
 					drawRect(
 						rl.Vector2 {
 							renderer.position.x + renderer.position.width / 2,

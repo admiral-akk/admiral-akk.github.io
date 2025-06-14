@@ -1,4 +1,4 @@
-package manager
+package graphics
 
 import rl "vendor:raylib"
 

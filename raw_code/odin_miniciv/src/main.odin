@@ -31,7 +31,7 @@ main :: proc() {
 	rl.InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Mini Civ")
 	rl.SetTargetFPS(500)
 
-	soundManager := sounds.init()
+	sounds.init()
 
 	g := game.init()
 	graphics.init()
@@ -39,7 +39,7 @@ main :: proc() {
 	// Tell the game to start itself up!
 	// same as while(true) in C
 	for {
-		game.tick(&g, soundManager)
+		game.tick(&g)
 		game.render(&g)
 	}
 }

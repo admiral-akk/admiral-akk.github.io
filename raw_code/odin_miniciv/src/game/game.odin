@@ -317,7 +317,7 @@ RayHit :: struct {
 	hit: rl.RayCollision,
 }
 
-place_tower :: proc(state: ^Game, pos: Vec2i, sound: ^sounds.SoundManager) {
+place_tower :: proc(state: ^Game, pos: Vec2i) {
 	#reverse for &e in state.entities {
 		#partial switch entity in e.entity {
 		case Tower:
@@ -568,7 +568,7 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 	}
 }
 
-tick :: proc(state: ^Game, sound: ^sounds.SoundManager) {
+tick :: proc(state: ^Game) {
 	update_time(state)
 
 	switch state.state {
@@ -598,7 +598,7 @@ tick :: proc(state: ^Game, sound: ^sounds.SoundManager) {
 					}
 					if !md {
 						state.entities[i].selected = .HOT
-						place_tower(state, state.entities[i].position, sound)
+						place_tower(state, state.entities[i].position)
 					}
 				case .HOT:
 					if md {

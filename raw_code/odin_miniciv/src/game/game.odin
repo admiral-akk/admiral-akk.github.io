@@ -90,21 +90,21 @@ Resource :: struct {
 }
 
 Upgrade :: struct {
-	using base: Blueprint,
-	requires:   []Resource,
+	name:     string,
+	requires: [dynamic]Resource,
 }
 
 Blueprint :: struct {
 	name:   string,
-	input:  []Resource,
-	output: []Resource,
+	input:  [dynamic]Resource,
+	output: [dynamic]Resource,
 }
 
 Building :: struct {
-	using base: Blueprint,
-	upgrade:    Maybe(Upgrade),
-	inputIds:   [dynamic]int,
-	outputIds:  [dynamic]int,
+	name:      string,
+	upgrade:   Maybe(Upgrade),
+	inputIds:  [dynamic]int,
+	outputIds: [dynamic]int,
 }
 
 EntityType :: union {
@@ -186,7 +186,9 @@ Game :: struct {
 	ui_entities:  [dynamic]UIEntity,
 	camera:       rl.Camera3D,
 	camera2d:     rl.Camera2D,
+	blueprints:   map[string]Blueprint,
 }
+
 
 Command :: enum int {
 	NONE    = 0,
@@ -637,20 +639,18 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 checkUpgrade :: proc(game: ^Game, building: ^Building) {
 	v, ok := building.upgrade.?
 	if ok {
-		fmt.println("checking upgrade")
-		// list of requirements
 		reqs := make([dynamic]Resource, context.temp_allocator)
 		for requirement in v.requires {
 			append(&reqs, requirement)
 		}
-		fmt.println("requirements", reqs)
 		for inputId in building.inputIds {
 			input := e_get(game, inputId)
 			if input != nil {
 				b, ok := input.entity.(Building)
 				if ok {
-					fmt.println("outputs", b)
-					for output in b.output {
+					_, building, _, _ := map_entry(&game.blueprints, b.name)
+					fmt.println(building)
+					for output in building.output {
 						inputIdx := find_first_matching(Resource, reqs[:], output)
 						if inputIdx > -1 {
 							unordered_remove(&reqs, inputIdx)
@@ -659,10 +659,11 @@ checkUpgrade :: proc(game: ^Game, building: ^Building) {
 				}
 			}
 		}
-		fmt.println("requirements", reqs)
 		if len(reqs) == 0 {
-			building.base = v.base
+			building.name = v.name
+			building.upgrade = nil
 		}
+		fmt.println(building)
 	}
 }
 
@@ -1137,28 +1138,53 @@ render :: proc(state: ^Game) {
 	rl.EndDrawing()
 }
 
+makeDynamic :: proc($T: typeid, slice: []T) -> [dynamic]T {
+	arr := make([dynamic]T, 0, 10)
+	for elem in slice {
+		append(&arr, elem)
+	}
+	return arr
+}
+
 makeBuilding :: proc(game: ^Game) -> ^GameEntity {
+	map_insert(
+		&game.blueprints,
+		"village",
+		Blueprint {
+			name = "Village",
+			input = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
+			output = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
+		},
+	)
+	map_insert(
+		&game.blueprints,
+		"farm",
+		Blueprint {
+			name = "Farm",
+			input = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
+			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
+		},
+	)
+	map_insert(&game.blueprints, "field", Blueprint{name = "Field"})
+
+
 	g := entity(game)
 	g.entity = Building {
-		base = Blueprint {
-			name = "Village",
-			input = []Resource{Resource{class = .Food, domain = .Base}},
-			output = []Resource{Resource{class = .Person, domain = .Base}},
-		},
+		name = "village",
 	}
-	fmt.println("village", g)
 	g.renderer = UIEntity {
 		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
 	g2 := entity(game)
 	g2.entity = Building {
-		name = "Field",
+		name = "field",
 		upgrade = Upgrade {
-			requires = []Resource{Resource{class = .Person, domain = .Base}},
-			name = "Farm",
-			input = []Resource{Resource{class = .Person, domain = .Base}},
-			output = []Resource{Resource{class = .Food, domain = .Base}},
+			requires = makeDynamic(
+				Resource,
+				[]Resource{Resource{class = .Person, domain = .Base}},
+			),
+			name = "farm",
 		},
 	}
 	g2.renderer = UIEntity {

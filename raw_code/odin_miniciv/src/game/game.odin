@@ -578,6 +578,50 @@ spawn_particle :: proc(game: ^Game, pos: Vec2i) {
 	}
 }
 
+getActive :: proc(state: ^Game) -> ^GameEntity {
+	for &e in state.entities {
+		if e.selected == .ACTIVE {
+			return &e
+		}
+	}
+	return nil
+}
+
+find_first_matching :: proc($T: typeid, arr: []T, target: T) -> int {
+	for i in 0 ..< len(arr) {
+		if arr[i] == target {
+			return i
+		}
+	}
+	return -1
+}
+
+updateConnection :: proc(game: ^Game, startId, endId: int) {
+	start := e_get(game, startId)
+	end := e_get(game, endId)
+	#partial switch &s in start.entity {
+	case Building:
+		#partial switch &e in end.entity {
+		case Building:
+			outputIdx := find_first_matching(int, s.outputIds[:], end.id)
+			inputIdx := find_first_matching(int, e.inputIds[:], start.id)
+			if inputIdx > -1 || outputIdx > -1 {
+				// remove both
+				if outputIdx > -1 {
+					unordered_remove(&s.outputIds, outputIdx)
+				}
+				if inputIdx > -1 {
+					unordered_remove(&e.inputIds, inputIdx)
+				}
+			} else {
+				// add both
+				append(&s.outputIds, end.id)
+				append(&e.inputIds, start.id)
+			}
+		}
+	}
+}
+
 tick :: proc(state: ^Game) {
 	update_time(state)
 
@@ -632,13 +676,23 @@ tick :: proc(state: ^Game) {
 					if left_pressed {
 						state.entities[i].selected = .ACTIVE
 					}
+					if left_released {
+						// check if there's a connection to be made / unmade here	
+						active := getActive(state)
+						if active != nil {
+							updateConnection(state, active.id, state.entities[i].id)
+						}
+					}
 				}
+			}
+		}
+		for i in 0 ..< len(state.entities) {
+			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
 			} else {
 				if left_released {
 					state.entities[i].selected = .INACTIVE
 				}
 				if state.entities[i].selected != .ACTIVE {
-
 					state.entities[i].selected = .INACTIVE
 				}
 			}
@@ -1048,12 +1102,8 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
 	g2 := entity(game)
-	outputIds := make([dynamic]int)
-	append_elem(&outputIds, g.id)
-
 	g2.entity = Building {
-		name      = "Village",
-		outputIds = outputIds,
+		name = "Village",
 	}
 	g2.renderer = UIEntity {
 		element  = Button{},

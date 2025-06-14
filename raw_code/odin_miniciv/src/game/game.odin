@@ -112,8 +112,6 @@ GameEntity :: struct {
 	entity:   EntityType,
 	selected: SelectionState,
 	position: Vec2i,
-	mesh:     string,
-	material: string,
 	renderer: Renderer,
 }
 
@@ -145,7 +143,7 @@ MeshRenderer :: struct {
 }
 
 Renderer :: union {
-	UIElement,
+	UIEntity,
 	MeshRenderer,
 }
 
@@ -177,6 +175,7 @@ Game :: struct {
 	entities:     [dynamic]GameEntity,
 	ui_entities:  [dynamic]UIEntity,
 	camera:       rl.Camera3D,
+	camera2d:     rl.Camera2D,
 }
 
 Command :: enum int {
@@ -253,6 +252,12 @@ restart :: proc(game: ^Game) {
 		fovy       = 30,
 		projection = .ORTHOGRAPHIC,
 	}
+
+	game.camera2d = rl.Camera2D {
+		offset = rl.Vector2{SCREEN_SIZE / 2, SCREEN_SIZE / 2},
+		zoom   = 1,
+	}
+
 	game.state = .PLAYING
 	game.lives = 10
 	button := ui_e(game)
@@ -271,6 +276,7 @@ restart :: proc(game: ^Game) {
 	town := entity(game)
 	town.entity = Town{}
 }
+
 newGame :: proc(game: ^Game) {
 	for len(game.entities) > 0 {
 		delete_e(game, game.entities[0].id)
@@ -294,8 +300,8 @@ gameOver :: proc(game: ^Game) {
 }
 
 RayHit :: struct {
-	id:  int,
-	hit: rl.RayCollision,
+	id:       int,
+	distance: f32,
 }
 
 place_tower :: proc(state: ^Game, pos: Vec2i) {
@@ -492,6 +498,7 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
+	mp_2d := rl.GetMousePosition() - state.camera2d.offset
 
 	// find the ray hits
 	for i in 0 ..< len(state.entities) {
@@ -512,15 +519,28 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 				)
 
 				if collision.hit {
-					append(&rayHit, RayHit{hit = collision, id = g.id})
+					append(&rayHit, RayHit{distance = collision.distance, id = g.id})
 				}
 			}
+		case Building:
+			#partial switch renderer in g.renderer {
+			case UIEntity:
+				#partial switch ui in renderer.element {
+				case Button:
+					fmt.println(mp_2d, renderer.position)
+					over_button := rl.CheckCollisionPointRec(mp_2d, renderer.position)
+					if over_button {
+						append(&rayHit, RayHit{distance = -1, id = g.id})
+					}
+				}
+			}
+
 		}
 	}
 	slice.sort_by(
 		rayHit[:],
 		proc(a, b: RayHit) -> bool {
-			return a.hit.distance > b.hit.distance // descending order
+			return a.distance > b.distance // descending order
 		},
 	)
 	return rayHit
@@ -825,19 +845,36 @@ render :: proc(state: ^Game) {
 	}
 	rl.EndMode3D()
 
-	rl.BeginMode2D(rl.Camera2D{zoom = 1., offset = rl.Vector2{SCREEN_SIZE / 2, SCREEN_SIZE / 2}})
+	rl.BeginMode2D(state.camera2d)
 
 	for e in state.entities {
 		#partial switch entity in e.entity {
 		case Building:
-			gui.render_text_box(
-				gui.TextBox {
-					position = rl.Vector2{f32(e.position.x), f32(e.position.y)},
-					font_size = 14,
-					text_val = strings.clone_to_cstring(entity.name, context.temp_allocator),
-					color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
-				},
-			)
+			#partial switch renderer in e.renderer {
+			case UIEntity:
+				button_color := rl.Color{200, 200, 200, 255}
+
+				switch e.selected {
+				case .INACTIVE:
+					button_color = rl.Color{200, 200, 200, 255}
+				case .HOT:
+					button_color = rl.Color{0, 200, 200, 255}
+				case .ACTIVE:
+					button_color = rl.Color{200, 0, 200, 255}
+				}
+				gui.render_button(gui.Button{color = button_color, position = renderer.position})
+				gui.render_text_box(
+					gui.TextBox {
+						position = rl.Vector2 {
+							f32(renderer.position.x) + renderer.position.width / 2,
+							f32(renderer.position.y) + renderer.position.height / 2,
+						},
+						font_size = 14,
+						text_val = strings.clone_to_cstring(entity.name, context.temp_allocator),
+						color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
+					},
+				)
+			}
 		}
 
 	}
@@ -916,7 +953,10 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	g.entity = Building {
 		name = "Village",
 	}
-	g.position = Vec2i{20, 20}
+	g.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{0, 0, 100, 100},
+	}
 	return g
 }
 

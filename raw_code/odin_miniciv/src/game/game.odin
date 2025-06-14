@@ -254,7 +254,7 @@ restart :: proc(game: ^Game) {
 	}
 
 	game.camera2d = rl.Camera2D {
-		offset = rl.Vector2{SCREEN_SIZE / 2, SCREEN_SIZE / 2},
+		offset = rl.Vector2{WINDOW_SIZE / 2, WINDOW_SIZE / 2},
 		zoom   = 1,
 	}
 
@@ -751,6 +751,19 @@ tick :: proc(state: ^Game) {
 	}
 }
 
+drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
+	angle := -rl.Vector2LineAngle(end - start, rl.Vector2{0, 1})
+	fmt.println("start", start, end)
+	length := rl.Vector2Length(end - start)
+	midpoint := (end - start) / 2
+	rl.DrawRectanglePro(
+		rl.Rectangle{midpoint.x + start.x, midpoint.y + start.y, length, width},
+		rl.Vector2{length, width} / 2,
+		angle * 360 / math.TAU,
+		color,
+	)
+}
+
 
 render :: proc(state: ^Game) {
 	// game state
@@ -852,6 +865,7 @@ render :: proc(state: ^Game) {
 
 	rl.BeginMode2D(state.camera2d)
 
+	mp_2d := rl.GetMousePosition() - state.camera2d.offset
 	for e in state.entities {
 		#partial switch entity in e.entity {
 		case Building:
@@ -867,6 +881,16 @@ render :: proc(state: ^Game) {
 				case .ACTIVE:
 					button_color = rl.Color{200, 0, 200, 255}
 				}
+				// check if click and drage
+				drawRect(
+					rl.Vector2 {
+						renderer.position.x + renderer.position.width / 2,
+						renderer.position.y + renderer.position.height / 2,
+					},
+					mp_2d,
+					20,
+					rl.Color{0, 200, 0, 255},
+				)
 				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 				gui.render_text_box(
 					gui.TextBox {

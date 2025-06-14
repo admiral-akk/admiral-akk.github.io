@@ -134,7 +134,6 @@ addSound :: proc(manager: ^SoundManager, name: string, params: SoundParams) -> ^
 
 
 init :: proc() -> ^SoundManager {
-
 	manager.sounds_len = 0
 	manager.sounds = make([]Sound, 100)
 	manager.engine = mini.engine{}

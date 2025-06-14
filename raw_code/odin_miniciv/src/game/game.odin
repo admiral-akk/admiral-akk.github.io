@@ -518,7 +518,7 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
-	mp_2d := rl.GetMousePosition() - state.camera2d.offset
+	mp_2d := (rl.GetMousePosition() - state.camera2d.offset) / state.camera2d.zoom
 
 	// find the ray hits
 	for i in 0 ..< len(state.entities) {
@@ -685,6 +685,7 @@ tick :: proc(state: ^Game) {
 	// TODO: add ability for forest to upgrade to farm
 
 	// TODO: trigger upgrade on conditions being met
+	// TODO: fix dragging when zooming in
 
 	switch state.state {
 	case .GAME_OVER:
@@ -987,7 +988,7 @@ render :: proc(state: ^Game) {
 
 	rl.BeginMode2D(state.camera2d)
 
-	mp_2d := rl.GetMousePosition() - state.camera2d.offset
+	mp_2d := (rl.GetMousePosition() - state.camera2d.offset) / state.camera2d.zoom
 	// render connections
 	for e in state.entities {
 		#partial switch entity in e.entity {
@@ -1146,7 +1147,8 @@ makeDynamic :: proc($T: typeid, slice: []T) -> [dynamic]T {
 	return arr
 }
 
-makeBuilding :: proc(game: ^Game) -> ^GameEntity {
+seedBlueprints :: proc(game: ^Game) {
+
 	map_insert(
 		&game.blueprints,
 		"village",
@@ -1167,6 +1169,9 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	)
 	map_insert(&game.blueprints, "field", Blueprint{name = "Field"})
 
+}
+
+makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 
 	g := entity(game)
 	g.entity = Building {
@@ -1196,7 +1201,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 
 init :: proc() -> Game {
 	state := Game{}
-
+	seedBlueprints(&state)
 	makeBuilding(&state)
 	makeGround(&state)
 	// test deletion

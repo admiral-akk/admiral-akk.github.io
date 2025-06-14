@@ -149,7 +149,7 @@ init :: proc() -> ^SoundManager {
 	addSound(
 		soundManager,
 		"C",
-		SoundParams{attack = 0.05, decay = 0.05, sustain = 0.5, freq = 440.},
+		SoundParams{attack = 0.05, decay = 0.05, sustain = 0.02, freq = 440.},
 	)
 	addSound(
 		soundManager,
@@ -157,7 +157,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 1. / 12.),
 		},
 	)
@@ -167,7 +167,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 2. / 12.),
 		},
 	)
@@ -177,7 +177,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 3. / 12.),
 		},
 	)
@@ -187,7 +187,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 4. / 12.),
 		},
 	)
@@ -197,7 +197,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 5. / 12.),
 		},
 	)
@@ -207,7 +207,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 6. / 12.),
 		},
 	)
@@ -217,7 +217,7 @@ init :: proc() -> ^SoundManager {
 		SoundParams {
 			attack = 0.05,
 			decay = 0.05,
-			sustain = 0.5,
+			sustain = 0.02,
 			freq = 440. * math.pow_f32(2., 7. / 12.),
 		},
 	)

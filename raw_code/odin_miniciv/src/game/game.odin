@@ -87,7 +87,7 @@ EventDestroy :: struct {
 
 EventReplace :: struct {
 	targetId: int,
-	name:     LocationType,
+	name:     NodeType,
 }
 
 EventDiscover :: struct {
@@ -123,17 +123,11 @@ get_first_matching :: proc(t: NodeType) -> ^GameEntity {
 	return nil
 }
 
-spawn :: proc(t: NodeType) -> ^GameEntity {
-	e := entity()
-	e.renderer = UIEntity {
-		element  = Button{},
-		position = rl.Rectangle{0, 0, 100, 100},
-	}
+toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 	switch t in t {
+
 	case LocationType:
-		e.entity = Building {
-			name = t,
-		}
+		return Building{name = t}
 	case EventType:
 		event := Event {
 			eventType = t,
@@ -164,8 +158,18 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 		case .Innovation:
 		case .Maintance:
 		}
-		e.entity = event
+		return event
 	}
+	return nil
+}
+
+spawn :: proc(t: NodeType) -> ^GameEntity {
+	e := entity()
+	e.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{0, 0, 100, 100},
+	}
+	e.entity = toEntityType(t).?
 	return e
 }
 
@@ -517,8 +521,12 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 	case EventDestroy:
 		destroyLocation(c.targetId)
 	case EventReplace:
-		target := &e_get(c.targetId).entity.(Building)
-		target.name = c.name
+		switch t in c.name {
+		case EventType:
+			target := &e_get(c.targetId).entity.(Building)
+		case LocationType:
+
+		}
 	case EventDiscover:
 		// spawn a new tile or event
 		// tile:

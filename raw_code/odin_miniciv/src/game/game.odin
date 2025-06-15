@@ -494,14 +494,14 @@ resolveTriggers :: proc(game: ^Game) {
 	}
 }
 
-moveOverlap :: proc(state: ^Game) {
+moveOverlap :: proc() {
 	// TODO: have connected nodes attract
-	for &e in state.entities {
+	for &e in game.entities {
 		ui, ok := &e.renderer.(UIEntity)
 		if !ok {
 			continue
 		}
-		for &e2 in state.entities {
+		for &e2 in game.entities {
 			if e2.id == e.id {
 				continue
 			}
@@ -630,7 +630,7 @@ tick :: proc() {
 
 		updateConditions(&game)
 		resolveTriggers(&game)
-		moveOverlap(&game)
+		moveOverlap()
 	}
 }
 

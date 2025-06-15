@@ -498,7 +498,7 @@ moveOverlap :: proc(state: ^Game) {
 
 			// make them fatter
 
-			buffer := f32(50.0)
+			buffer := f32(20.0)
 			rect1 := ui.position
 			rect2 := ui2.position
 
@@ -516,7 +516,6 @@ moveOverlap :: proc(state: ^Game) {
 			if !rl.CheckCollisionRecs(rect1, rect2) {
 				continue
 			}
-			fmt.println("collision")
 
 			c1 := rl.Vector2 {
 				ui.position.x + ui.position.width / 2,

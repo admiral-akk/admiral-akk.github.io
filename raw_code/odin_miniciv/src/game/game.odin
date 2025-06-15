@@ -583,6 +583,7 @@ getOutputConnections :: proc(entity: ^GameEntity) -> [dynamic]int {
 }
 
 moveOverlap :: proc() {
+	// Handle intersecting nodes
 	for &e in game.entities {
 		ui, ok := &e.renderer.(UIEntity)
 		if !ok {
@@ -639,15 +640,11 @@ moveOverlap :: proc() {
 			}
 			delta := rl.Vector2Normalize(c1 - c2) * 2
 
-			// move them apart
-			// TODO: add momentum
-
 			ui.position.x += delta.x
 			ui.position.y += delta.y
 			ui2.position.x -= delta.x
 			ui2.position.y -= delta.y
 		}
-		// TODO: have connected nodes attract
 
 		connections := getOutputConnections(&e)
 		for connection in connections {
@@ -672,6 +669,8 @@ moveOverlap :: proc() {
 			dir := (c3 - c1)
 			dir -= rl.Vector2Normalize(dir) * 200
 			dir *= 0.01
+
+			// Handle connected nodes
 			ui.position.x += dir.x
 			ui.position.y += dir.y
 			ui3.position.x -= dir.x
@@ -716,9 +715,8 @@ moveOverlap :: proc() {
 					moveDir *= -1
 				}
 
-				// move them apart
-				// TODO: add momentum
 
+				// Handle nodes that sit on top of a connection
 				ui.position.x += moveDir.x
 				ui.position.y += moveDir.y
 				ui2.position.x -= moveDir.x

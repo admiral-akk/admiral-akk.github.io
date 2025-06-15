@@ -640,7 +640,12 @@ spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType)
 	}
 	g.renderer = UIEntity {
 		element  = Button{},
-		position = rl.Rectangle{position.x, position.y, 100, 100},
+		position = rl.Rectangle {
+			position.x + rand.float32_range(-10, 10),
+			position.y + rand.float32_range(-10, 10),
+			100,
+			100,
+		},
 	}
 	return g
 }

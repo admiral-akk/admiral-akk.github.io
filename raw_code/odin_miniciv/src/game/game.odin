@@ -173,17 +173,8 @@ Fill :: struct {
 	max:      int,
 }
 
-Drain :: struct {
-	resource: Resource,
-	current:  int,
-	target:   int,
-	min:      int,
-	max:      int,
-}
-
 Condition :: union {
 	Fill,
-	Drain,
 }
 
 ReplaceLocation :: struct {
@@ -683,6 +674,12 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 	}
 }
 
+getBlueprint :: proc(game: ^Game, name: string) -> ^Blueprint {
+
+	_, building, _, _ := map_entry(&game.blueprints, name)
+	return building
+}
+
 checkUpgrade :: proc(game: ^Game, building: ^Building) {
 	v, ok := building.upgrade.?
 	if ok {
@@ -690,20 +687,11 @@ checkUpgrade :: proc(game: ^Game, building: ^Building) {
 		for requirement in v.requires {
 			append(&reqs, requirement)
 		}
-		for inputId in building.inputIds {
-			input := e_get(game, inputId)
-			if input != nil {
-				b, ok := input.entity.(Building)
-				if ok {
-					_, building, _, _ := map_entry(&game.blueprints, b.name)
-					fmt.println(building)
-					for output in building.output {
-						inputIdx := find_first_matching(Resource, reqs[:], output)
-						if inputIdx > -1 {
-							unordered_remove(&reqs, inputIdx)
-						}
-					}
-				}
+		inputs := getInputs(game, building)
+		for input in inputs {
+			inputIdx := find_first_matching(Resource, reqs[:], input)
+			if inputIdx > -1 {
+				unordered_remove(&reqs, inputIdx)
 			}
 		}
 		if len(reqs) == 0 {
@@ -711,6 +699,35 @@ checkUpgrade :: proc(game: ^Game, building: ^Building) {
 			building.upgrade = nil
 		}
 		fmt.println(building)
+	}
+}
+
+getInputs :: proc(game: ^Game, location: ^Building) -> [dynamic]Resource {
+	inputs := make([dynamic]Resource, context.temp_allocator)
+	for inputId in location.inputIds {
+		input := e_get(game, inputId).entity.(Building)
+
+		blueprint := getBlueprint(game, input.name)
+		append(&inputs, ..blueprint.output[:])
+	}
+	return inputs
+}
+
+updateConditions :: proc(game: ^Game) {
+	for i := len(game.entities); i >= 0; i -= 1 {
+		e := game.entities[i]
+		#partial switch &e in e.entity {
+		case Building:
+			inputs := getInputs(game, &e)
+			for &trigger in e.triggers {
+				switch c in trigger.conditions {
+				case Fill:
+				// check if there's an input that matches
+
+
+				}
+			}
+		}
 	}
 }
 

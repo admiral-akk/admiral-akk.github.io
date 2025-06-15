@@ -32,5 +32,6 @@ main :: proc() {
 	for {
 		game.tick(&g)
 		game.render(&g)
+		free_all(context.temp_allocator)
 	}
 }

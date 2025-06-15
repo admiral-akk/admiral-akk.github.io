@@ -225,30 +225,6 @@ RayHit :: struct {
 	distance: f32,
 }
 
-sign :: proc(v: Vec2i) -> Vec2i {
-	x := 0
-	y := 0
-	if v.x > 0 {
-		x = 1
-	} else if v.x < 0 {
-		x = -1
-	}
-	if v.y > 0 {
-		y = 1
-	} else if v.y < 0 {
-		y = -1
-	}
-	return Vec2i{x, y}
-}
-
-length :: proc(v: Vec2i) -> int {
-	return math.abs(v.x) + math.abs(v.y)
-}
-
-length_2 :: proc(v: Vec2i) -> int {
-	return int(math.sqrt(f32(v.x * v.x + v.y * v.y)))
-}
-
 get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
 	ray := rl.GetScreenToWorldRay(mp, state.camera3d) // Get a ray trace from screen position (i.e mouse)
@@ -284,10 +260,6 @@ update_time :: proc(state: ^Game) {
 	state.time.tick += 1
 	state.time.deltaTime = rl.GetFrameTime()
 	state.time.realTime = rl.GetTime()
-}
-
-ClickedOn :: union {
-	UIElement,
 }
 
 getActive :: proc(state: ^Game) -> ^GameEntity {

@@ -849,7 +849,6 @@ seedBlueprints :: proc(game: ^Game) {
 		LocationType.Village,
 		Blueprint {
 			name = "Village",
-			input = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
 			output = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
 		},
 	)
@@ -862,7 +861,15 @@ seedBlueprints :: proc(game: ^Game) {
 			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
 		},
 	)
-	map_insert(&game.blueprints, LocationType.Field, Blueprint{name = "Field"})
+	map_insert(
+		&game.blueprints,
+		LocationType.Field,
+		Blueprint {
+			name = "Field",
+			input = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
+			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
+		},
+	)
 
 }
 
@@ -916,7 +923,7 @@ restart :: proc(game: ^Game) {
 		// all of these must be met for the results to trigger.
 		resultCondition = EventDrain {
 			resource = Resource{class = .Food, domain = .Base},
-			min = -200,
+			min = -1000,
 		},
 		result = EventDestroy{targetId = g.id},
 	}

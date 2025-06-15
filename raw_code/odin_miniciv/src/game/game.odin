@@ -521,12 +521,8 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 	case EventDestroy:
 		destroyLocation(c.targetId)
 	case EventReplace:
-		switch t in c.name {
-		case EventType:
-			target := &e_get(c.targetId).entity.(Building)
-		case LocationType:
-
-		}
+		target := e_get(c.targetId)
+		target.entity = toEntityType(c.name).?
 	case EventDiscover:
 		// spawn a new tile or event
 		// tile:

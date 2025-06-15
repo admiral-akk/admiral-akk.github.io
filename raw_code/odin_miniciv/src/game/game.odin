@@ -483,6 +483,7 @@ resolveTriggers :: proc(game: ^Game) {
 }
 
 moveOverlap :: proc(state: ^Game) {
+	// TODO: have connected nodes attract
 	for &e in state.entities {
 		ui, ok := &e.renderer.(UIEntity)
 		if !ok {

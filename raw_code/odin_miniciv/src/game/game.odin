@@ -941,10 +941,9 @@ restart :: proc(game: ^Game) {
 	}
 
 }
-init :: proc() -> Game {
-	state := Game{}
-	seedBlueprints(&state)
+init :: proc() -> ^Game {
+	seedBlueprints(&game)
 	// test deletion
-	restart(&state)
-	return state
+	restart(&game)
+	return &game
 }

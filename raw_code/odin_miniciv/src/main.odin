@@ -30,8 +30,8 @@ main :: proc() {
 	// Tell the game to start itself up!
 	// same as while(true) in C
 	for {
-		game.tick(&g)
-		game.render(&g)
+		game.tick(g)
+		game.render(g)
 		free_all(context.temp_allocator)
 	}
 }

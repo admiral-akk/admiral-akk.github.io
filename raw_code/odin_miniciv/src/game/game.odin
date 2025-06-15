@@ -26,6 +26,7 @@ SelectionState :: enum int {
 	HOT      = 1,
 	ACTIVE   = 2,
 }
+
 ResourceClass :: enum {
 	Person,
 	Food,
@@ -155,11 +156,6 @@ MeshRenderer :: struct {
 Renderer :: union {
 	UIEntity,
 	MeshRenderer,
-}
-
-Score :: struct {
-	value:        int,
-	last_changed: GameTime,
 }
 
 GameTime :: struct {

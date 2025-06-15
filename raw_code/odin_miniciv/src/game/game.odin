@@ -944,7 +944,10 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		// if this is met, the event fissles.
 		endCondition = EventTimer{totalTicks = 400},
 		// all of these must be met for the results to trigger.
-		resultCondition = EventTimer{totalTicks = 100},
+		resultCondition = EventFill {
+			resource = Resource{class = .Person, domain = .Base},
+			max = 100,
+		},
 		result = EventReplace{targetId = g2.id, name = .Farm},
 	}
 

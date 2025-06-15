@@ -90,11 +90,9 @@ EventReplace :: struct {
 	name:     LocationType,
 }
 
-EventExplore :: struct {
+EventDiscover :: struct {
 }
 
-
-// TODO: make a single NodeType which we can then spawn.
 
 NodeType :: union {
 	LocationType,
@@ -162,7 +160,7 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 				resource = Resource{class = .Person, domain = .Base},
 				max = 100,
 			}
-			event.result = EventExplore{}
+			event.result = EventDiscover{}
 		case .Innovation:
 		case .Maintance:
 		}
@@ -174,7 +172,7 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 EventResult :: union {
 	EventDestroy,
 	EventReplace,
-	EventExplore,
+	EventDiscover,
 }
 
 EventType :: enum {
@@ -521,7 +519,7 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 	case EventReplace:
 		target := &e_get(c.targetId).entity.(Building)
 		target.name = c.name
-	case EventExplore:
+	case EventDiscover:
 		// spawn a new tile or event
 		// tile:
 		pos := event.renderer.(UIEntity).position
@@ -567,6 +565,7 @@ resolveTriggers :: proc() {
 
 moveOverlap :: proc() {
 	// TODO: have connected nodes attract
+	// TODO: have connections repel nodes
 	for &e in game.entities {
 		ui, ok := &e.renderer.(UIEntity)
 		if !ok {
@@ -638,18 +637,18 @@ moveOverlap :: proc() {
 tick :: proc() {
 	update_time(&game)
 
-	// handle scrolling
+	// handle panning
 	if rl.IsMouseButtonDown(.RIGHT) {
 		game.camera2d.offset += rl.GetMouseDelta()
 	}
 
+	// handle scrolling
 	// TODO: zoom into mouse pointer, as opposed to origin?
 	game.camera2d.zoom += rl.GetMouseWheelMove() / 10
 	game.camera2d.zoom = math.clamp(game.camera2d.zoom, 0.2, 5)
 
 	// TODO: implement building dragging seperate from resource dragging
 	// TODO: render timers
-	// TODO: add nodes that player cannot control (IE, natural disasters)
 
 	switch game.state {
 	case .GAME_OVER:
@@ -759,7 +758,7 @@ render :: proc() {
 					outId = result.targetId
 				case EventReplace:
 					outId = result.targetId
-				case EventExplore:
+				case EventDiscover:
 
 				}
 

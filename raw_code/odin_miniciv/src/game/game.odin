@@ -213,13 +213,6 @@ delete_e :: proc(game: ^Game, entityId: int) {
 	}
 }
 
-newGame :: proc(game: ^Game) {
-	for len(game.entities) > 0 {
-		delete_e(game, game.entities[0].id)
-	}
-	restart(game)
-}
-
 RayHit :: struct {
 	id:       int,
 	distance: f32,
@@ -804,7 +797,6 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 
 	return g
 }
-
 
 restart :: proc(game: ^Game) {
 	game.camera3d = rl.Camera3D {

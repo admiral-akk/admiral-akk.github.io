@@ -65,6 +65,7 @@ EventDrain :: struct {
 EventTimer :: struct {
 	totalTicks:   int,
 	currentTicks: int,
+	loop:         bool,
 }
 
 EventCondition :: union {
@@ -402,10 +403,10 @@ getInputs :: proc(game: ^Game, target: ^GameEntity) -> [dynamic]Resource {
 
 updateConditions :: proc(game: ^Game) {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
-		entity := game.entities[i]
+		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
 		case Event:
-			inputs := getInputs(game, &entity)
+			inputs := getInputs(game, entity)
 			switch &c in e.endCondition {
 			case EventFill:
 				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
@@ -427,10 +428,43 @@ updateConditions :: proc(game: ^Game) {
 				c.current = math.clamp(c.current, c.min, 0)
 			case EventTimer:
 				c.currentTicks += 1
+				if c.loop && c.currentTicks > c.totalTicks {
+					// we set it to 1 here because we want to ensure
+					// it happens every total ticks.
+					c.currentTicks = 1
+				}
+			}
+			switch &c in e.resultCondition {
+			case EventFill:
+				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				if inputIdx > -1 {
+					c.current += 1
+
+				} else {
+					c.current -= 1
+				}
+				c.current = math.clamp(c.current, 0, c.max)
+			case EventDrain:
+				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				if inputIdx > -1 {
+					c.current += 1
+
+				} else {
+					c.current -= 1
+				}
+				c.current = math.clamp(c.current, c.min, 0)
+			case EventTimer:
+				c.currentTicks += 1
+				if c.loop && c.currentTicks > c.totalTicks {
+					// we set it to 1 here because we want to ensure
+					// it happens every total ticks.
+					c.currentTicks = 1
+				}
+				fmt.println(e)
 			}
 
 		case Building:
-			inputs := getInputs(game, &entity)
+			inputs := getInputs(game, entity)
 			for &trigger in e.triggers {
 				switch &c in trigger.conditions {
 				case Fill:
@@ -493,7 +527,7 @@ applyResult :: proc(game: ^Game, result: ^EventResult) {
 	case EventDestroy:
 		destroyLocation(game, c.targetId)
 	case EventReplace:
-		target := e_get(game, c.targetId).entity.(Building)
+		target := &e_get(game, c.targetId).entity.(Building)
 		target.name = c.name
 	}
 }
@@ -789,8 +823,8 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 					conditions = Fill {
 						resource = Resource{class = .Person, domain = .Base},
 						min = 0,
-						max = 100,
-						target = 100,
+						max = 400,
+						target = 400,
 					},
 					results = ReplaceLocation{name = .Farm},
 				},
@@ -798,9 +832,9 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 					conditions = Drain {
 						resource = Resource{class = .Person, domain = .Base},
 						min = 0,
-						max = 100,
+						max = 400,
 						target = 0,
-						current = 100,
+						current = 400,
 					},
 					results = DestroyLocation{},
 				},
@@ -811,6 +845,17 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		element  = Button{},
 		position = rl.Rectangle{300, 20, 100, 100},
 	}
+
+	upgrade := entity(game)
+	upgrade.entity = Event {
+		eventType = .Innovation,
+		// if this is met, the event fissles.
+		endCondition = EventTimer{totalTicks = 400},
+		// all of these must be met for the results to trigger.
+		resultCondition = EventTimer{totalTicks = 100},
+		result = EventReplace{targetId = g2.id, name = .Farm},
+	}
+
 	return g
 }
 

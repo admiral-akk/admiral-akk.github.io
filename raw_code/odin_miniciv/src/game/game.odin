@@ -442,7 +442,7 @@ applyResult :: proc(game: ^Game, event: ^GameEntity, result: ^EventResult) {
 		// spawn a new tile or event
 		// tile:
 		pos := event.renderer.(UIEntity).position
-		spawnLocation(game, rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
+		l := spawnLocation(game, rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
 	}
 }
 
@@ -540,13 +540,13 @@ moveOverlap :: proc(state: ^Game) {
 			delta := rl.Vector2Normalize(c1 - c2) * 2
 
 			// move them apart
+			// TODO: add momentum
 
 			ui.position.x += delta.x
 			ui.position.y += delta.y
 			ui2.position.x -= delta.x
 			ui2.position.y -= delta.y
 		}
-		// find overlap
 
 	}
 }
@@ -559,27 +559,13 @@ tick :: proc(state: ^Game) {
 		state.camera2d.offset += rl.GetMouseDelta()
 	}
 
-	// TODO: zoom into mouse pointer
+	// TODO: zoom into mouse pointer, as opposed to origin?
 	state.camera2d.zoom += rl.GetMouseWheelMove() / 10
 	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
 
-	// TODO: add a spawning mechanic?
-	// TODO: actually flow input to output
 	// TODO: implement building dragging seperate from resource dragging
-	// TODO: implement "Explore!"
-	// TODO: implement "Degrade" mechanic
-	// TODO: impelment timer for upgrade
 	// TODO: render timers
 	// TODO: add nodes that player cannot control (IE, natural disasters)
-	// TODO: separate out triggers, and producers
-
-	// Producers take inputs, and generate output if all input reqs are met
-	// triggers take inputs, and if all conditions are met, trigger some one-off result
-	// triggers do not have outputs!
-
-	// TODO: Add ability to link / unlink events
-
-	// TODO: move overlapping entities away from each other.
 
 	switch state.state {
 	case .GAME_OVER:
@@ -647,7 +633,7 @@ drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	)
 }
 
-spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType) {
+spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType) -> ^GameEntity {
 	g := entity(game)
 	g.entity = Building {
 		name = location,
@@ -656,6 +642,7 @@ spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType)
 		element  = Button{},
 		position = rl.Rectangle{position.x, position.y, 100, 100},
 	}
+	return g
 }
 
 
@@ -740,7 +727,6 @@ render :: proc(state: ^Game) {
 		}
 	}
 
-	// TODO: add rendering for events
 	// render entities
 	for e in state.entities {
 		#partial switch entity in e.entity {

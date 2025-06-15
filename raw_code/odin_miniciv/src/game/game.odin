@@ -431,7 +431,7 @@ conditionMet :: proc(condition: ^EventCondition) -> bool {
 	return false
 }
 
-applyResult :: proc(game: ^Game, result: ^EventResult) {
+applyResult :: proc(game: ^Game, event: ^GameEntity, result: ^EventResult) {
 	switch &c in result {
 	case EventDestroy:
 		destroyLocation(game, c.targetId)
@@ -441,7 +441,8 @@ applyResult :: proc(game: ^Game, result: ^EventResult) {
 	case EventExplore:
 		// spawn a new tile or event
 		// tile:
-		spawnLocation(game)
+		pos := event.renderer.(UIEntity).position
+		spawnLocation(game, rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
 	}
 }
 
@@ -473,7 +474,7 @@ resolveTriggers :: proc(game: ^Game) {
 				resultConditionMet := conditionMet(&e.resultCondition)
 				if resultConditionMet {
 					// trigger results
-					applyResult(game, &e.result)
+					applyResult(game, entity, &e.result)
 					resetCondition(&e.resultCondition)
 				}
 			}
@@ -646,14 +647,14 @@ drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	)
 }
 
-spawnLocation :: proc(game: ^Game) {
+spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType) {
 	g := entity(game)
 	g.entity = Building {
-		name = .Field,
+		name = location,
 	}
 	g.renderer = UIEntity {
 		element  = Button{},
-		position = rl.Rectangle{0, 0, 100, 100},
+		position = rl.Rectangle{position.x, position.y, 100, 100},
 	}
 }
 

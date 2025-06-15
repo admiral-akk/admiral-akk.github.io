@@ -380,6 +380,16 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 	}
 }
 
+getEventName :: proc(event: EventType) -> string {
+	switch event {
+	case .Innovation:
+		return "Innovation"
+	case .Maintance:
+		return "Maintance"
+	}
+	return "UNKNOWN?"
+}
+
 getBlueprint :: proc(game: ^Game, name: LocationType) -> ^Blueprint {
 	_, building, _, _ := map_entry(&game.blueprints, name)
 	return building
@@ -602,6 +612,8 @@ tick :: proc(state: ^Game) {
 	// triggers take inputs, and if all conditions are met, trigger some one-off result
 	// triggers do not have outputs!
 
+	// TODO: Add ability to link / unlink events
+
 	switch state.state {
 	case .GAME_OVER:
 	case .PLAYING:
@@ -716,9 +728,53 @@ render :: proc(state: ^Game) {
 		}
 	}
 
+	// TODO: add rendering for events
 	// render entities
 	for e in state.entities {
 		#partial switch entity in e.entity {
+		case Event:
+			#partial switch renderer in e.renderer {
+			case UIEntity:
+				button_color := rl.Color{200, 200, 200, 255}
+
+				switch e.selected {
+				case .INACTIVE:
+					button_color = rl.Color{200, 200, 200, 255}
+				case .HOT:
+					button_color = rl.Color{0, 200, 200, 255}
+				case .ACTIVE:
+					button_color = rl.Color{200, 0, 200, 255}
+					// check if click and drage
+					// TODO: render this either consistently behind or in front of buildings
+					drawRect(
+						rl.Vector2 {
+							renderer.position.x + renderer.position.width / 2,
+							renderer.position.y + renderer.position.height / 2,
+						},
+						mp_2d,
+						20,
+						rl.Color{0, 200, 0, 255},
+					)
+				}
+
+				gui.render_button(gui.Button{color = button_color, position = renderer.position})
+
+				gui.render_text_box(
+					gui.TextBox {
+						position = rl.Vector2 {
+							f32(renderer.position.x) + renderer.position.width / 2,
+							f32(renderer.position.y) + renderer.position.height / 2,
+						},
+						font_size = 14,
+						text_val = strings.clone_to_cstring(
+							getEventName(entity.eventType),
+							context.temp_allocator,
+						),
+						color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
+					},
+				)
+			}
+
 		case Building:
 			#partial switch renderer in e.renderer {
 			case UIEntity:
@@ -854,6 +910,11 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		// all of these must be met for the results to trigger.
 		resultCondition = EventTimer{totalTicks = 100},
 		result = EventReplace{targetId = g2.id, name = .Farm},
+	}
+
+	upgrade.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{300, -120, 100, 100},
 	}
 
 	return g

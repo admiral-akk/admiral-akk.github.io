@@ -857,7 +857,6 @@ seedBlueprints :: proc(game: ^Game) {
 		LocationType.Farm,
 		Blueprint {
 			name = "Farm",
-			input = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
 			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
 		},
 	)

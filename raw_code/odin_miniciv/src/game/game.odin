@@ -79,7 +79,7 @@ EventDestroy :: struct {
 
 EventReplace :: struct {
 	targetId: int,
-	name:     string,
+	name:     LocationType,
 }
 
 EventResult :: union {
@@ -384,13 +384,13 @@ getBlueprint :: proc(game: ^Game, name: LocationType) -> ^Blueprint {
 	return building
 }
 
-getInputs :: proc(game: ^Game, location: ^GameEntity) -> [dynamic]Resource {
+getInputs :: proc(game: ^Game, target: ^GameEntity) -> [dynamic]Resource {
 	inputs := make([dynamic]Resource, context.temp_allocator)
 	for e in game.entities {
 		b, ok := e.entity.(Building)
 		if ok {
 			// check if it's connected 
-			idx := find_first_matching(int, b.outputIds[:], location.id)
+			idx := find_first_matching(int, b.outputIds[:], target.id)
 			if idx > -1 {
 				blueprint := getBlueprint(game, b.name)
 				append(&inputs, ..blueprint.output[:])
@@ -405,6 +405,30 @@ updateConditions :: proc(game: ^Game) {
 		entity := game.entities[i]
 		#partial switch &e in entity.entity {
 		case Event:
+			inputs := getInputs(game, &entity)
+			switch &c in e.endCondition {
+			case EventFill:
+				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				if inputIdx > -1 {
+					c.current += 1
+
+				} else {
+					c.current -= 1
+				}
+				c.current = math.clamp(c.current, 0, c.max)
+			case EventDrain:
+				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				if inputIdx > -1 {
+					c.current += 1
+
+				} else {
+					c.current -= 1
+				}
+				c.current = math.clamp(c.current, c.min, 0)
+			case EventTimer:
+				c.currentTicks += 1
+			}
+
 		case Building:
 			inputs := getInputs(game, &entity)
 			for &trigger in e.triggers {
@@ -431,7 +455,6 @@ updateConditions :: proc(game: ^Game) {
 						c.current -= 1
 					}
 					c.current = math.clamp(c.current, c.min, c.max)
-
 				}
 			}
 		}
@@ -453,10 +476,47 @@ destroyLocation :: proc(game: ^Game, id: int) {
 	delete_e(game, id)
 }
 
+conditionMet :: proc(condition: ^EventCondition) -> bool {
+	switch &c in condition {
+	case EventFill:
+		return c.current >= c.max
+	case EventDrain:
+		return c.current <= c.min
+	case EventTimer:
+		return c.currentTicks >= c.totalTicks
+	}
+	return false
+}
+
+applyResult :: proc(game: ^Game, result: ^EventResult) {
+	switch &c in result {
+	case EventDestroy:
+		destroyLocation(game, c.targetId)
+	case EventReplace:
+		target := e_get(game, c.targetId).entity.(Building)
+		target.name = c.name
+	}
+}
+
 resolveTriggers :: proc(game: ^Game) {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
 		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
+		case Event:
+			inputs := getInputs(game, entity)
+
+			endConditionMet := conditionMet(&e.endCondition)
+			if endConditionMet {
+				// destroy this
+				destroyLocation(game, entity.id)
+			} else {
+				// check whether the results trigger
+				resultConditionMet := conditionMet(&e.resultCondition)
+				if resultConditionMet {
+					// trigger results
+					applyResult(game, &e.result)
+				}
+			}
 		case Building:
 			inputs := getInputs(game, entity)
 			for &trigger in e.triggers {

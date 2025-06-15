@@ -564,9 +564,25 @@ resolveTriggers :: proc() {
 	}
 }
 
+getOutputConnections :: proc(entity: ^GameEntity) -> [dynamic]int {
+	connections := make([dynamic]int, context.temp_allocator)
+	switch &e in entity.entity {
+	case Building:
+		append(&connections, ..e.outputIds[:])
+	case Event:
+		switch &r in e.result {
+		case EventDestroy:
+			append(&connections, r.targetId)
+		case EventReplace:
+			append(&connections, r.targetId)
+		case EventDiscover:
+
+		}
+	}
+	return connections
+}
+
 moveOverlap :: proc() {
-	// TODO: have connected nodes attract
-	// TODO: have connections repel nodes
 	for &e in game.entities {
 		ui, ok := &e.renderer.(UIEntity)
 		if !ok {
@@ -631,6 +647,69 @@ moveOverlap :: proc() {
 			ui2.position.x -= delta.x
 			ui2.position.y -= delta.y
 		}
+		// TODO: have connected nodes attract
+
+		connections := getOutputConnections(&e)
+		for connection in connections {
+			target := e_get(connection)
+			if target == nil {
+				continue
+			}
+			ui3, ok3 := &target.renderer.(UIEntity)
+			if !ok3 {
+				continue
+			}
+
+			for &e2 in game.entities {
+				if e2.id == e.id {
+					continue
+				}
+				if e2.id == target.id {
+					continue
+				}
+				ui2, ok2 := &e2.renderer.(UIEntity)
+				if !ok2 {
+					continue
+				}
+				c1 := rl.Vector2 {
+					ui.position.x + ui.position.width / 2,
+					ui.position.y + ui.position.height / 2,
+				}
+				c2 := rl.Vector2 {
+					ui2.position.x + ui2.position.width / 2,
+					ui2.position.y + ui2.position.height / 2,
+				}
+				c3 := rl.Vector2 {
+					ui3.position.x + ui3.position.width / 2,
+					ui3.position.y + ui3.position.height / 2,
+				}
+				// check if the entity is too close to the line
+				if !rl.CheckCollisionPointLine(c2, c1, c3, 100) {
+					continue
+				}
+
+				// find what side of line c2 is on
+				lineDir := rl.Vector2Normalize(c1 - c3)
+				angle := rl.Vector2LineAngle(rl.Vector2Normalize(c1 - c2), lineDir)
+
+				moveDir := rl.Vector2{-lineDir.y, lineDir.x} * 2
+				if angle > 0 {
+					moveDir *= -1
+				}
+
+				// move them apart
+				// TODO: add momentum
+
+				ui.position.x += moveDir.x
+				ui.position.y += moveDir.y
+				ui2.position.x -= moveDir.x
+				ui2.position.y -= moveDir.y
+				ui3.position.x += moveDir.x
+				ui3.position.y += moveDir.y
+			}
+		}
+
+		// TODO: have connections repel nodes
 
 	}
 }
@@ -737,6 +816,7 @@ spawnLocation :: proc(position: rl.Vector2, location: LocationType) -> ^GameEnti
 
 render :: proc() {
 	// game state
+	// TODO: switch to using Rect as "center" + "width / height" (instead of top right corner + width / height)
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
 

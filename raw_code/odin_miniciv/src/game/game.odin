@@ -735,26 +735,22 @@ render :: proc(state: ^Game) {
 				for outId in entity.outputIds {
 					target := e_get(state, outId)
 					if target != nil {
+						#partial switch t_render in target.renderer {
+						case UIEntity:
+							// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
+							drawRect(
+								rl.Vector2 {
+									renderer.position.x + renderer.position.width / 2,
+									renderer.position.y + renderer.position.height / 2,
+								},
+								rl.Vector2 {
+									t_render.position.x + t_render.position.width / 2,
+									t_render.position.y + t_render.position.height / 2,
+								},
+								20,
+								rl.Color{220, 40, 20, 255},
+							)
 
-						#partial switch t_entity in target.entity {
-						case Building:
-							#partial switch t_render in target.renderer {
-							case UIEntity:
-								// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
-								drawRect(
-									rl.Vector2 {
-										renderer.position.x + renderer.position.width / 2,
-										renderer.position.y + renderer.position.height / 2,
-									},
-									rl.Vector2 {
-										t_render.position.x + t_render.position.width / 2,
-										t_render.position.y + t_render.position.height / 2,
-									},
-									20,
-									rl.Color{220, 40, 20, 255},
-								)
-
-							}
 						}
 					}
 				}

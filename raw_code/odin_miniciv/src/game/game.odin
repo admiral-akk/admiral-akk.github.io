@@ -88,14 +88,19 @@ EventReplace :: struct {
 	name:     LocationType,
 }
 
+EventExplore :: struct {
+}
+
 EventResult :: union {
 	EventDestroy,
 	EventReplace,
+	EventExplore,
 }
 
 EventType :: enum {
 	Maintance,
 	Innovation,
+	Discover,
 }
 
 // This is a one-off Event.
@@ -304,6 +309,8 @@ getEventName :: proc(event: EventType) -> string {
 		return "Innovation"
 	case .Maintance:
 		return "Maintance"
+	case .Discover:
+		return "Discover"
 	}
 	return "UNKNOWN?"
 }
@@ -431,6 +438,10 @@ applyResult :: proc(game: ^Game, result: ^EventResult) {
 	case EventReplace:
 		target := &e_get(game, c.targetId).entity.(Building)
 		target.name = c.name
+	case EventExplore:
+		// spawn a new tile or event
+		// tile:
+		spawnLocation(game)
 	}
 }
 
@@ -563,6 +574,17 @@ drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	)
 }
 
+spawnLocation :: proc(game: ^Game) {
+	g := entity(game)
+	g.entity = Building {
+		name = .Field,
+	}
+	g.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{0, 0, 100, 100},
+	}
+}
+
 
 render :: proc(state: ^Game) {
 	// game state
@@ -588,6 +610,8 @@ render :: proc(state: ^Game) {
 					outId = result.targetId
 				case EventReplace:
 					outId = result.targetId
+				case EventExplore:
+
 				}
 
 				target := e_get(state, outId)
@@ -775,7 +799,6 @@ seedBlueprints :: proc(game: ^Game) {
 }
 
 makeBuilding :: proc(game: ^Game) -> ^GameEntity {
-
 	g := entity(game)
 	g.entity = Building {
 		name = .Village,
@@ -784,29 +807,21 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
-	g2 := entity(game)
-	g2.entity = Building {
-		name = .Field,
-	}
-	g2.renderer = UIEntity {
-		element  = Button{},
-		position = rl.Rectangle{300, 20, 100, 100},
-	}
 
-	upgrade := entity(game)
-	upgrade.entity = Event {
-		eventType = .Innovation,
+	explore := entity(game)
+	explore.entity = Event {
+		eventType = .Discover,
 		// if this is met, the event fissles.
-		endCondition = EventTimer{totalTicks = 400},
+		endCondition = AlwaysFalse{},
 		// all of these must be met for the results to trigger.
 		resultCondition = EventFill {
 			resource = Resource{class = .Person, domain = .Base},
 			max = 100,
 		},
-		result = EventReplace{targetId = g2.id, name = .Farm},
+		result = EventExplore{},
 	}
 
-	upgrade.renderer = UIEntity {
+	explore.renderer = UIEntity {
 		element  = Button{},
 		position = rl.Rectangle{300, -120, 100, 100},
 	}

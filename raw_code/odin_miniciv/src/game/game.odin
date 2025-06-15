@@ -69,10 +69,14 @@ EventTimer :: struct {
 	loop:         bool,
 }
 
+AlwaysFalse :: struct {
+}
+
 EventCondition :: union {
 	EventFill,
 	EventDrain,
 	EventTimer,
+	AlwaysFalse,
 }
 
 EventDestroy :: struct {
@@ -357,6 +361,7 @@ updateConditions :: proc(game: ^Game) {
 					// it happens every total ticks.
 					c.currentTicks = 1
 				}
+			case AlwaysFalse:
 			}
 			switch &c in e.resultCondition {
 			case EventFill:
@@ -384,7 +389,7 @@ updateConditions :: proc(game: ^Game) {
 					// it happens every total ticks.
 					c.currentTicks = 1
 				}
-				fmt.println(e)
+			case AlwaysFalse:
 			}
 		}
 	}
@@ -413,6 +418,8 @@ conditionMet :: proc(condition: ^EventCondition) -> bool {
 		return c.current <= c.min
 	case EventTimer:
 		return c.currentTicks >= c.totalTicks
+	case AlwaysFalse:
+		return false
 	}
 	return false
 }
@@ -424,6 +431,18 @@ applyResult :: proc(game: ^Game, result: ^EventResult) {
 	case EventReplace:
 		target := &e_get(game, c.targetId).entity.(Building)
 		target.name = c.name
+	}
+}
+
+resetCondition :: proc(condition: ^EventCondition) {
+	switch &c in condition {
+	case EventFill:
+		c.current = 0
+	case EventDrain:
+		c.current = 0
+	case EventTimer:
+		c.currentTicks = 0
+	case AlwaysFalse:
 	}
 }
 
@@ -444,6 +463,7 @@ resolveTriggers :: proc(game: ^Game) {
 				if resultConditionMet {
 					// trigger results
 					applyResult(game, &e.result)
+					resetCondition(&e.resultCondition)
 				}
 			}
 		}

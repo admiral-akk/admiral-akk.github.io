@@ -40,11 +40,6 @@ Resource :: struct {
 	domain: ResourceDomain,
 }
 
-Upgrade :: struct {
-	name:     string,
-	requires: [dynamic]Resource,
-}
-
 Blueprint :: struct {
 	name:   string,
 	input:  [dynamic]Resource,

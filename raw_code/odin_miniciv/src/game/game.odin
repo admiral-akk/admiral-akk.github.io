@@ -94,11 +94,76 @@ EventExplore :: struct {
 }
 
 
+// TODO: make a single NodeType which we can then spawn.
+
 NodeType :: union {
 	LocationType,
 	EventType,
 }
 
+get_first_matching :: proc(t: NodeType) -> ^GameEntity {
+	for &e in game.entities {
+		switch t in t {
+		case LocationType:
+			b, ok := e.entity.(Building)
+			if !ok {
+				continue
+			}
+			if b.name == t {
+				return &e
+			}
+		case EventType:
+			event, ok := e.entity.(Event)
+			if !ok {
+				continue
+			}
+			if event.eventType == t {
+				return &e
+			}
+		}
+	}
+	return nil
+}
+
+spawn :: proc(t: NodeType) -> ^GameEntity {
+	e := entity()
+	e.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{0, 0, 100, 100},
+	}
+	switch t in t {
+	case LocationType:
+		e.entity = Building {
+			name = t,
+		}
+	case EventType:
+		event := Event {
+			eventType = t,
+		}
+		switch t {
+		case .Famine:
+			event.endCondition = EventFill {
+				resource = Resource{class = .Food, domain = .Base},
+				max = 100,
+			}
+			event.resultCondition = EventDrain {
+				resource = Resource{class = .Food, domain = .Base},
+				min = -1000,
+			}
+			// find target
+			target := get_first_matching(.Village)
+
+			event.result = EventDestroy {
+				targetId = target.id,
+			}
+		case .Discover:
+		case .Innovation:
+		case .Maintance:
+		}
+		e.entity = event
+	}
+	return e
+}
 
 EventResult :: union {
 	EventDestroy,
@@ -895,14 +960,8 @@ restart :: proc() {
 	}
 
 	game.state = .PLAYING
-	g := entity()
-	g.entity = Building {
-		name = .Village,
-	}
-	g.renderer = UIEntity {
-		element  = Button{},
-		position = rl.Rectangle{0, 0, 100, 100},
-	}
+	g := spawn(.Village)
+	spawn(.Famine)
 
 	explore := entity()
 	explore.entity = Event {
@@ -918,24 +977,6 @@ restart :: proc() {
 	}
 
 	explore.renderer = UIEntity {
-		element  = Button{},
-		position = rl.Rectangle{300, -120, 100, 100},
-	}
-
-	famine := entity()
-	famine.entity = Event {
-		eventType = .Famine,
-		// if this is met, the event fissles.
-		endCondition = EventFill{resource = Resource{class = .Food, domain = .Base}, max = 100},
-		// all of these must be met for the results to trigger.
-		resultCondition = EventDrain {
-			resource = Resource{class = .Food, domain = .Base},
-			min = -1000,
-		},
-		result = EventDestroy{targetId = g.id},
-	}
-
-	famine.renderer = UIEntity {
 		element  = Button{},
 		position = rl.Rectangle{300, -120, 100, 100},
 	}

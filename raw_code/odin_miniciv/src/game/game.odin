@@ -830,6 +830,13 @@ tick :: proc(state: ^Game) {
 	// TODO: implement "Explore!"
 	// TODO: implement "Degrade" mechanic
 	// TODO: impelment timer for upgrade
+	// TODO: render timers
+	// TODO: add nodes that player cannot control (IE, natural disasters)
+	// TODO: separate out triggers, and producers
+
+	// Producers take inputs, and generate output if all input reqs are met
+	// triggers take inputs, and if all conditions are met, trigger some one-off result
+	// triggers do not have outputs!
 
 	switch state.state {
 	case .GAME_OVER:

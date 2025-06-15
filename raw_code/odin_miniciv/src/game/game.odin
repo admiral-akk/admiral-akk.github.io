@@ -119,7 +119,6 @@ LocationType :: enum {
 Building :: struct {
 	name:      LocationType,
 	triggers:  [dynamic]Trigger,
-	inputIds:  [dynamic]int,
 	outputIds: [dynamic]int,
 }
 
@@ -373,19 +372,10 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 		#partial switch &e in end.entity {
 		case Building:
 			outputIdx := find_first_matching(int, s.outputIds[:], end.id)
-			inputIdx := find_first_matching(int, e.inputIds[:], start.id)
-			if inputIdx > -1 || outputIdx > -1 {
-				// remove both
-				if outputIdx > -1 {
-					unordered_remove(&s.outputIds, outputIdx)
-				}
-				if inputIdx > -1 {
-					unordered_remove(&e.inputIds, inputIdx)
-				}
+			if outputIdx > -1 {
+				unordered_remove(&s.outputIds, outputIdx)
 			} else {
-				// add both
 				append(&s.outputIds, end.id)
-				append(&e.inputIds, start.id)
 			}
 		}
 	}
@@ -396,24 +386,29 @@ getBlueprint :: proc(game: ^Game, name: LocationType) -> ^Blueprint {
 	return building
 }
 
-getInputs :: proc(game: ^Game, location: ^Building) -> [dynamic]Resource {
+getInputs :: proc(game: ^Game, location: ^GameEntity) -> [dynamic]Resource {
 	inputs := make([dynamic]Resource, context.temp_allocator)
-	for inputId in location.inputIds {
-		input := e_get(game, inputId).entity.(Building)
-
-		blueprint := getBlueprint(game, input.name)
-		append(&inputs, ..blueprint.output[:])
+	for e in game.entities {
+		b, ok := e.entity.(Building)
+		if ok {
+			// check if it's connected 
+			idx := find_first_matching(int, b.outputIds[:], location.id)
+			if idx > -1 {
+				blueprint := getBlueprint(game, b.name)
+				append(&inputs, ..blueprint.output[:])
+			}
+		}
 	}
 	return inputs
 }
 
 updateConditions :: proc(game: ^Game) {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
-		e := game.entities[i]
-		#partial switch &e in e.entity {
+		entity := game.entities[i]
+		#partial switch &e in entity.entity {
 		case Event:
 		case Building:
-			inputs := getInputs(game, &e)
+			inputs := getInputs(game, &entity)
 			for &trigger in e.triggers {
 				switch &c in trigger.conditions {
 				case Fill:
@@ -446,16 +441,11 @@ updateConditions :: proc(game: ^Game) {
 }
 
 destroyLocation :: proc(game: ^Game, id: int) {
-	// remove any connections it might have
+	// remove any thing pointing at it
 	for &e in game.entities {
 		v, ok := e.entity.(Building)
 		if ok {
-			idx := find_first_matching(int, v.inputIds[:], id)
-			for idx > -1 {
-				unordered_remove(&v.inputIds, idx)
-				idx = find_first_matching(int, v.inputIds[:], id)
-			}
-			idx = find_first_matching(int, v.outputIds[:], id)
+			idx := find_first_matching(int, v.outputIds[:], id)
 			for idx > -1 {
 				unordered_remove(&v.outputIds, idx)
 				idx = find_first_matching(int, v.outputIds[:], id)
@@ -470,7 +460,7 @@ resolveTriggers :: proc(game: ^Game) {
 		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
 		case Building:
-			inputs := getInputs(game, &e)
+			inputs := getInputs(game, entity)
 			for &trigger in e.triggers {
 				conditionMet := false
 				switch &c in trigger.conditions {

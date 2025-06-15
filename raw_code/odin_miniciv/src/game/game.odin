@@ -51,6 +51,74 @@ Blueprint :: struct {
 	output: [dynamic]Resource,
 }
 
+ResourceCondition :: struct {
+	class:  Maybe(ResourceClass),
+	domain: Maybe(ResourceDomain),
+}
+
+// always starts at 0, decrements if missing, increments if provided.
+// true iff current == max.
+EventFill :: struct {
+	resource: Resource,
+	max:      int,
+	current:  int,
+}
+
+// always starts at 0, decrements if missing, increments if provided.
+// true iff current == min.
+EventDrain :: struct {
+	resource: Resource,
+	min:      int,
+	current:  int,
+}
+
+EventTimer :: struct {
+	totalTicks:   int,
+	currentTicks: int,
+}
+
+EventCondition :: union {
+	EventFill,
+	EventDrain,
+	EventTimer,
+}
+
+EventDestroy :: struct {
+	targetId: int,
+}
+
+EventReplace :: struct {
+	targetId: int,
+	name:     string,
+}
+
+EventResult :: union {
+	EventDestroy,
+	EventReplace,
+}
+
+EventType :: enum {
+	Maintance,
+}
+
+// This is a one-off Event.
+// 
+// It does not have output resources. Instead, 
+// it takes inputs, and has events.
+//
+// Examples:
+//
+// Innovation: given the input, upgrades a building
+// Invasion: every X ticks, degrades / destroys a building.
+Event :: struct {
+	eventType:       EventType,
+	// if this is met, the event fissles.
+	endCondition:    EventCondition,
+	// all of these must be met for the results to trigger.
+	resultCondition: EventCondition,
+	result:          EventResult,
+}
+
 Building :: struct {
 	name:      string,
 	upgrade:   Maybe(Upgrade),
@@ -61,6 +129,7 @@ Building :: struct {
 
 EntityType :: union {
 	Building,
+	Event,
 }
 
 GameEntity :: struct {
@@ -337,7 +406,6 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 }
 
 getBlueprint :: proc(game: ^Game, name: string) -> ^Blueprint {
-
 	_, building, _, _ := map_entry(&game.blueprints, name)
 	return building
 }

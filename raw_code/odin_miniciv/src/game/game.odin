@@ -564,73 +564,73 @@ moveOverlap :: proc(state: ^Game) {
 	}
 }
 
-tick :: proc(state: ^Game) {
-	update_time(state)
+tick :: proc() {
+	update_time(&game)
 
 	// handle scrolling
 	if rl.IsMouseButtonDown(.RIGHT) {
-		state.camera2d.offset += rl.GetMouseDelta()
+		game.camera2d.offset += rl.GetMouseDelta()
 	}
 
 	// TODO: zoom into mouse pointer, as opposed to origin?
-	state.camera2d.zoom += rl.GetMouseWheelMove() / 10
-	state.camera2d.zoom = math.clamp(state.camera2d.zoom, 0.2, 5)
+	game.camera2d.zoom += rl.GetMouseWheelMove() / 10
+	game.camera2d.zoom = math.clamp(game.camera2d.zoom, 0.2, 5)
 
 	// TODO: implement building dragging seperate from resource dragging
 	// TODO: render timers
 	// TODO: add nodes that player cannot control (IE, natural disasters)
 
-	switch state.state {
+	switch game.state {
 	case .GAME_OVER:
 	case .PLAYING:
-		rayHit := get_ray_hits(state)
+		rayHit := get_ray_hits(&game)
 
 
 		left_pressed := rl.IsMouseButtonPressed(.LEFT)
 		left_released := rl.IsMouseButtonReleased(.LEFT)
-		for i in 0 ..< len(state.entities) {
-			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
-				switch state.entities[i].selected {
+		for i in 0 ..< len(game.entities) {
+			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == game.entities[i].id {
+				switch game.entities[i].selected {
 				case .INACTIVE:
 					if left_pressed {
-						state.entities[i].selected = .ACTIVE
+						game.entities[i].selected = .ACTIVE
 
 					} else {
-						state.entities[i].selected = .HOT
+						game.entities[i].selected = .HOT
 					}
 				case .ACTIVE:
 					if left_released {
-						state.entities[i].selected = .HOT
+						game.entities[i].selected = .HOT
 					}
 				case .HOT:
 					if left_pressed {
-						state.entities[i].selected = .ACTIVE
+						game.entities[i].selected = .ACTIVE
 					}
 					if left_released {
 						// check if there's a connection to be made / unmade here	
-						active := getActive(state)
+						active := getActive(&game)
 						if active != nil {
-							updateConnection(state, active.id, state.entities[i].id)
+							updateConnection(&game, active.id, game.entities[i].id)
 						}
 					}
 				}
 			}
 		}
-		for i in 0 ..< len(state.entities) {
-			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == state.entities[i].id {
+		for i in 0 ..< len(game.entities) {
+			if len(rayHit) > 0 && rayHit[len(rayHit) - 1].id == game.entities[i].id {
 			} else {
 				if left_released {
-					state.entities[i].selected = .INACTIVE
+					game.entities[i].selected = .INACTIVE
 				}
-				if state.entities[i].selected != .ACTIVE {
-					state.entities[i].selected = .INACTIVE
+				if game.entities[i].selected != .ACTIVE {
+					game.entities[i].selected = .INACTIVE
 				}
 			}
 		}
 
-		updateConditions(state)
-		resolveTriggers(state)
-		moveOverlap(state)
+		updateConditions(&game)
+		resolveTriggers(&game)
+		moveOverlap(&game)
 	}
 }
 

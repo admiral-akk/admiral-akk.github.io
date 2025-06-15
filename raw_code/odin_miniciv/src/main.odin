@@ -24,13 +24,13 @@ main :: proc() {
 
 	s.init()
 
-	g := game.init()
+	game.init()
 	gfx.init()
 
 	// Tell the game to start itself up!
 	// same as while(true) in C
 	for {
-		game.tick(g)
+		game.tick()
 		game.render()
 		free_all(context.temp_allocator)
 	}

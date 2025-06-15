@@ -660,6 +660,24 @@ moveOverlap :: proc() {
 				continue
 			}
 
+			// pull the nodes together like a spring
+			c1 := rl.Vector2 {
+				ui.position.x + ui.position.width / 2,
+				ui.position.y + ui.position.height / 2,
+			}
+			c3 := rl.Vector2 {
+				ui3.position.x + ui3.position.width / 2,
+				ui3.position.y + ui3.position.height / 2,
+			}
+			dir := (c3 - c1)
+			dir -= rl.Vector2Normalize(dir) * 200
+			dir *= 0.01
+			ui.position.x += dir.x
+			ui.position.y += dir.y
+			ui3.position.x -= dir.x
+			ui3.position.y -= dir.y
+
+
 			for &e2 in game.entities {
 				if e2.id == e.id {
 					continue
@@ -671,7 +689,7 @@ moveOverlap :: proc() {
 				if !ok2 {
 					continue
 				}
-				c1 := rl.Vector2 {
+				c1 = rl.Vector2 {
 					ui.position.x + ui.position.width / 2,
 					ui.position.y + ui.position.height / 2,
 				}
@@ -679,7 +697,7 @@ moveOverlap :: proc() {
 					ui2.position.x + ui2.position.width / 2,
 					ui2.position.y + ui2.position.height / 2,
 				}
-				c3 := rl.Vector2 {
+				c3 = rl.Vector2 {
 					ui3.position.x + ui3.position.width / 2,
 					ui3.position.y + ui3.position.height / 2,
 				}
@@ -689,6 +707,7 @@ moveOverlap :: proc() {
 				}
 
 				// find what side of line c2 is on
+
 				lineDir := rl.Vector2Normalize(c1 - c3)
 				angle := rl.Vector2LineAngle(rl.Vector2Normalize(c1 - c2), lineDir)
 
@@ -709,7 +728,6 @@ moveOverlap :: proc() {
 			}
 		}
 
-		// TODO: have connections repel nodes
 
 	}
 }

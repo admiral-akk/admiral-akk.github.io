@@ -120,9 +120,14 @@ Event :: struct {
 	result:          EventResult,
 }
 
+LocationType :: enum {
+	Village,
+	Field,
+	Farm,
+}
+
 Building :: struct {
-	name:      string,
-	upgrade:   Maybe(Upgrade),
+	name:      LocationType,
 	triggers:  [dynamic]Trigger,
 	inputIds:  [dynamic]int,
 	outputIds: [dynamic]int,
@@ -202,7 +207,7 @@ Condition :: union {
 }
 
 ReplaceLocation :: struct {
-	name: string,
+	name: LocationType,
 }
 
 DestroyLocation :: struct {
@@ -247,7 +252,7 @@ Game :: struct {
 	entities:   [dynamic]GameEntity,
 	camera:     rl.Camera3D,
 	camera2d:   rl.Camera2D,
-	blueprints: map[string]Blueprint,
+	blueprints: map[LocationType]Blueprint,
 }
 
 
@@ -400,37 +405,14 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 				// add both
 				append(&s.outputIds, end.id)
 				append(&e.inputIds, start.id)
-				checkUpgrade(game, &e)
 			}
 		}
 	}
 }
 
-getBlueprint :: proc(game: ^Game, name: string) -> ^Blueprint {
+getBlueprint :: proc(game: ^Game, name: LocationType) -> ^Blueprint {
 	_, building, _, _ := map_entry(&game.blueprints, name)
 	return building
-}
-
-checkUpgrade :: proc(game: ^Game, building: ^Building) {
-	v, ok := building.upgrade.?
-	if ok {
-		reqs := make([dynamic]Resource, context.temp_allocator)
-		for requirement in v.requires {
-			append(&reqs, requirement)
-		}
-		inputs := getInputs(game, building)
-		for input in inputs {
-			inputIdx := find_first_matching(Resource, reqs[:], input)
-			if inputIdx > -1 {
-				unordered_remove(&reqs, inputIdx)
-			}
-		}
-		if len(reqs) == 0 {
-			building.name = v.name
-			building.upgrade = nil
-		}
-		fmt.println(building)
-	}
 }
 
 getInputs :: proc(game: ^Game, location: ^Building) -> [dynamic]Resource {
@@ -699,6 +681,7 @@ render :: proc(state: ^Game) {
 				}
 
 				gui.render_button(gui.Button{color = button_color, position = renderer.position})
+
 				gui.render_text_box(
 					gui.TextBox {
 						position = rl.Vector2 {
@@ -706,7 +689,10 @@ render :: proc(state: ^Game) {
 							f32(renderer.position.y) + renderer.position.height / 2,
 						},
 						font_size = 14,
-						text_val = strings.clone_to_cstring(entity.name, context.temp_allocator),
+						text_val = strings.clone_to_cstring(
+							getBlueprint(state, entity.name).name,
+							context.temp_allocator,
+						),
 						color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
 					},
 				)
@@ -733,7 +719,7 @@ seedBlueprints :: proc(game: ^Game) {
 
 	map_insert(
 		&game.blueprints,
-		"village",
+		LocationType.Village,
 		Blueprint {
 			name = "Village",
 			input = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
@@ -742,14 +728,14 @@ seedBlueprints :: proc(game: ^Game) {
 	)
 	map_insert(
 		&game.blueprints,
-		"farm",
+		LocationType.Farm,
 		Blueprint {
 			name = "Farm",
 			input = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
 			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
 		},
 	)
-	map_insert(&game.blueprints, "field", Blueprint{name = "Field"})
+	map_insert(&game.blueprints, LocationType.Field, Blueprint{name = "Field"})
 
 }
 
@@ -757,7 +743,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 
 	g := entity(game)
 	g.entity = Building {
-		name = "village",
+		name = .Village,
 	}
 	g.renderer = UIEntity {
 		element  = Button{},
@@ -765,7 +751,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	}
 	g2 := entity(game)
 	g2.entity = Building {
-		name     = "field",
+		name     = .Field,
 		triggers = makeDynamic(
 			Trigger,
 			[]Trigger {
@@ -776,7 +762,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 						max = 100,
 						target = 100,
 					},
-					results = ReplaceLocation{name = "farm"},
+					results = ReplaceLocation{name = .Farm},
 				},
 				Trigger {
 					conditions = Drain {

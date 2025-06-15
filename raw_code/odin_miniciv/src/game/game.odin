@@ -103,6 +103,7 @@ Blueprint :: struct {
 Building :: struct {
 	name:      string,
 	upgrade:   Maybe(Upgrade),
+	triggers:  [dynamic]Trigger,
 	inputIds:  [dynamic]int,
 	outputIds: [dynamic]int,
 }
@@ -157,6 +158,53 @@ Renderer :: union {
 	MeshRenderer,
 }
 
+// Represents having access to a resource
+//
+// Ticks downwards without resource, and upwards with resource.
+//
+// Condition is met iff current == target.
+//
+// current = math.clamp(current, math)
+Fill :: struct {
+	resource: Resource,
+	current:  int,
+	target:   int,
+	min:      int,
+	max:      int,
+}
+
+Drain :: struct {
+	resource: Resource,
+	current:  int,
+	target:   int,
+	min:      int,
+	max:      int,
+}
+
+Condition :: union {
+	Fill,
+	Drain,
+}
+
+ReplaceLocation :: struct {
+	// nil means that the location is removed
+	name: Maybe(string),
+}
+
+Result :: union {
+	ReplaceLocation,
+}
+
+// something like:
+//
+// if X holds, then Y happens
+// 
+// can use this to power _everything_
+Trigger :: struct {
+	conditions: Condition,
+	results:    Result,
+}
+
 Score :: struct {
 	value:        int,
 	last_changed: GameTime,
@@ -188,7 +236,6 @@ Game :: struct {
 	camera2d:     rl.Camera2D,
 	blueprints:   map[string]Blueprint,
 }
-
 
 Command :: enum int {
 	NONE    = 0,
@@ -681,7 +728,10 @@ tick :: proc(state: ^Game) {
 
 	// TODO: add a spawning mechanic?
 	// TODO: actually flow input to output
-
+	// TODO: implement building dragging seperate from resource dragging
+	// TODO: implement "Explore!"
+	// TODO: implement "Degrade" mechanic
+	// TODO: impelment timer for upgrade
 
 	switch state.state {
 	case .GAME_OVER:
@@ -1187,6 +1237,20 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 			),
 			name = "farm",
 		},
+		triggers = makeDynamic(
+			Trigger,
+			[]Trigger {
+				Trigger {
+					conditions = Fill {
+						resource = Resource{class = .Person, domain = .Base},
+						min = 0,
+						max = 100,
+						target = 100,
+					},
+					results = ReplaceLocation{name = "farm"},
+				},
+			},
+		),
 	}
 	g2.renderer = UIEntity {
 		element  = Button{},

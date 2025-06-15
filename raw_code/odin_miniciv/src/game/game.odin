@@ -119,7 +119,6 @@ LocationType :: enum {
 
 Building :: struct {
 	name:      LocationType,
-	triggers:  [dynamic]Trigger,
 	outputIds: [dynamic]int,
 }
 
@@ -156,56 +155,6 @@ MeshRenderer :: struct {
 Renderer :: union {
 	UIEntity,
 	MeshRenderer,
-}
-
-// Represents having access to a resource
-//
-// Ticks downwards without resource, and upwards with resource.
-//
-// Condition is met iff current == target.
-//
-// current = math.clamp(current, math)
-Fill :: struct {
-	resource: Resource,
-	current:  int,
-	target:   int,
-	min:      int,
-	max:      int,
-}
-
-Drain :: struct {
-	resource: Resource,
-	current:  int,
-	target:   int,
-	min:      int,
-	max:      int,
-}
-
-Condition :: union {
-	Fill,
-	Drain,
-}
-
-ReplaceLocation :: struct {
-	name: LocationType,
-}
-
-DestroyLocation :: struct {
-}
-
-Result :: union {
-	ReplaceLocation,
-	DestroyLocation,
-}
-
-// something like:
-//
-// if X holds, then Y happens
-// 
-// can use this to power _everything_
-Trigger :: struct {
-	conditions: Condition,
-	results:    Result,
 }
 
 Score :: struct {
@@ -476,35 +425,6 @@ updateConditions :: proc(game: ^Game) {
 				}
 				fmt.println(e)
 			}
-
-		case Building:
-			inputs := getInputs(game, entity)
-			for &trigger in e.triggers {
-				switch &c in trigger.conditions {
-				case Fill:
-					// check if there's an input that matches
-					inputIdx := find_first_matching(Resource, inputs[:], c.resource)
-					if inputIdx > -1 {
-						// condition met, incremenet
-						c.current += 1
-					} else {
-						// condition failed, decremenet
-						c.current -= 1
-					}
-					c.current = math.clamp(c.current, c.min, c.max)
-				case Drain:
-					// check if there's an input that matches
-					inputIdx := find_first_matching(Resource, inputs[:], c.resource)
-					if inputIdx > -1 {
-						// condition met, incremenet
-						c.current += 1
-					} else {
-						// condition failed, decremenet
-						c.current -= 1
-					}
-					c.current = math.clamp(c.current, c.min, c.max)
-				}
-			}
 		}
 	}
 }
@@ -563,28 +483,6 @@ resolveTriggers :: proc(game: ^Game) {
 				if resultConditionMet {
 					// trigger results
 					applyResult(game, &e.result)
-				}
-			}
-
-		case Building:
-			inputs := getInputs(game, entity)
-			for &trigger in e.triggers {
-				conditionMet := false
-				switch &c in trigger.conditions {
-				case Fill:
-					conditionMet = c.current >= c.target
-				case Drain:
-					conditionMet = c.current <= c.target
-				}
-
-				if conditionMet {
-					switch &r in trigger.results {
-					case ReplaceLocation:
-						e.name = r.name
-					case DestroyLocation:
-						destroyLocation(game, entity.id)
-						break
-					}
 				}
 			}
 		}
@@ -907,8 +805,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	}
 	g2 := entity(game)
 	g2.entity = Building {
-		name     = .Field,
-		triggers = makeDynamic(Trigger, []Trigger{}),
+		name = .Field,
 	}
 	g2.renderer = UIEntity {
 		element  = Button{},

@@ -664,19 +664,19 @@ spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType)
 }
 
 
-render :: proc(state: ^Game) {
+render :: proc() {
 	// game state
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
 
-	rl.BeginMode3D(state.camera3d)
+	rl.BeginMode3D(game.camera3d)
 	rl.EndMode3D()
 
-	rl.BeginMode2D(state.camera2d)
+	rl.BeginMode2D(game.camera2d)
 
-	mp_2d := (rl.GetMousePosition() - state.camera2d.offset) / state.camera2d.zoom
+	mp_2d := (rl.GetMousePosition() - game.camera2d.offset) / game.camera2d.zoom
 	// render connections
-	for e in state.entities {
+	for e in game.entities {
 		#partial switch entity in e.entity {
 		case Event:
 			#partial switch renderer in e.renderer {
@@ -692,7 +692,7 @@ render :: proc(state: ^Game) {
 
 				}
 
-				target := e_get(state, outId)
+				target := e_get(&game, outId)
 				if target != nil {
 					#partial switch t_render in target.renderer {
 					case UIEntity:
@@ -720,7 +720,7 @@ render :: proc(state: ^Game) {
 			case UIEntity:
 				// if it has any outgoing connections, draw them
 				for outId in entity.outputIds {
-					target := e_get(state, outId)
+					target := e_get(&game, outId)
 					if target != nil {
 						#partial switch t_render in target.renderer {
 						case UIEntity:
@@ -746,7 +746,7 @@ render :: proc(state: ^Game) {
 	}
 
 	// render entities
-	for e in state.entities {
+	for e in game.entities {
 		#partial switch entity in e.entity {
 		case Event:
 			#partial switch renderer in e.renderer {
@@ -826,7 +826,7 @@ render :: proc(state: ^Game) {
 						},
 						font_size = 14,
 						text_val = strings.clone_to_cstring(
-							getBlueprint(state, entity.name).name,
+							getBlueprint(&game, entity.name).name,
 							context.temp_allocator,
 						),
 						color = oklab.OkLab{0.2, 0.2, 0.45, 1.},

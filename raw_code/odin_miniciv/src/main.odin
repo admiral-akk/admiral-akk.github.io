@@ -31,7 +31,7 @@ main :: proc() {
 	// same as while(true) in C
 	for {
 		game.tick(g)
-		game.render(g)
+		game.render()
 		free_all(context.temp_allocator)
 	}
 }

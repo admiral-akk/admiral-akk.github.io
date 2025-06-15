@@ -481,6 +481,76 @@ resolveTriggers :: proc(game: ^Game) {
 	}
 }
 
+moveOverlap :: proc(state: ^Game) {
+	for &e in state.entities {
+		ui, ok := &e.renderer.(UIEntity)
+		if !ok {
+			continue
+		}
+		for &e2 in state.entities {
+			if e2.id == e.id {
+				continue
+			}
+			ui2, ok2 := &e2.renderer.(UIEntity)
+			if !ok2 {
+				continue
+			}
+
+			// make them fatter
+
+			buffer := f32(50.0)
+			rect1 := ui.position
+			rect2 := ui2.position
+
+			rect1.x -= buffer / 2.0
+			rect1.y -= buffer / 2.0
+			rect1.width += buffer
+			rect1.height += buffer
+
+			rect2.x -= buffer / 2
+			rect2.y -= buffer / 2
+			rect2.width += buffer
+			rect2.height += buffer
+
+			// check intersection
+			if !rl.CheckCollisionRecs(rect1, rect2) {
+				continue
+			}
+			fmt.println("collision")
+
+			c1 := rl.Vector2 {
+				ui.position.x + ui.position.width / 2,
+				ui.position.y + ui.position.height / 2,
+			}
+			c2 := rl.Vector2 {
+				ui2.position.x + ui2.position.width / 2,
+				ui2.position.y + ui2.position.height / 2,
+			}
+			// if they are in the same position, jiggle one around
+			if rl.Vector2Length(c1 - c2) < 0.001 {
+				// generate a random direction and move it 0.005 that way.
+				angle := rand.float32_range(0., math.TAU)
+				ui.position.x += 0.005 * math.cos(angle)
+				ui.position.y += 0.005 * math.sin(angle)
+				c1 = rl.Vector2 {
+					ui.position.x + ui.position.width / 2,
+					ui.position.y + ui.position.height / 2,
+				}
+			}
+			delta := rl.Vector2Normalize(c1 - c2) * 2
+
+			// move them apart
+
+			ui.position.x += delta.x
+			ui.position.y += delta.y
+			ui2.position.x -= delta.x
+			ui2.position.y -= delta.y
+		}
+		// find overlap
+
+	}
+}
+
 tick :: proc(state: ^Game) {
 	update_time(state)
 
@@ -508,6 +578,8 @@ tick :: proc(state: ^Game) {
 	// triggers do not have outputs!
 
 	// TODO: Add ability to link / unlink events
+
+	// TODO: move overlapping entities away from each other.
 
 	switch state.state {
 	case .GAME_OVER:
@@ -559,6 +631,7 @@ tick :: proc(state: ^Game) {
 
 		updateConditions(state)
 		resolveTriggers(state)
+		moveOverlap(state)
 	}
 }
 

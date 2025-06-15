@@ -708,21 +708,20 @@ moveOverlap :: proc() {
 
 				// find what side of line c2 is on
 
-				lineDir := rl.Vector2Normalize(c1 - c3)
-				angle := rl.Vector2LineAngle(rl.Vector2Normalize(c1 - c2), lineDir)
-
-				moveDir := rl.Vector2{-lineDir.y, lineDir.x} * 2
-				if angle > 0 {
+				lineDir := rl.Vector2Normalize(c3 - c1)
+				moveDir := rl.Vector2{-lineDir.y, lineDir.x}
+				lineSide := rl.Vector2DotProduct(moveDir, c2 - c1)
+				if lineSide > 0 {
 					moveDir *= -1
 				}
 
 				// Handle nodes that sit on top of a connection
 				ui.position.x += moveDir.x
 				ui.position.y += moveDir.y
-				ui2.position.x -= moveDir.x
-				ui2.position.y -= moveDir.y
 				ui3.position.x += moveDir.x
 				ui3.position.y += moveDir.y
+				ui2.position.x -= moveDir.x
+				ui2.position.y -= moveDir.y
 			}
 		}
 

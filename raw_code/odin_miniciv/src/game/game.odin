@@ -724,8 +724,6 @@ moveOverlap :: proc() {
 				ui2.position.y -= moveDir.y
 			}
 		}
-
-
 	}
 }
 
@@ -744,7 +742,6 @@ tick :: proc() {
 
 	// TODO: implement building dragging seperate from resource dragging
 	// TODO: render timers
-
 	switch game.state {
 	case .GAME_OVER:
 	case .PLAYING:

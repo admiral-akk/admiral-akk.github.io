@@ -600,7 +600,7 @@ moveOverlap :: proc() {
 
 			// make them fatter
 
-			buffer := f32(20.0)
+			buffer := f32(10.0)
 			rect1 := ui.position
 			rect2 := ui2.position
 
@@ -667,16 +667,17 @@ moveOverlap :: proc() {
 				ui3.position.y + ui3.position.height / 2,
 			}
 			dir := (c3 - c1)
-			dir -= rl.Vector2Normalize(dir) * 200
-			dir *= 0.01
+			dir -= rl.Vector2Normalize(dir) * 300
+			if rl.Vector2Length(dir) > 40 {
+				dir *= 0.01
 
-			// Handle connected nodes
-			ui.position.x += dir.x
-			ui.position.y += dir.y
-			ui3.position.x -= dir.x
-			ui3.position.y -= dir.y
+				// Handle connected nodes
+				ui.position.x += dir.x
+				ui.position.y += dir.y
+				ui3.position.x -= dir.x
+				ui3.position.y -= dir.y
 
-
+			}
 			for &e2 in game.entities {
 				if e2.id == e.id {
 					continue
@@ -714,7 +715,6 @@ moveOverlap :: proc() {
 				if angle > 0 {
 					moveDir *= -1
 				}
-
 
 				// Handle nodes that sit on top of a connection
 				ui.position.x += moveDir.x

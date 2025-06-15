@@ -150,7 +150,6 @@ UIElement :: union {
 
 UIEntity :: struct {
 	element:  UIElement,
-	selected: SelectionState,
 	position: rl.Rectangle,
 }
 

@@ -908,30 +908,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	g2 := entity(game)
 	g2.entity = Building {
 		name     = .Field,
-		triggers = makeDynamic(
-			Trigger,
-			[]Trigger {
-				Trigger {
-					conditions = Fill {
-						resource = Resource{class = .Person, domain = .Base},
-						min = 0,
-						max = 400,
-						target = 400,
-					},
-					results = ReplaceLocation{name = .Farm},
-				},
-				Trigger {
-					conditions = Drain {
-						resource = Resource{class = .Person, domain = .Base},
-						min = 0,
-						max = 400,
-						target = 0,
-						current = 400,
-					},
-					results = DestroyLocation{},
-				},
-			},
-		),
+		triggers = makeDynamic(Trigger, []Trigger{}),
 	}
 	g2.renderer = UIEntity {
 		element  = Button{},

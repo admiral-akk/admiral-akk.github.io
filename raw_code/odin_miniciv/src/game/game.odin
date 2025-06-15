@@ -46,11 +46,6 @@ Blueprint :: struct {
 	output: [dynamic]Resource,
 }
 
-ResourceCondition :: struct {
-	class:  Maybe(ResourceClass),
-	domain: Maybe(ResourceDomain),
-}
-
 // always starts at 0, decrements if missing, increments if provided.
 // true iff current == max.
 EventFill :: struct {
@@ -416,6 +411,7 @@ updateConditions :: proc(game: ^Game) {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
 		e := game.entities[i]
 		#partial switch &e in e.entity {
+		case Event:
 		case Building:
 			inputs := getInputs(game, &e)
 			for &trigger in e.triggers {

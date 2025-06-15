@@ -15,16 +15,6 @@ import rl "vendor:raylib"
 WINDOW_SIZE :: 720
 SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
-GRID_SIZE :: 128
-TOWER_ATTACK :: 1
-TICK_TO_SPAWN :: 200
-TOWER_RANGE :: 400
-TOWER_RELOAD_TICKS :: 50
-ENEMY_SPEED :: 5
-GRAVITY_PER_TICK :: 0.1
-ENEMY_HEALTH :: 2
-PARTICLE_SCALE :: 0.2
-PARTICLE_MAX_TICKS :: 40
 Vec2i :: [2]int
 
 // add some sound effects using the 8-bit midi sound effect thing where you draw them using notes

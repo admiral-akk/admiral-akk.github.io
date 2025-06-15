@@ -199,7 +199,7 @@ Game :: struct {
 	blueprints: map[LocationType]Blueprint,
 }
 
-entity :: proc(game: ^Game) -> ^GameEntity {
+entity :: proc() -> ^GameEntity {
 	e := GameEntity {
 		renderer = MeshRenderer{material = "base", mesh = "base"},
 		id = game.entityId,
@@ -209,7 +209,7 @@ entity :: proc(game: ^Game) -> ^GameEntity {
 	return &game.entities[len(game.entities) - 1]
 }
 
-e_get :: proc(game: ^Game, id: int) -> ^GameEntity {
+e_get :: proc(id: int) -> ^GameEntity {
 	for i in 0 ..< len(game.entities) {
 		if game.entities[i].id == id {
 			return &game.entities[i]
@@ -219,7 +219,7 @@ e_get :: proc(game: ^Game, id: int) -> ^GameEntity {
 	return nil
 }
 
-delete_e :: proc(game: ^Game, entityId: int) {
+delete_e :: proc(entityId: int) {
 	for i in 0 ..< len(game.entities) {
 		if game.entities[i].id == entityId {
 			unordered_remove(&game.entities, i)
@@ -289,9 +289,9 @@ find_first_matching :: proc($T: typeid, arr: []T, target: T) -> int {
 }
 
 // TODO: enforce rules around what can connect to what
-updateConnection :: proc(game: ^Game, startId, endId: int) {
-	start := e_get(game, startId)
-	end := e_get(game, endId)
+updateConnection :: proc(startId, endId: int) {
+	start := e_get(startId)
+	end := e_get(endId)
 	#partial switch &s in start.entity {
 	case Building:
 		#partial switch &e in end.entity {
@@ -327,12 +327,12 @@ getEventName :: proc(event: EventType) -> string {
 	return "UNKNOWN?"
 }
 
-getBlueprint :: proc(game: ^Game, name: LocationType) -> ^Blueprint {
+getBlueprint :: proc(name: LocationType) -> ^Blueprint {
 	_, building, _, _ := map_entry(&game.blueprints, name)
 	return building
 }
 
-getInputs :: proc(game: ^Game, target: ^GameEntity) -> [dynamic]Resource {
+getInputs :: proc(target: ^GameEntity) -> [dynamic]Resource {
 	inputs := make([dynamic]Resource, context.temp_allocator)
 	for e in game.entities {
 		b, ok := e.entity.(Building)
@@ -340,7 +340,7 @@ getInputs :: proc(game: ^Game, target: ^GameEntity) -> [dynamic]Resource {
 			// check if it's connected 
 			idx := find_first_matching(int, b.outputIds[:], target.id)
 			if idx > -1 {
-				blueprint := getBlueprint(game, b.name)
+				blueprint := getBlueprint(b.name)
 				append(&inputs, ..blueprint.output[:])
 			}
 		}
@@ -348,12 +348,12 @@ getInputs :: proc(game: ^Game, target: ^GameEntity) -> [dynamic]Resource {
 	return inputs
 }
 
-updateConditions :: proc(game: ^Game) {
+updateConditions :: proc() {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
 		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
 		case Event:
-			inputs := getInputs(game, entity)
+			inputs := getInputs(entity)
 			switch &c in e.endCondition {
 			case EventFill:
 				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
@@ -414,7 +414,7 @@ updateConditions :: proc(game: ^Game) {
 	}
 }
 
-destroyLocation :: proc(game: ^Game, id: int) {
+destroyLocation :: proc(id: int) {
 	// remove any thing pointing at it
 	for &e in game.entities {
 		v, ok := e.entity.(Building)
@@ -426,7 +426,7 @@ destroyLocation :: proc(game: ^Game, id: int) {
 			}
 		}
 	}
-	delete_e(game, id)
+	delete_e(id)
 }
 
 conditionMet :: proc(condition: ^EventCondition) -> bool {
@@ -443,18 +443,18 @@ conditionMet :: proc(condition: ^EventCondition) -> bool {
 	return false
 }
 
-applyResult :: proc(game: ^Game, event: ^GameEntity, result: ^EventResult) {
+applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 	switch &c in result {
 	case EventDestroy:
-		destroyLocation(game, c.targetId)
+		destroyLocation(c.targetId)
 	case EventReplace:
-		target := &e_get(game, c.targetId).entity.(Building)
+		target := &e_get(c.targetId).entity.(Building)
 		target.name = c.name
 	case EventExplore:
 		// spawn a new tile or event
 		// tile:
 		pos := event.renderer.(UIEntity).position
-		l := spawnLocation(game, rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
+		l := spawnLocation(rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
 	}
 }
 
@@ -470,23 +470,23 @@ resetCondition :: proc(condition: ^EventCondition) {
 	}
 }
 
-resolveTriggers :: proc(game: ^Game) {
+resolveTriggers :: proc() {
 	for i := len(game.entities) - 1; i >= 0; i -= 1 {
 		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
 		case Event:
-			inputs := getInputs(game, entity)
+			inputs := getInputs(entity)
 
 			endConditionMet := conditionMet(&e.endCondition)
 			if endConditionMet {
 				// destroy this
-				destroyLocation(game, entity.id)
+				destroyLocation(entity.id)
 			} else {
 				// check whether the results trigger
 				resultConditionMet := conditionMet(&e.resultCondition)
 				if resultConditionMet {
 					// trigger results
-					applyResult(game, entity, &e.result)
+					applyResult(entity, &e.result)
 					resetCondition(&e.resultCondition)
 				}
 			}
@@ -610,7 +610,7 @@ tick :: proc() {
 						// check if there's a connection to be made / unmade here	
 						active := getActive(&game)
 						if active != nil {
-							updateConnection(&game, active.id, game.entities[i].id)
+							updateConnection(active.id, game.entities[i].id)
 						}
 					}
 				}
@@ -628,8 +628,8 @@ tick :: proc() {
 			}
 		}
 
-		updateConditions(&game)
-		resolveTriggers(&game)
+		updateConditions()
+		resolveTriggers()
 		moveOverlap()
 	}
 }
@@ -646,8 +646,8 @@ drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	)
 }
 
-spawnLocation :: proc(game: ^Game, position: rl.Vector2, location: LocationType) -> ^GameEntity {
-	g := entity(game)
+spawnLocation :: proc(position: rl.Vector2, location: LocationType) -> ^GameEntity {
+	g := entity()
 	g.entity = Building {
 		name = location,
 	}
@@ -692,7 +692,7 @@ render :: proc() {
 
 				}
 
-				target := e_get(&game, outId)
+				target := e_get(outId)
 				if target != nil {
 					#partial switch t_render in target.renderer {
 					case UIEntity:
@@ -720,7 +720,7 @@ render :: proc() {
 			case UIEntity:
 				// if it has any outgoing connections, draw them
 				for outId in entity.outputIds {
-					target := e_get(&game, outId)
+					target := e_get(outId)
 					if target != nil {
 						#partial switch t_render in target.renderer {
 						case UIEntity:
@@ -826,7 +826,7 @@ render :: proc() {
 						},
 						font_size = 14,
 						text_val = strings.clone_to_cstring(
-							getBlueprint(&game, entity.name).name,
+							getBlueprint(entity.name).name,
 							context.temp_allocator,
 						),
 						color = oklab.OkLab{0.2, 0.2, 0.45, 1.},
@@ -851,7 +851,7 @@ makeDynamic :: proc($T: typeid, slice: []T) -> [dynamic]T {
 	return arr
 }
 
-seedBlueprints :: proc(game: ^Game) {
+seedBlueprints :: proc() {
 
 	map_insert(
 		&game.blueprints,
@@ -880,7 +880,7 @@ seedBlueprints :: proc(game: ^Game) {
 	)
 }
 
-restart :: proc(game: ^Game) {
+restart :: proc() {
 	game.camera3d = rl.Camera3D {
 		position   = rl.Vector3{10, 10, 10},
 		target     = rl.Vector3{0, 0, 0},
@@ -895,7 +895,7 @@ restart :: proc(game: ^Game) {
 	}
 
 	game.state = .PLAYING
-	g := entity(game)
+	g := entity()
 	g.entity = Building {
 		name = .Village,
 	}
@@ -904,7 +904,7 @@ restart :: proc(game: ^Game) {
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
 
-	explore := entity(game)
+	explore := entity()
 	explore.entity = Event {
 		eventType = .Discover,
 		// if this is met, the event fissles.
@@ -922,7 +922,7 @@ restart :: proc(game: ^Game) {
 		position = rl.Rectangle{300, -120, 100, 100},
 	}
 
-	famine := entity(game)
+	famine := entity()
 	famine.entity = Event {
 		eventType = .Famine,
 		// if this is met, the event fissles.
@@ -941,9 +941,7 @@ restart :: proc(game: ^Game) {
 	}
 
 }
-init :: proc() -> ^Game {
-	seedBlueprints(&game)
-	// test deletion
-	restart(&game)
-	return &game
+init :: proc() {
+	seedBlueprints()
+	restart()
 }

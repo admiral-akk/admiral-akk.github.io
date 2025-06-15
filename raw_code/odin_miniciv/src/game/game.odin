@@ -17,6 +17,8 @@ SCREEN_SIZE :: 320
 TICK_RATE :: 0.02
 Vec2i :: [2]int
 
+game := Game{}
+
 // add some sound effects using the 8-bit midi sound effect thing where you draw them using notes
 
 // Mouse buttons
@@ -90,6 +92,13 @@ EventReplace :: struct {
 
 EventExplore :: struct {
 }
+
+
+NodeType :: union {
+	LocationType,
+	EventType,
+}
+
 
 EventResult :: union {
 	EventDestroy,

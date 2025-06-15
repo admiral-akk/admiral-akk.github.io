@@ -309,20 +309,17 @@ get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	// find the ray hits
 	for i in 0 ..< len(state.entities) {
 		g := state.entities[i]
-		#partial switch entity in g.entity {
-		case Building:
-			#partial switch renderer in g.renderer {
-			case UIEntity:
-				#partial switch ui in renderer.element {
-				case Button:
-					over_button := rl.CheckCollisionPointRec(mp_2d, renderer.position)
-					if over_button {
-						append(&rayHit, RayHit{distance = -1, id = g.id})
-					}
+		#partial switch renderer in g.renderer {
+		case UIEntity:
+			#partial switch ui in renderer.element {
+			case Button:
+				over_button := rl.CheckCollisionPointRec(mp_2d, renderer.position)
+				if over_button {
+					append(&rayHit, RayHit{distance = -1, id = g.id})
 				}
 			}
-
 		}
+		// TODO: add 3d hit?
 	}
 	slice.sort_by(
 		rayHit[:],
@@ -370,6 +367,13 @@ updateConnection :: proc(game: ^Game, startId, endId: int) {
 	case Building:
 		#partial switch &e in end.entity {
 		case Building:
+			outputIdx := find_first_matching(int, s.outputIds[:], end.id)
+			if outputIdx > -1 {
+				unordered_remove(&s.outputIds, outputIdx)
+			} else {
+				append(&s.outputIds, end.id)
+			}
+		case Event:
 			outputIdx := find_first_matching(int, s.outputIds[:], end.id)
 			if outputIdx > -1 {
 				unordered_remove(&s.outputIds, outputIdx)
@@ -561,6 +565,7 @@ resolveTriggers :: proc(game: ^Game) {
 					applyResult(game, &e.result)
 				}
 			}
+
 		case Building:
 			inputs := getInputs(game, entity)
 			for &trigger in e.triggers {
@@ -728,6 +733,7 @@ render :: proc(state: ^Game) {
 				}
 			}
 
+		// TODO: prevent output drag from event
 		case Building:
 			#partial switch renderer in e.renderer {
 			case UIEntity:

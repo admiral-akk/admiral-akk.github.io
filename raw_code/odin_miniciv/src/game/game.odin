@@ -140,14 +140,7 @@ GameEntity :: struct {
 	renderer: Renderer,
 }
 
-ButtonType :: enum int {
-	Increment = 0,
-	NewGame   = 1,
-}
-
 Button :: struct {
-	state: SelectionState,
-	type:  ButtonType,
 }
 
 // elements that have persistent state
@@ -156,7 +149,6 @@ UIElement :: union {
 }
 
 UIEntity :: struct {
-	id:       int,
 	element:  UIElement,
 	selected: SelectionState,
 	position: rl.Rectangle,

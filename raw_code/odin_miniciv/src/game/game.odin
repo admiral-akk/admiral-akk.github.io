@@ -243,8 +243,8 @@ UIElement :: union {
 
 UIEntity :: struct {
 	element:      UIElement,
+	// TODO: replace all usage of position with nodePosition
 	nodePosition: NodePosition,
-	position:     rl.Rectangle,
 }
 
 MeshRenderer :: struct {

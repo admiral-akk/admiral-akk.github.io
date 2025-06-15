@@ -173,8 +173,18 @@ Fill :: struct {
 	max:      int,
 }
 
+Drain :: struct {
+	resource: Resource,
+	current:  int,
+	target:   int,
+	min:      int,
+	max:      int,
+}
+
+
 Condition :: union {
 	Fill,
+	Drain,
 }
 
 ReplaceLocation :: struct {
@@ -735,6 +745,18 @@ updateConditions :: proc(game: ^Game) {
 						c.current -= 1
 					}
 					c.current = math.clamp(c.current, c.min, c.max)
+				case Drain:
+					// check if there's an input that matches
+					inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+					if inputIdx > -1 {
+						// condition met, incremenet
+						c.current += 1
+					} else {
+						// condition failed, decremenet
+						c.current -= 1
+					}
+					c.current = math.clamp(c.current, c.min, c.max)
+
 				}
 			}
 		}
@@ -768,11 +790,14 @@ resolveTriggers :: proc(game: ^Game) {
 		case Building:
 			inputs := getInputs(game, &e)
 			for &trigger in e.triggers {
-				conditionMet := true
+				conditionMet := false
 				switch &c in trigger.conditions {
 				case Fill:
-					conditionMet &= c.current >= c.target
+					conditionMet = c.current >= c.target
+				case Drain:
+					conditionMet = c.current <= c.target
 				}
+
 				if conditionMet {
 					switch &r in trigger.results {
 					case ReplaceLocation:
@@ -1318,6 +1343,16 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 						target = 100,
 					},
 					results = ReplaceLocation{name = "farm"},
+				},
+				Trigger {
+					conditions = Drain {
+						resource = Resource{class = .Person, domain = .Base},
+						min = 0,
+						max = 100,
+						target = 0,
+						current = 100,
+					},
+					results = DestroyLocation{},
 				},
 			},
 		),

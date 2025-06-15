@@ -869,7 +869,6 @@ seedBlueprints :: proc(game: ^Game) {
 			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
 		},
 	)
-
 }
 
 restart :: proc(game: ^Game) {

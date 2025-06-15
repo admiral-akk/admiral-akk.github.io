@@ -98,6 +98,7 @@ EventResult :: union {
 }
 
 EventType :: enum {
+	Famine,
 	Maintance,
 	Innovation,
 	Discover,
@@ -311,6 +312,8 @@ getEventName :: proc(event: EventType) -> string {
 		return "Maintance"
 	case .Discover:
 		return "Discover"
+	case .Famine:
+		return "Famine"
 	}
 	return "UNKNOWN?"
 }
@@ -863,7 +866,21 @@ seedBlueprints :: proc(game: ^Game) {
 
 }
 
-makeBuilding :: proc(game: ^Game) -> ^GameEntity {
+restart :: proc(game: ^Game) {
+	game.camera3d = rl.Camera3D {
+		position   = rl.Vector3{10, 10, 10},
+		target     = rl.Vector3{0, 0, 0},
+		up         = rl.Vector3{0, 1, 0},
+		fovy       = 30,
+		projection = .ORTHOGRAPHIC,
+	}
+
+	game.camera2d = rl.Camera2D {
+		offset = rl.Vector2{WINDOW_SIZE / 2, WINDOW_SIZE / 2},
+		zoom   = 1,
+	}
+
+	game.state = .PLAYING
 	g := entity(game)
 	g.entity = Building {
 		name = .Village,
@@ -891,25 +908,24 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 		position = rl.Rectangle{300, -120, 100, 100},
 	}
 
-	return g
-}
-
-restart :: proc(game: ^Game) {
-	game.camera3d = rl.Camera3D {
-		position   = rl.Vector3{10, 10, 10},
-		target     = rl.Vector3{0, 0, 0},
-		up         = rl.Vector3{0, 1, 0},
-		fovy       = 30,
-		projection = .ORTHOGRAPHIC,
+	famine := entity(game)
+	famine.entity = Event {
+		eventType = .Famine,
+		// if this is met, the event fissles.
+		endCondition = EventFill{resource = Resource{class = .Food, domain = .Base}, max = 100},
+		// all of these must be met for the results to trigger.
+		resultCondition = EventDrain {
+			resource = Resource{class = .Food, domain = .Base},
+			min = -200,
+		},
+		result = EventDestroy{targetId = g.id},
 	}
 
-	game.camera2d = rl.Camera2D {
-		offset = rl.Vector2{WINDOW_SIZE / 2, WINDOW_SIZE / 2},
-		zoom   = 1,
+	famine.renderer = UIEntity {
+		element  = Button{},
+		position = rl.Rectangle{300, -120, 100, 100},
 	}
 
-	game.state = .PLAYING
-	makeBuilding(game)
 }
 init :: proc() -> Game {
 	state := Game{}

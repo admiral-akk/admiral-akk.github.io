@@ -99,6 +99,7 @@ EventResult :: union {
 
 EventType :: enum {
 	Maintance,
+	Innovation,
 }
 
 // This is a one-off Event.

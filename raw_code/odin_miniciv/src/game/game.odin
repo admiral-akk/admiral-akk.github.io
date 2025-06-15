@@ -180,7 +180,6 @@ Drain :: struct {
 	max:      int,
 }
 
-
 Condition :: union {
 	Fill,
 	Drain,
@@ -230,11 +229,10 @@ Game :: struct {
 	time:       GameTime,
 	entityId:   int,
 	entities:   [dynamic]GameEntity,
-	camera:     rl.Camera3D,
+	camera3d:   rl.Camera3D,
 	camera2d:   rl.Camera2D,
 	blueprints: map[LocationType]Blueprint,
 }
-
 
 entity :: proc(game: ^Game) -> ^GameEntity {
 	e := GameEntity {
@@ -303,7 +301,7 @@ length_2 :: proc(v: Vec2i) -> int {
 
 get_ray_hits :: proc(state: ^Game) -> [dynamic]RayHit {
 	mp := rl.GetMousePosition()
-	ray := rl.GetScreenToWorldRay(mp, state.camera) // Get a ray trace from screen position (i.e mouse)
+	ray := rl.GetScreenToWorldRay(mp, state.camera3d) // Get a ray trace from screen position (i.e mouse)
 	rayHit := make([dynamic]RayHit)
 	mp_2d := (rl.GetMousePosition() - state.camera2d.offset) / state.camera2d.zoom
 
@@ -581,7 +579,7 @@ render :: proc(state: ^Game) {
 	rl.BeginDrawing()
 	rl.ClearBackground({76, 53, 83, 255})
 
-	rl.BeginMode3D(state.camera)
+	rl.BeginMode3D(state.camera3d)
 	rl.EndMode3D()
 
 	rl.BeginMode2D(state.camera2d)
@@ -758,7 +756,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 
 
 restart :: proc(game: ^Game) {
-	game.camera = rl.Camera3D {
+	game.camera3d = rl.Camera3D {
 		position   = rl.Vector3{10, 10, 10},
 		target     = rl.Vector3{0, 0, 0},
 		up         = rl.Vector3{0, 1, 0},

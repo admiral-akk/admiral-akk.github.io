@@ -157,6 +157,12 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 				targetId = target.id,
 			}
 		case .Discover:
+			event.endCondition = AlwaysFalse{}
+			event.resultCondition = EventFill {
+				resource = Resource{class = .Person, domain = .Base},
+				max = 100,
+			}
+			event.result = EventExplore{}
 		case .Innovation:
 		case .Maintance:
 		}
@@ -962,24 +968,7 @@ restart :: proc() {
 	game.state = .PLAYING
 	g := spawn(.Village)
 	spawn(.Famine)
-
-	explore := entity()
-	explore.entity = Event {
-		eventType = .Discover,
-		// if this is met, the event fissles.
-		endCondition = AlwaysFalse{},
-		// all of these must be met for the results to trigger.
-		resultCondition = EventFill {
-			resource = Resource{class = .Person, domain = .Base},
-			max = 100,
-		},
-		result = EventExplore{},
-	}
-
-	explore.renderer = UIEntity {
-		element  = Button{},
-		position = rl.Rectangle{300, -120, 100, 100},
-	}
+	spawn(.Discover)
 
 }
 init :: proc() {

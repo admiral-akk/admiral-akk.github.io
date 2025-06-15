@@ -77,7 +77,6 @@ GameEntity :: struct {
 	id:       int,
 	entity:   EntityType,
 	selected: SelectionState,
-	position: Vec2i,
 	renderer: Renderer,
 }
 

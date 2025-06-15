@@ -524,10 +524,7 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 		target := e_get(c.targetId)
 		target.entity = toEntityType(c.name).?
 	case EventDiscover:
-		// spawn a new tile or event
-		// tile:
-		pos := event.renderer.(UIEntity).position
-		l := spawnLocation(rl.Vector2{pos.x + pos.width / 2, pos.y + pos.height / 2}, .Field)
+		event.entity = toEntityType(.Field).?
 	}
 }
 

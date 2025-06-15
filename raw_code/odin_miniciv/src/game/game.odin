@@ -178,12 +178,15 @@ Condition :: union {
 }
 
 ReplaceLocation :: struct {
-	// nil means that the location is removed
-	name: Maybe(string),
+	name: string,
+}
+
+DestroyLocation :: struct {
 }
 
 Result :: union {
 	ReplaceLocation,
+	DestroyLocation,
 }
 
 // something like:
@@ -714,17 +717,70 @@ getInputs :: proc(game: ^Game, location: ^Building) -> [dynamic]Resource {
 }
 
 updateConditions :: proc(game: ^Game) {
-	for i := len(game.entities); i >= 0; i -= 1 {
+	for i := len(game.entities) - 1; i >= 0; i -= 1 {
 		e := game.entities[i]
 		#partial switch &e in e.entity {
 		case Building:
 			inputs := getInputs(game, &e)
 			for &trigger in e.triggers {
-				switch c in trigger.conditions {
+				switch &c in trigger.conditions {
 				case Fill:
-				// check if there's an input that matches
+					// check if there's an input that matches
+					inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+					if inputIdx > -1 {
+						// condition met, incremenet
+						c.current += 1
+					} else {
+						// condition failed, decremenet
+						c.current -= 1
+					}
+					c.current = math.clamp(c.current, c.min, c.max)
+				}
+			}
+		}
+	}
+}
 
+destroyLocation :: proc(game: ^Game, id: int) {
+	// remove any connections it might have
+	for &e in game.entities {
+		v, ok := e.entity.(Building)
+		if ok {
+			idx := find_first_matching(int, v.inputIds[:], id)
+			for idx > -1 {
+				unordered_remove(&v.inputIds, idx)
+				idx = find_first_matching(int, v.inputIds[:], id)
+			}
+			idx = find_first_matching(int, v.outputIds[:], id)
+			for idx > -1 {
+				unordered_remove(&v.outputIds, idx)
+				idx = find_first_matching(int, v.outputIds[:], id)
+			}
+		}
+	}
+	delete_e(game, id)
+}
 
+resolveTriggers :: proc(game: ^Game) {
+	for i := len(game.entities) - 1; i >= 0; i -= 1 {
+		entity := &game.entities[i]
+		#partial switch &e in entity.entity {
+		case Building:
+			inputs := getInputs(game, &e)
+			for &trigger in e.triggers {
+				conditionMet := true
+				switch &c in trigger.conditions {
+				case Fill:
+					conditionMet &= c.current >= c.target
+				}
+				if conditionMet {
+					switch &r in trigger.results {
+					case ReplaceLocation:
+						e.name = r.name
+					case DestroyLocation:
+						destroyLocation(game, entity.id)
+						break
+					}
 				}
 			}
 		}
@@ -807,6 +863,10 @@ tick :: proc(state: ^Game) {
 				}
 			}
 		}
+
+		updateConditions(state)
+		resolveTriggers(state)
+
 		#reverse for &g in state.entities {
 			#partial switch &tower in g.entity {
 			case Tower:
@@ -1246,14 +1306,7 @@ makeBuilding :: proc(game: ^Game) -> ^GameEntity {
 	}
 	g2 := entity(game)
 	g2.entity = Building {
-		name = "field",
-		upgrade = Upgrade {
-			requires = makeDynamic(
-				Resource,
-				[]Resource{Resource{class = .Person, domain = .Base}},
-			),
-			name = "farm",
-		},
+		name     = "field",
 		triggers = makeDynamic(
 			Trigger,
 			[]Trigger {

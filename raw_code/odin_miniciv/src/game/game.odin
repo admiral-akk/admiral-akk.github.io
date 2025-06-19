@@ -60,66 +60,113 @@ EventType :: enum {
 	Raid,
 }
 
-toEvent :: proc(t: EventType) -> EntityType {
+toEvent :: proc(id: int, t: EventType) -> EntityType {
 	event := Event {
 		eventType = t,
 	}
 	switch t {
 	case .Famine:
-		event.endCondition = EventFill {
-			resource = .Food,
-			max      = 100,
-		}
-		event.resultCondition = EventDrain {
-			resource = .Food,
-			min      = -1000,
-		}
 		// find target
 		target := get_first_matching(.Village)
-
-		event.result = EventDestroy {
-			targetId = target.id,
-		}
+		event.c = makeDynamic(
+			CauseAndEffect,
+			[]CauseAndEffect {
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventDrain{resource = .Food, min = -1000}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventDestroy{targetId = target.id}},
+					),
+				},
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventFill{resource = .Food, max = 100}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventSpawn{name = .Festival}, EventDestroy{targetId = id}},
+					),
+				},
+			},
+		)
 	case .Explore:
-		event.endCondition = AlwaysFalse{}
-		event.resultCondition = EventFill {
-			resource = .Scout,
-			max      = 100,
-		}
-		event.result = EventDiscover{}
-
+		event.c = makeDynamic(
+			CauseAndEffect,
+			[]CauseAndEffect {
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventFill{resource = .Scout, max = 100}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventSpawn{name = .Field}, EventDestroy{targetId = id}},
+					),
+				},
+			},
+		)
 	case .Invent:
-		event.endCondition = AlwaysFalse{}
-		event.resultCondition = EventFill {
-			resource = .Priest,
-			max      = 100,
-		}
-
-		event.result = EventInvent{}
+		event.c = makeDynamic(
+			CauseAndEffect,
+			[]CauseAndEffect {
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventFill{resource = .Priest, max = 100}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventReplace{targetId = id, name = .Field}},
+					),
+				},
+			},
+		)
 
 	case .Raid:
-		event.endCondition = EventFill {
-			resource = .Soldier,
-			max      = 100,
-		}
-		event.resultCondition = EventDrain {
-			resource = .Soldier,
-			min      = -1000,
-		}
 		// find target
 		target := get_first_matching(.Village)
-
-		event.result = EventDestroy {
-			targetId = target.id,
-		}
-
+		event.c = makeDynamic(
+			CauseAndEffect,
+			[]CauseAndEffect {
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventDrain{resource = .Soldier, min = -1000}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventDestroy{targetId = target.id}},
+					),
+				},
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventFill{resource = .Soldier, max = 100}},
+					),
+					results = makeDynamic(EventResult, []EventResult{EventDestroy{targetId = id}}),
+				},
+			},
+		)
 	case .Festival:
-		event.endCondition = AlwaysFalse{}
-		event.resultCondition = EventFill {
-			resource = .Food,
-			max      = 100,
-		}
-		event.result = EventFestival{}
+		event.c = makeDynamic(
+			CauseAndEffect,
+			[]CauseAndEffect {
+				CauseAndEffect {
+					conditions = makeDynamic(
+						EventCondition,
+						[]EventCondition{EventFill{resource = .Food, max = 100}},
+					),
+					results = makeDynamic(
+						EventResult,
+						[]EventResult{EventReplace{targetId = id, name = .Fire}},
+					),
+				},
+			},
+		)
 	}
 	return event
 }
@@ -207,6 +254,10 @@ EventReplace :: struct {
 	targetId: int,
 	name:     NodeType,
 }
+
+EventSpawn :: struct {
+	name: NodeType,
+}
 EventInvent :: struct {
 }
 EventFestival :: struct {
@@ -245,12 +296,12 @@ get_first_matching :: proc(t: NodeType) -> ^GameEntity {
 	return nil
 }
 
-toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
+toEntityType :: proc(id: int, t: NodeType) -> Maybe(EntityType) {
 	switch t in t {
 	case LocationType:
 		return Building{name = t}
 	case EventType:
-		return toEvent(t)
+		return toEvent(id, t)
 	}
 	return nil
 }
@@ -261,16 +312,22 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
-	e.entity = toEntityType(t).?
+	e.entity = toEntityType(e.id, t).?
 	return e
 }
 
 EventResult :: union {
 	EventDestroy,
 	EventInvent,
+	EventSpawn,
 	EventReplace,
 	EventDiscover,
 	EventFestival,
+}
+
+CauseAndEffect :: struct {
+	conditions: [dynamic]EventCondition,
+	results:    [dynamic]EventResult,
 }
 
 // This is a one-off Event.
@@ -283,12 +340,8 @@ EventResult :: union {
 // Innovation: given the input, upgrades a building
 // Invasion: every X ticks, degrades / destroys a building.
 Event :: struct {
-	eventType:       EventType,
-	// if this is met, the event fissles.
-	endCondition:    EventCondition,
-	// all of these must be met for the results to trigger.
-	resultCondition: EventCondition,
-	result:          EventResult,
+	eventType: EventType,
+	c:         [dynamic]CauseAndEffect,
 }
 
 Building :: struct {
@@ -489,61 +542,37 @@ updateConditions :: proc() {
 		#partial switch &e in entity.entity {
 		case Event:
 			inputs := getInputs(entity)
-			switch &c in e.endCondition {
-			case EventFill:
-				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
-				if inputIdx > -1 {
-					c.current += 1
+			for &cause in e.c {
+				for &condition in cause.conditions {
+					switch &c in condition {
+					case EventFill:
+						inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
+						if inputIdx > -1 {
+							c.current += 1
 
-				} else {
-					c.current -= 1
-				}
-				c.current = math.clamp(c.current, 0, c.max)
-			case EventDrain:
-				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
-				if inputIdx > -1 {
-					c.current += 1
+						} else {
+							c.current -= 1
+						}
+						c.current = math.clamp(c.current, 0, c.max)
+					case EventDrain:
+						inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
+						if inputIdx > -1 {
+							c.current += 1
 
-				} else {
-					c.current -= 1
+						} else {
+							c.current -= 1
+						}
+						c.current = math.clamp(c.current, c.min, 0)
+					case EventTimer:
+						c.currentTicks += 1
+						if c.loop && c.currentTicks > c.totalTicks {
+							// we set it to 1 here because we want to ensure
+							// it happens every total ticks.
+							c.currentTicks = 1
+						}
+					case AlwaysFalse:
+					}
 				}
-				c.current = math.clamp(c.current, c.min, 0)
-			case EventTimer:
-				c.currentTicks += 1
-				if c.loop && c.currentTicks > c.totalTicks {
-					// we set it to 1 here because we want to ensure
-					// it happens every total ticks.
-					c.currentTicks = 1
-				}
-			case AlwaysFalse:
-			}
-			switch &c in e.resultCondition {
-			case EventFill:
-				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
-				if inputIdx > -1 {
-					c.current += 1
-
-				} else {
-					c.current -= 1
-				}
-				c.current = math.clamp(c.current, 0, c.max)
-			case EventDrain:
-				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
-				if inputIdx > -1 {
-					c.current += 1
-
-				} else {
-					c.current -= 1
-				}
-				c.current = math.clamp(c.current, c.min, 0)
-			case EventTimer:
-				c.currentTicks += 1
-				if c.loop && c.currentTicks > c.totalTicks {
-					// we set it to 1 here because we want to ensure
-					// it happens every total ticks.
-					c.currentTicks = 1
-				}
-			case AlwaysFalse:
 			}
 		}
 	}
@@ -584,13 +613,16 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 		destroyLocation(c.targetId)
 	case EventReplace:
 		target := e_get(c.targetId)
-		target.entity = toEntityType(c.name).?
+		target.entity = toEntityType(event.id, c.name).?
 	case EventDiscover:
-		event.entity = toEntityType(.Field).?
+		event.entity = toEntityType(event.id, .Field).?
 	case EventFestival:
-		event.entity = toEntityType(.Fire).?
+		event.entity = toEntityType(event.id, .Fire).?
 	case EventInvent:
-		event.entity = toEntityType(.Spear).?
+		event.entity = toEntityType(event.id, .Spear).?
+	case EventSpawn:
+		spawn(c.name)
+
 	}
 }
 
@@ -611,30 +643,16 @@ resolveTriggers :: proc() {
 		entity := &game.entities[i]
 		#partial switch &e in entity.entity {
 		case Event:
-			inputs := getInputs(entity)
-
-			endConditionMet := conditionMet(&e.endCondition)
-			if endConditionMet {
-				#partial switch e.eventType {
-				case .Famine:
-					result: EventResult
-					result = EventReplace {
-						targetId = entity.id,
-						name     = .Festival,
-					}
-					applyResult(entity, &result)
-
-				case:
-					// destroy this
-					destroyLocation(entity.id)
+			for cause in e.c {
+				met := true
+				for &cond in cause.conditions {
+					met &= conditionMet(&cond)
 				}
-			} else {
-				// check whether the results trigger
-				resultConditionMet := conditionMet(&e.resultCondition)
-				if resultConditionMet {
-					// trigger results
-					applyResult(entity, &e.result)
-					resetCondition(&e.resultCondition)
+				if met {
+					for &result in cause.results {
+						applyResult(entity, &result)
+					}
+					break
 				}
 			}
 		}
@@ -647,15 +665,20 @@ getOutputConnections :: proc(entity: ^GameEntity) -> [dynamic]int {
 	case Building:
 		append(&connections, ..e.outputIds[:])
 	case Event:
-		switch &r in e.result {
-		case EventDestroy:
-			append(&connections, r.targetId)
-		case EventReplace:
-			append(&connections, r.targetId)
-		case EventDiscover:
-		case EventInvent:
-		case EventFestival:
+		for c in e.c {
+			for r in c.results {
+				switch r in r {
+				case EventDestroy:
+					append(&connections, r.targetId)
+				case EventReplace:
+					append(&connections, r.targetId)
+				case EventDiscover:
+				case EventInvent:
+				case EventFestival:
+				case EventSpawn:
 
+				}
+			}
 		}
 	}
 	return connections
@@ -925,33 +948,39 @@ render :: proc() {
 			case UIEntity:
 				// if it has any outgoing connections, draw them
 				outId := -1
-				switch result in entity.result {
-				case EventDestroy:
-					outId = result.targetId
-				case EventReplace:
-					outId = result.targetId
-				case EventDiscover:
-				case EventFestival:
-				case EventInvent:
-				}
+				for ability in entity.c {
+					for result in ability.results {
 
-				target := e_get(outId)
-				if target != nil {
-					#partial switch t_render in target.renderer {
-					case UIEntity:
-						// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
-						drawRect(
-							rl.Vector2 {
-								renderer.position.x + renderer.position.width / 2,
-								renderer.position.y + renderer.position.height / 2,
-							},
-							rl.Vector2 {
-								t_render.position.x + t_render.position.width / 2,
-								t_render.position.y + t_render.position.height / 2,
-							},
-							20,
-							rl.Color{220, 40, 20, 255},
-						)
+						switch result in result {
+						case EventDestroy:
+							outId = result.targetId
+						case EventReplace:
+							outId = result.targetId
+						case EventDiscover:
+						case EventFestival:
+						case EventInvent:
+						case EventSpawn:
+						}
+						target := e_get(outId)
+						if target != nil {
+							#partial switch t_render in target.renderer {
+							case UIEntity:
+								// TODO: render this being mindful of overlap (ex: if two nodes form a cycle)
+								drawRect(
+									rl.Vector2 {
+										renderer.position.x + renderer.position.width / 2,
+										renderer.position.y + renderer.position.height / 2,
+									},
+									rl.Vector2 {
+										t_render.position.x + t_render.position.width / 2,
+										t_render.position.y + t_render.position.height / 2,
+									},
+									20,
+									rl.Color{220, 40, 20, 255},
+								)
+
+							}
+						}
 
 					}
 				}

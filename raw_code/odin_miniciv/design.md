@@ -80,12 +80,13 @@ Lose: Have your village disabled
 - Start with Village + Famine! + Explore!
   - If Famine! triggers, LOSS.
 - Explore! leads to Field
-- Field treats Famine!, creating ???
-- ???
-- ???
+- Field treats Famine!, creating Festival!
+- Festival! needs food + people.
+- Festival! triggers, creating Bonfire + Invent!
+  - If Invent! triggers, spawn Spear
 - Raid! appears, targeting Field
   - If Raid! triggers targeting village, LOSS.
-- Barracks defeats Raid!, WIN
+  - If defeat Raid!, WIN
 
 ### Resources
 

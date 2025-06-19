@@ -68,6 +68,35 @@ LocationType :: enum {
 }
 
 
+getBlueprint :: proc(name: LocationType) -> Blueprint {
+	switch name {
+	case .Field:
+		return Blueprint {
+			name = "Field",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Food}),
+		}
+	case .Village:
+		return Blueprint {
+			name = "Village",
+			output = makeDynamic(ResourceType, []ResourceType{.Scout}),
+		}
+	case .Spear:
+		return Blueprint {
+			name = "Spear",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Soldier}),
+		}
+	case .Fire:
+		return Blueprint {
+			name = "Fire",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Priest}),
+		}
+	}
+	return Blueprint{}
+}
+
 Blueprint :: struct {
 	name:   string,
 	input:  [dynamic]ResourceType,
@@ -396,35 +425,6 @@ updateConnection :: proc(startId, endId: int) {
 			}
 		}
 	}
-}
-
-getBlueprint :: proc(name: LocationType) -> Blueprint {
-	switch name {
-	case .Field:
-		return Blueprint {
-			name = "Field",
-			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
-			output = makeDynamic(ResourceType, []ResourceType{.Food}),
-		}
-	case .Village:
-		return Blueprint {
-			name = "Village",
-			output = makeDynamic(ResourceType, []ResourceType{.Scout}),
-		}
-	case .Spear:
-		return Blueprint {
-			name = "Spear",
-			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
-			output = makeDynamic(ResourceType, []ResourceType{.Soldier}),
-		}
-	case .Fire:
-		return Blueprint {
-			name = "Fire",
-			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
-			output = makeDynamic(ResourceType, []ResourceType{.Priest}),
-		}
-	}
-	return Blueprint{}
 }
 
 getInputs :: proc(target: ^GameEntity) -> [dynamic]ResourceType {

@@ -23,11 +23,6 @@ game := Game{}
 
 // Mouse buttons
 
-NodePosition :: struct {
-	pos:    rl.Vector2,
-	radius: f32,
-}
-
 SelectionState :: enum int {
 	INACTIVE = 0,
 	HOT      = 1,
@@ -171,8 +166,7 @@ toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 spawn :: proc(t: NodeType) -> ^GameEntity {
 	e := entity()
 	e.renderer = UIEntity {
-		element = Button{},
-		nodePosition = NodePosition{radius = 100},
+		element  = Button{},
 		position = rl.Rectangle{0, 0, 100, 100},
 	}
 	e.entity = toEntityType(t).?
@@ -242,9 +236,8 @@ UIElement :: union {
 }
 
 UIEntity :: struct {
-	element:      UIElement,
-	nodePosition: NodePosition,
-	position:     rl.Rectangle,
+	element:  UIElement,
+	position: rl.Rectangle,
 }
 
 MeshRenderer :: struct {
@@ -803,7 +796,6 @@ tick :: proc() {
 	}
 }
 
-
 drawRect :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
 	angle := -rl.Vector2LineAngle(end - start, rl.Vector2{0, 1})
 	length := rl.Vector2Length(end - start)
@@ -822,11 +814,7 @@ spawnLocation :: proc(position: rl.Vector2, location: LocationType) -> ^GameEnti
 		name = location,
 	}
 	g.renderer = UIEntity {
-		element = Button{},
-		nodePosition = NodePosition {
-			pos = position + rl.Vector2{rand.float32_range(-10, 10), rand.float32_range(-10, 10)},
-			radius = 100,
-		},
+		element  = Button{},
 		position = rl.Rectangle {
 			position.x + rand.float32_range(-10, 10),
 			position.y + rand.float32_range(-10, 10),
@@ -948,13 +936,7 @@ render :: proc() {
 					)
 				}
 
-				gui.render_button(
-					gui.Button {
-						color = button_color,
-						position = renderer.nodePosition.pos,
-						radius = renderer.nodePosition.radius,
-					},
-				)
+				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 
 				gui.render_text_box(
 					gui.TextBox {
@@ -997,13 +979,7 @@ render :: proc() {
 					)
 				}
 
-				gui.render_button(
-					gui.Button {
-						color = button_color,
-						position = renderer.nodePosition.pos,
-						radius = renderer.nodePosition.radius,
-					},
-				)
+				gui.render_button(gui.Button{color = button_color, position = renderer.position})
 
 				gui.render_text_box(
 					gui.TextBox {

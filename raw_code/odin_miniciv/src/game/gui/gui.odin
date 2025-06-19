@@ -28,11 +28,10 @@ render_text_box :: proc(text_box: TextBox) {
 
 Button :: struct {
 	color:    rl.Color,
-	position: rl.Vector2,
-	radius:   f32,
+	position: rl.Rectangle,
 }
 
 render_button :: proc(button: Button) {
-	rl.DrawCircleV(button.position, button.radius, button.color)
-	rl.DrawCircleLinesV(button.position, button.radius, {50, 50, 50, 255})
+	rl.DrawRectangleRec(button.position, button.color)
+	rl.DrawRectangleLinesEx(button.position, 1, {50, 50, 50, 255})
 }

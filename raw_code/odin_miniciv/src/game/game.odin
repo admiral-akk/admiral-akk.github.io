@@ -36,6 +36,22 @@ ResourceType :: enum {
 	Food,
 }
 
+getEventName :: proc(event: EventType) -> string {
+	switch event {
+	case .Invent:
+		return "Invent!"
+	case .Explore:
+		return "Explore!"
+	case .Raid:
+		return "Raid!"
+	case .Famine:
+		return "Famine!"
+	case .Festival:
+		return "Festival!"
+	}
+	return "UNKNOWN?"
+}
+
 EventType :: enum {
 	Famine,
 	Festival,
@@ -381,22 +397,6 @@ updateConnection :: proc(startId, endId: int) {
 			}
 		}
 	}
-}
-
-getEventName :: proc(event: EventType) -> string {
-	switch event {
-	case .Invent:
-		return "Invent!"
-	case .Explore:
-		return "Explore!"
-	case .Raid:
-		return "Raid!"
-	case .Famine:
-		return "Famine!"
-	case .Festival:
-		return "Festival!"
-	}
-	return "UNKNOWN?"
 }
 
 getBlueprint :: proc(name: LocationType) -> ^Blueprint {

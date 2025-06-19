@@ -60,10 +60,6 @@ EventType :: enum {
 	Raid,
 }
 
-triggerActions :: proc(t: EventType, id: int) {
-
-}
-
 toEvent :: proc(t: EventType) -> EntityType {
 	event := Event {
 		eventType = t,
@@ -276,7 +272,6 @@ EventResult :: union {
 	EventDiscover,
 	EventFestival,
 }
-
 
 // This is a one-off Event.
 // 
@@ -620,8 +615,19 @@ resolveTriggers :: proc() {
 
 			endConditionMet := conditionMet(&e.endCondition)
 			if endConditionMet {
-				// destroy this
-				destroyLocation(entity.id)
+				#partial switch e.eventType {
+				case .Famine:
+					result: EventResult
+					result = EventReplace {
+						targetId = entity.id,
+						name     = .Festival,
+					}
+					applyResult(entity, &result)
+
+				case:
+					// destroy this
+					destroyLocation(entity.id)
+				}
 			} else {
 				// check whether the results trigger
 				resultConditionMet := conditionMet(&e.resultCondition)

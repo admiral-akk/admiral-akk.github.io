@@ -60,6 +60,41 @@ EventType :: enum {
 	Raid,
 }
 
+toEvent :: proc(t: EventType) -> EntityType {
+
+	event := Event {
+		eventType = t,
+	}
+	switch t {
+	case .Famine:
+		event.endCondition = EventFill {
+			resource = .Food,
+			max      = 100,
+		}
+		event.resultCondition = EventDrain {
+			resource = .Food,
+			min      = -1000,
+		}
+		// find target
+		target := get_first_matching(.Village)
+
+		event.result = EventDestroy {
+			targetId = target.id,
+		}
+	case .Explore:
+		event.endCondition = AlwaysFalse{}
+		event.resultCondition = EventFill {
+			resource = .Scout,
+			max      = 100,
+		}
+		event.result = EventDiscover{}
+	case .Invent:
+	case .Raid:
+	case .Festival:
+	}
+	return event
+}
+
 LocationType :: enum {
 	Village,
 	Field,
@@ -182,37 +217,7 @@ toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 	case LocationType:
 		return Building{name = t}
 	case EventType:
-		event := Event {
-			eventType = t,
-		}
-		switch t {
-		case .Famine:
-			event.endCondition = EventFill {
-				resource = .Food,
-				max      = 100,
-			}
-			event.resultCondition = EventDrain {
-				resource = .Food,
-				min      = -1000,
-			}
-			// find target
-			target := get_first_matching(.Village)
-
-			event.result = EventDestroy {
-				targetId = target.id,
-			}
-		case .Explore:
-			event.endCondition = AlwaysFalse{}
-			event.resultCondition = EventFill {
-				resource = .Scout,
-				max      = 100,
-			}
-			event.result = EventDiscover{}
-		case .Invent:
-		case .Raid:
-		case .Festival:
-		}
-		return event
+		return toEvent(t)
 	}
 	return nil
 }
@@ -251,6 +256,7 @@ Event :: struct {
 	resultCondition: EventCondition,
 	result:          EventResult,
 }
+
 Building :: struct {
 	name:      LocationType,
 	outputIds: [dynamic]int,

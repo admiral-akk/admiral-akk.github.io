@@ -61,6 +61,32 @@ Brainstorm - things in the real world:
 
 ## Content
 
+### Menus
+
+We can actually create the menus via this system:
+
+- Location: Start
+- Event: Game (connect start to this to start the game)
+
+- Location: Try
+- Event: Again (connect try to this to restart the game)
+
+### Prototype
+
+Win: Complete the Raid! event
+
+Lose: Have your village disabled
+
+- Start with Village + Famine! + Explore!
+  - If Famine! triggers, LOSS.
+- Explore! leads to Field
+- Field treats Famine!, creating ???
+- ???
+- ???
+- Raid! appears, targeting Field
+  - If Raid! triggers targeting village, LOSS.
+- Barracks defeats Raid!, WIN
+
 ### Resources
 
 Resources have "attributes" which are needed to solve problems
@@ -93,6 +119,10 @@ Field
 
 - Output: Food
 
+Barracks
+
+- Output: Fighter
+
 ### Events
 
 Famine!
@@ -105,8 +135,6 @@ Famine!
 - Result:
   - Destroy Event
   - Spawn Invent!
-
-Locusts!
 
 Raid!
 

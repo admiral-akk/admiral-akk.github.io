@@ -60,8 +60,11 @@ EventType :: enum {
 	Raid,
 }
 
-toEvent :: proc(t: EventType) -> EntityType {
+triggerActions :: proc(t: EventType, id: int) {
 
+}
+
+toEvent :: proc(t: EventType) -> EntityType {
 	event := Event {
 		eventType = t,
 	}
@@ -88,9 +91,39 @@ toEvent :: proc(t: EventType) -> EntityType {
 			max      = 100,
 		}
 		event.result = EventDiscover{}
+
 	case .Invent:
+		event.endCondition = AlwaysFalse{}
+		event.resultCondition = EventFill {
+			resource = .Priest,
+			max      = 100,
+		}
+
+		event.result = EventInvent{}
+
 	case .Raid:
+		event.endCondition = EventFill {
+			resource = .Soldier,
+			max      = 100,
+		}
+		event.resultCondition = EventDrain {
+			resource = .Soldier,
+			min      = -1000,
+		}
+		// find target
+		target := get_first_matching(.Village)
+
+		event.result = EventDestroy {
+			targetId = target.id,
+		}
+
 	case .Festival:
+		event.endCondition = AlwaysFalse{}
+		event.resultCondition = EventFill {
+			resource = .Food,
+			max      = 100,
+		}
+		event.result = EventFestival{}
 	}
 	return event
 }
@@ -178,6 +211,10 @@ EventReplace :: struct {
 	targetId: int,
 	name:     NodeType,
 }
+EventInvent :: struct {
+}
+EventFestival :: struct {
+}
 
 EventDiscover :: struct {
 }
@@ -234,8 +271,10 @@ spawn :: proc(t: NodeType) -> ^GameEntity {
 
 EventResult :: union {
 	EventDestroy,
+	EventInvent,
 	EventReplace,
 	EventDiscover,
+	EventFestival,
 }
 
 
@@ -553,6 +592,10 @@ applyResult :: proc(event: ^GameEntity, result: ^EventResult) {
 		target.entity = toEntityType(c.name).?
 	case EventDiscover:
 		event.entity = toEntityType(.Field).?
+	case EventFestival:
+		event.entity = toEntityType(.Fire).?
+	case EventInvent:
+		event.entity = toEntityType(.Spear).?
 	}
 }
 
@@ -604,6 +647,8 @@ getOutputConnections :: proc(entity: ^GameEntity) -> [dynamic]int {
 		case EventReplace:
 			append(&connections, r.targetId)
 		case EventDiscover:
+		case EventInvent:
+		case EventFestival:
 
 		}
 	}
@@ -880,7 +925,8 @@ render :: proc() {
 				case EventReplace:
 					outId = result.targetId
 				case EventDiscover:
-
+				case EventFestival:
+				case EventInvent:
 				}
 
 				target := e_get(outId)

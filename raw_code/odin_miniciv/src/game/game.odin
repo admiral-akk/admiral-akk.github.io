@@ -29,13 +29,28 @@ SelectionState :: enum int {
 	ACTIVE   = 2,
 }
 
-
 ResourceType :: enum {
 	Scout,
 	Soldier,
 	Priest,
 	Food,
 }
+
+EventType :: enum {
+	Famine,
+	Festival,
+	Invent,
+	Explore,
+	Raid,
+}
+
+LocationType :: enum {
+	Village,
+	Field,
+	Spear,
+	Fire,
+}
+
 
 Blueprint :: struct {
 	name:   string,
@@ -174,13 +189,6 @@ EventResult :: union {
 	EventDiscover,
 }
 
-EventType :: enum {
-	Famine,
-	Festival,
-	Invent,
-	Explore,
-	Raid,
-}
 
 // This is a one-off Event.
 // 
@@ -199,14 +207,6 @@ Event :: struct {
 	resultCondition: EventCondition,
 	result:          EventResult,
 }
-
-LocationType :: enum {
-	Village,
-	Field,
-	Spear,
-	Fire,
-}
-
 Building :: struct {
 	name:      LocationType,
 	outputIds: [dynamic]int,

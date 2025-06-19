@@ -29,30 +29,24 @@ SelectionState :: enum int {
 	ACTIVE   = 2,
 }
 
-ResourceClass :: enum {
-	Person,
+
+ResourceType :: enum {
+	Scout,
+	Soldier,
+	Priest,
 	Food,
-}
-
-ResourceDomain :: enum {
-	Base,
-}
-
-Resource :: struct {
-	class:  ResourceClass,
-	domain: ResourceDomain,
 }
 
 Blueprint :: struct {
 	name:   string,
-	input:  [dynamic]Resource,
-	output: [dynamic]Resource,
+	input:  [dynamic]ResourceType,
+	output: [dynamic]ResourceType,
 }
 
 // always starts at 0, decrements if missing, increments if provided.
 // true iff current == max.
 EventFill :: struct {
-	resource: Resource,
+	resource: ResourceType,
 	max:      int,
 	current:  int,
 }
@@ -60,7 +54,7 @@ EventFill :: struct {
 // always starts at 0, decrements if missing, increments if provided.
 // true iff current == min.
 EventDrain :: struct {
-	resource: Resource,
+	resource: ResourceType,
 	min:      int,
 	current:  int,
 }
@@ -135,12 +129,12 @@ toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 		switch t {
 		case .Famine:
 			event.endCondition = EventFill {
-				resource = Resource{class = .Food, domain = .Base},
-				max = 100,
+				resource = .Food,
+				max      = 100,
 			}
 			event.resultCondition = EventDrain {
-				resource = Resource{class = .Food, domain = .Base},
-				min = -1000,
+				resource = .Food,
+				min      = -1000,
 			}
 			// find target
 			target := get_first_matching(.Village)
@@ -148,15 +142,16 @@ toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 			event.result = EventDestroy {
 				targetId = target.id,
 			}
-		case .Discover:
+		case .Explore:
 			event.endCondition = AlwaysFalse{}
 			event.resultCondition = EventFill {
-				resource = Resource{class = .Person, domain = .Base},
-				max = 100,
+				resource = .Scout,
+				max      = 100,
 			}
 			event.result = EventDiscover{}
-		case .Innovation:
-		case .Maintance:
+		case .Invent:
+		case .Raid:
+		case .Festival:
 		}
 		return event
 	}
@@ -181,9 +176,10 @@ EventResult :: union {
 
 EventType :: enum {
 	Famine,
-	Maintance,
-	Innovation,
-	Discover,
+	Festival,
+	Invent,
+	Explore,
+	Raid,
 }
 
 // This is a one-off Event.
@@ -207,7 +203,8 @@ Event :: struct {
 LocationType :: enum {
 	Village,
 	Field,
-	Farm,
+	Spear,
+	Fire,
 }
 
 Building :: struct {
@@ -388,14 +385,16 @@ updateConnection :: proc(startId, endId: int) {
 
 getEventName :: proc(event: EventType) -> string {
 	switch event {
-	case .Innovation:
-		return "Innovation"
-	case .Maintance:
-		return "Maintance"
-	case .Discover:
-		return "Discover"
+	case .Invent:
+		return "Invent!"
+	case .Explore:
+		return "Explore!"
+	case .Raid:
+		return "Raid!"
 	case .Famine:
-		return "Famine"
+		return "Famine!"
+	case .Festival:
+		return "Festival!"
 	}
 	return "UNKNOWN?"
 }
@@ -405,8 +404,8 @@ getBlueprint :: proc(name: LocationType) -> ^Blueprint {
 	return building
 }
 
-getInputs :: proc(target: ^GameEntity) -> [dynamic]Resource {
-	inputs := make([dynamic]Resource, context.temp_allocator)
+getInputs :: proc(target: ^GameEntity) -> [dynamic]ResourceType {
+	inputs := make([dynamic]ResourceType, context.temp_allocator)
 	for e in game.entities {
 		b, ok := e.entity.(Building)
 		if ok {
@@ -429,7 +428,7 @@ updateConditions :: proc() {
 			inputs := getInputs(entity)
 			switch &c in e.endCondition {
 			case EventFill:
-				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
 				if inputIdx > -1 {
 					c.current += 1
 
@@ -438,7 +437,7 @@ updateConditions :: proc() {
 				}
 				c.current = math.clamp(c.current, 0, c.max)
 			case EventDrain:
-				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
 				if inputIdx > -1 {
 					c.current += 1
 
@@ -457,7 +456,7 @@ updateConditions :: proc() {
 			}
 			switch &c in e.resultCondition {
 			case EventFill:
-				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
 				if inputIdx > -1 {
 					c.current += 1
 
@@ -466,7 +465,7 @@ updateConditions :: proc() {
 				}
 				c.current = math.clamp(c.current, 0, c.max)
 			case EventDrain:
-				inputIdx := find_first_matching(Resource, inputs[:], c.resource)
+				inputIdx := find_first_matching(ResourceType, inputs[:], c.resource)
 				if inputIdx > -1 {
 					c.current += 1
 
@@ -1019,26 +1018,15 @@ seedBlueprints :: proc() {
 	map_insert(
 		&game.blueprints,
 		LocationType.Village,
-		Blueprint {
-			name = "Village",
-			output = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
-		},
-	)
-	map_insert(
-		&game.blueprints,
-		LocationType.Farm,
-		Blueprint {
-			name = "Farm",
-			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
-		},
+		Blueprint{name = "Village", output = makeDynamic(ResourceType, []ResourceType{.Scout})},
 	)
 	map_insert(
 		&game.blueprints,
 		LocationType.Field,
 		Blueprint {
 			name = "Field",
-			input = makeDynamic(Resource, []Resource{Resource{class = .Person, domain = .Base}}),
-			output = makeDynamic(Resource, []Resource{Resource{class = .Food, domain = .Base}}),
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Food}),
 		},
 	)
 }
@@ -1060,7 +1048,7 @@ restart :: proc() {
 	game.state = .PLAYING
 	g := spawn(.Village)
 	spawn(.Famine)
-	spawn(.Discover)
+	spawn(.Explore)
 
 }
 init :: proc() {

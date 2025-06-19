@@ -150,7 +150,6 @@ get_first_matching :: proc(t: NodeType) -> ^GameEntity {
 
 toEntityType :: proc(t: NodeType) -> Maybe(EntityType) {
 	switch t in t {
-
 	case LocationType:
 		return Building{name = t}
 	case EventType:
@@ -399,9 +398,33 @@ updateConnection :: proc(startId, endId: int) {
 	}
 }
 
-getBlueprint :: proc(name: LocationType) -> ^Blueprint {
-	_, building, _, _ := map_entry(&game.blueprints, name)
-	return building
+getBlueprint :: proc(name: LocationType) -> Blueprint {
+	switch name {
+	case .Field:
+		return Blueprint {
+			name = "Field",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Food}),
+		}
+	case .Village:
+		return Blueprint {
+			name = "Village",
+			output = makeDynamic(ResourceType, []ResourceType{.Scout}),
+		}
+	case .Spear:
+		return Blueprint {
+			name = "Spear",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Soldier}),
+		}
+	case .Fire:
+		return Blueprint {
+			name = "Fire",
+			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
+			output = makeDynamic(ResourceType, []ResourceType{.Priest}),
+		}
+	}
+	return Blueprint{}
 }
 
 getInputs :: proc(target: ^GameEntity) -> [dynamic]ResourceType {
@@ -1013,24 +1036,6 @@ makeDynamic :: proc($T: typeid, slice: []T) -> [dynamic]T {
 	return arr
 }
 
-seedBlueprints :: proc() {
-
-	map_insert(
-		&game.blueprints,
-		LocationType.Village,
-		Blueprint{name = "Village", output = makeDynamic(ResourceType, []ResourceType{.Scout})},
-	)
-	map_insert(
-		&game.blueprints,
-		LocationType.Field,
-		Blueprint {
-			name = "Field",
-			input = makeDynamic(ResourceType, []ResourceType{.Scout}),
-			output = makeDynamic(ResourceType, []ResourceType{.Food}),
-		},
-	)
-}
-
 restart :: proc() {
 	game.camera3d = rl.Camera3D {
 		position   = rl.Vector3{10, 10, 10},
@@ -1052,6 +1057,5 @@ restart :: proc() {
 
 }
 init :: proc() {
-	seedBlueprints()
 	restart()
 }

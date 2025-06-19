@@ -94,37 +94,42 @@ Resources have "attributes" which are needed to solve problems
 
 Attributes:
 
-- Combat
+- Explorer
+- Warrior
 - Food
-- Science
-- Goods
-- Widgets
-
-Brainstorm - things in the real world:
-
-- Farmer, doctor, teacher, scientist, engineer, mechanic, banker, politician, priest, police, solider
-- Brick, stone, wood, glass, metal, fruit, grain, meat, water, gold, silver, iron, bronze, plant, energy
-- Electronics, gears, pipes, wheels, cooked food, hammer, nail, pot, pan, pillar, bag, clothes, books
-
-Explorer - human
-Warrior - combat, human
-Farmer -
+- Priest
 
 ### Locations
 
 Village
 
+- Input: (N/A)
 - Output: Explorer
 
 Field
 
+- Input: Explorer
 - Output: Food
 
-Barracks
+Bonfire
 
+- Input: Explorer
+- Output: Priest
+
+Spear
+
+- Input: Explorer
 - Output: Fighter
 
 ### Events
+
+Explore!
+
+- Timeout: N/A
+- Input:
+  - Explorer
+- Result:
+  - Spawn Field
 
 Famine!
 
@@ -132,10 +137,16 @@ Famine!
   - Disable target
   - Retarget
 - Input:
-  - Person (any)
+  - Food
 - Result:
   - Destroy Event
-  - Spawn Invent!
+  - Spawn Festival!
+
+Festival!
+
+- Timeout: N/A
+- Input: Food, Explorer
+- Output: Bonfire, Invent! (Spear)
 
 Raid!
 
@@ -147,24 +158,6 @@ Raid!
 - Result:
   - Destroy Event
   - Spawn Invent!
-
-Explore!
-
-- Timeout:
-  - Destroy Event
-- Input:
-  - Scout
-- Result:
-  - Spawn new Location
-
-Invent!
-
-- Timeout:
-  - Destroy Event
-- Input:
-  - Scout
-- Result:
-  - Transform target Location
 
 ### Actions
 

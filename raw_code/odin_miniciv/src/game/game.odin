@@ -120,7 +120,10 @@ toEvent :: proc(id: int, t: EventType) -> EntityType {
 					),
 					results = makeDynamic(
 						EventResult,
-						[]EventResult{EventReplace{targetId = id, name = .Field}},
+						[]EventResult {
+							EventReplace{targetId = id, name = .Spear},
+							EventSpawn{name = .Raid},
+						},
 					),
 				},
 			},
@@ -162,7 +165,10 @@ toEvent :: proc(id: int, t: EventType) -> EntityType {
 					),
 					results = makeDynamic(
 						EventResult,
-						[]EventResult{EventReplace{targetId = id, name = .Fire}},
+						[]EventResult {
+							EventReplace{targetId = id, name = .Fire},
+							EventSpawn{name = .Invent},
+						},
 					),
 				},
 			},

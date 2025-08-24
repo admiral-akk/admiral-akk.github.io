@@ -4,6 +4,7 @@ import {
   mat4,
 } from "https://webgpufundamentals.org/3rdparty/wgpu-matrix.module.js";
 import { window } from "./engine/window";
+import { DrumMachine } from "./drum";
 
 async function main() {
   const adapter = await navigator.gpu?.requestAdapter();
@@ -451,5 +452,73 @@ function fail(msg) {
   elem.style.display = "";
   contentElem.textContent = msg;
 }
+const audioContext = new AudioContext();
+const kickConfig = {
+  oldParams: true,
+  wave_type: 0,
+  p_env_attack: 0.025,
+  p_env_sustain: 0.24,
+  p_env_punch: 0.275,
+  p_env_decay: 0.3,
+  p_base_freq: 0.158,
+  p_freq_limit: 0,
+  p_freq_ramp: 0,
+  p_freq_dramp: 0,
+  p_vib_strength: 0,
+  p_vib_speed: 0,
+  p_arp_mod: -0.225,
+  p_arp_speed: 0.815,
+  p_duty: 0.077,
+  p_duty_ramp: 0,
+  p_repeat_speed: 0,
+  p_pha_offset: 0.011,
+  p_pha_ramp: 0,
+  p_lpf_freq: 0.179,
+  p_lpf_ramp: -0.476,
+  p_lpf_resonance: 0.197,
+  p_hpf_freq: 0,
+  p_hpf_ramp: 0.34496207686575275,
+  sound_vol: 0.25,
+  sample_rate: 44100,
+  sample_size: 8,
+};
+const highHatConfig = {
+  oldParams: true,
+  wave_type: 3,
+  p_env_attack: 0.025,
+  p_env_sustain: 0.124,
+  p_env_punch: 0.296,
+  p_env_decay: 0.201,
+  p_base_freq: 0.958,
+  p_freq_limit: 0,
+  p_freq_ramp: 0.03,
+  p_freq_dramp: -0.078,
+  p_vib_strength: 0,
+  p_vib_speed: 0.902,
+  p_arp_mod: 0.352,
+  p_arp_speed: 0.844,
+  p_duty: 0.077,
+  p_duty_ramp: 0,
+  p_repeat_speed: 0,
+  p_pha_offset: -0.002,
+  p_pha_ramp: 0,
+  p_lpf_freq: 1,
+  p_lpf_ramp: -0.476,
+  p_lpf_resonance: 0.197,
+  p_hpf_freq: 0,
+  p_hpf_ramp: -0.263,
+  sound_vol: 0.104,
+  sample_rate: 44100,
+  sample_size: 8,
+};
 
-main();
+// Usage
+const drumMachine = new DrumMachine(audioContext);
+drumMachine.addSound("kick", kickConfig);
+drumMachine.addSound("hihat", highHatConfig);
+
+// Set patterns (true = hit, false = rest)
+drumMachine.setPattern("kick", [0, 4, 8, 12]);
+drumMachine.setPattern("hihat", [1, 3, 5, 6, 9, 11, 13, 14, 15]);
+
+drumMachine.start();

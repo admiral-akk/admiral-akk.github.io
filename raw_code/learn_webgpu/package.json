@@ -17,6 +17,7 @@
   "dependencies": {
     "gl-matrix": "^3.4.3",
     "gsap": "^3.12.5",
+    "jsfxr": "^1.2.2",
     "lil-gui": "^0.19.0",
     "stats-js": "^1.0.1",
     "twgl.js": "^5.5.4"

@@ -46,16 +46,39 @@ wss.on("connection", (ws) => {
   pc.ondatachannel = (event) => {
     const dc = event.channel;
     dc.onopen = () => console.log("DataChannel open on Node");
-    dc.onmessage = (msg) => console.log("Node received:", msg.data);
+    dc.onmessage = (msg) => {
+      for (const [key, value] of Object.entries(players)) {
+        value.dc.send(JSON.stringify(msg.data));
+      }
+    };
+    const playerId = addPlayer({ dc });
 
     // send a reply
-    dc.send("Hello from Node!");
-    dc.send("Hello from Node2!");
+    dc.send(JSON.stringify({ type: "id", data: { playerId } }));
   };
 
   // ICE candidates from Node → browser
   pc.onicecandidate = ({ candidate }) => {
     if (candidate) ws.send(JSON.stringify({ type: "ice", candidate }));
+  };
+  pc.onconnectionstatechange = () => {
+    console.log("Connection state:", pc.connectionState);
+
+    switch (pc.connectionState) {
+      case "connected":
+        console.log("Peer connected ✅");
+
+        break;
+      case "disconnected":
+        console.log("Peer disconnected ⚠️");
+        break;
+      case "failed":
+        console.log("Connection failed ❌");
+        break;
+      case "closed":
+        console.log("Connection closed ⏹");
+        break;
+    }
   };
 
   // Handle signaling messages from browser

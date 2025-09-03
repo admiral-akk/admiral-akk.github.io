@@ -1,19 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="shortcut icon" href="#" />
-    <link rel="stylesheet" href="./style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-    />
-      <script src="./riffwave.js"></script>
-      <script src="./sfxr.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>three.js base</title>
-  </head>
-  <body>
-    <script type="module" src="./script.js"></script>
-  </body>
-</html>
+<!doctype html>
+<meta charset="utf-8" />
+<title>WebRTC client ↔ Node server</title>
+<button id="connect">Connect to server</button>
+<input id="msg" placeholder="type message" disabled>
+<button id="send" disabled>Send</button>
+<pre id="log"></pre>
+
+<script>
+const ws = new WebSocket(location.origin.replace("http","ws"));
+let pc, dc;
+
+function log(...a) {
+  document.querySelector("#log").textContent += a.join(" ")+"\n";
+}
+
+ws.onmessage = async (ev) => {
+  const msg = JSON.parse(ev.data);
+
+  if (msg.type === "answer") {
+    await pc.setRemoteDescription(msg.answer);
+    log("Got answer from server");
+  }
+  if (msg.type === "ice") {
+    try { await pc.addIceCandidate(msg.candidate); } catch {}
+  }
+};
+
+document.querySelector("#connect").onclick = async () => {
+  pc = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  });
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) ws.send(JSON.stringify({ type:"ice", candidate: e.candidate }));
+  };
+
+  dc = pc.createDataChannel("client-channel");
+  dc.onopen = () => {
+    log("Data channel open");
+    document.querySelector("#msg").disabled = false;
+    document.querySelector("#send").disabled = false;
+  };
+  dc.onmessage = (e) => log("Server:", e.data);
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  ws.send(JSON.stringify({ type:"offer", offer }));
+};
+
+document.querySelector("#send").onclick = () => {
+  const m = document.querySelector("#msg").value;
+  dc.send(m);
+  log("You:", m);
+  document.querySelector("#msg").value = "";
+};
+</script>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>WebRTC DataChannel Test</h1>
+<title>WebRTC client ↔ Node server</title>
+<button id="connect">Connect to server</button>
+<input id="msg" placeholder="type message" disabled>
+<button id="send" disabled>Send</button>
+<pre id="log"></pre>
+    <script>
+function log(...a) {
+  document.querySelector("#log").textContent += a.join(" ")+"\n";
+}   
+let ws;
+let pc;
+
+document.querySelector("#connect").onclick = async () => {
+        if (ws || pc) {
+            return;
+        }
+       ws = new WebSocket("ws://localhost:3000");
+
+       pc = new RTCPeerConnection();
+
+      // Create DataChannel
+      const dc = pc.createDataChannel("chat");
+      dc.onopen = () => {
+        console.log("DataChannel open in browser");
+        dc.send("Hello Node!");
+        document.querySelector("#msg").disabled = false;
+        document.querySelector("#send").disabled = false;
+      };
+      dc.onmessage = (msg) => {
+        
+        log("You:", msg.data);
+        console.log("Browser received:", msg.data);}
+
+      // ICE candidates from browser → Node
+      pc.onicecandidate = ({ candidate }) => {
+        if (candidate) ws.send(JSON.stringify({ type: "ice", candidate }));
+      };
+
+      ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "answer") {
+          await pc.setRemoteDescription(data);
+        } else if (data.candidate) {
+          try {
+            await pc.addIceCandidate(data.candidate);
+          } catch (e) {
+            console.error("Error adding ICE candidate:", e);
+          }
+        }
+      };
+
+      ws.onopen = async () => {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        ws.send(JSON.stringify(offer));
+      };
+        document.querySelector("#send").onclick = () => {
+        const m = document.querySelector("#msg").value;
+        dc.send(m);
+        document.querySelector("#msg").value = "";
+        };
+    }
+    </script>
+  </body>
+</html>

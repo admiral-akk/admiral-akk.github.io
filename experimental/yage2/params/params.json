@@ -1,0 +1,240 @@
+{
+  "engineParams": {
+    "debugMode": false
+  },
+  "paletteParams": {
+    "colorArray": {
+      "0": {
+        "l": 0.2,
+        "c": 0,
+        "h": 266.2,
+        "a": 1
+      },
+      "2": {
+        "l": 0.55,
+        "c": 0.08,
+        "h": 80,
+        "a": 1
+      },
+      "3": {
+        "l": 0.78,
+        "c": 0.06,
+        "h": 80,
+        "a": 0
+      },
+      "4": {
+        "l": 0.14,
+        "c": 0.005,
+        "h": 80,
+        "a": 1
+      },
+      "7": {
+        "l": 0.75,
+        "c": 0.06,
+        "h": 80,
+        "a": 1
+      }
+    },
+    "nameIndex": {
+      "background": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-box": {
+        "index": 2,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-button": {
+        "index": 7,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "text": {
+        "index": 4,
+        "lMult": 1.008,
+        "cMult": 1
+      },
+      "particle-highlight": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      }
+    }
+  },
+  "imageParams": {
+    "toImage": {
+      "speaker": "speaker",
+      "speaker-off": "speaker-off"
+    }
+  },
+  "sfxParams": {
+    "fileMap": {
+      "countdown-tick": "ui-hover.mp3",
+      "round-start": "ui-select.mp3",
+      "bell": "boxing-bell.mp3",
+      "punch-jab": "whip-fast.mp3",
+      "punch-hook": "whip-sharp.mp3",
+      "haymaker-windup": "punch-heavy.mp3",
+      "haymaker-launch": "whip-sharp.mp3",
+      "haymaker-feint": "whip-fast.mp3",
+      "counter-jab-throw": "whip-fast.mp3",
+      "dip-success": "whip03.mp3",
+      "dip-catch": "punch-heavy.mp3",
+      "hit-block": "block-hit.mp3",
+      "hit-haymaker-block": "punch-heavy.mp3",
+      "hit-jab": "punch-light.mp3",
+      "hit-hook": "punch-heavy.mp3",
+      "counter-jab-connect": "punch-light.mp3",
+      "counter-jab-miss": "whip-fast.mp3",
+      "knockdown": "knockdown-thud.mp3",
+      "crowd-ambient": "crowd-ambient.mp3",
+      "crowd-hit-cheer": "crowd-hit-cheer.mp3",
+      "crowd-critical-ooh": "crowd-hit-cheer.mp3",
+      "role-switch": "ui-select.mp3",
+      "game-over": "game-over-stinger.mp3",
+      "block-up": "whip-fast.mp3",
+      "block-down": "whip-fast.mp3",
+      "stamina-empty": "stamina-empty.mp3",
+      "menu-hover": "ui-hover.mp3",
+      "menu-click": "ui-select.mp3"
+    }
+  },
+  "musicParams": {
+    "fileMap": {}
+  },
+  "volumeParams": {
+    "master": 0.8,
+    "sfx": 0.7,
+    "music": 0.3
+  },
+  "render3dParams": {
+    "celShading": false,
+    "colorVariance": 0.1,
+    "colorVarianceScale": 2,
+    "aoEnabled": false,
+    "aoIntensity": 1,
+    "aoRadius": 0.5,
+    "aoBias": 0.025,
+    "aoSampleCount": 16,
+    "aoBlurEnabled": true,
+    "aoBlurDepthSharpness": 200,
+    "aoMaxScreenFraction": 0.05,
+    "shadowEnabled": false,
+    "shadowMethod": "csm",
+    "shadowMapSize": 2048,
+    "shadowSlopeFactor": 2,
+    "shadowDepthUnits": 4,
+    "shadowLambda": 0.7,
+    "shadowBlurRadius": 3,
+    "shadowSoftShadows": true,
+    "shadowPcf": true,
+    "shadowGeometry": false,
+    "shadowDarken": 0.3,
+    "shadowNormalBias": 0.05,
+    "contactShadows": false,
+    "contactSteps": 12,
+    "contactMaxDist": 2,
+    "contactThickness": 0.5,
+    "fogEnabled": true,
+    "fogNear": 12,
+    "fogFar": 35,
+    "fogR": 0.55,
+    "fogG": 0.68,
+    "fogB": 0.78,
+    "dofEnabled": false,
+    "dofFocalDistance": 5,
+    "dofFocalRange": 3,
+    "dofMaxBlur": 8
+  },
+  "boxingParams": {
+    "jabWindup": 5,
+    "jabStartup": 8,
+    "jabActive": 4,
+    "jabRecovery": 18,
+    "hookWindup": 8,
+    "hookStartup": 12,
+    "hookActive": 8,
+    "hookRecovery": 24,
+    "haymakerWindup": 14,
+    "haymakerStartup": 30,
+    "haymakerActive": 8,
+    "haymakerRecovery": 28,
+    "haymakerCancelWindow": 15,
+    "counterJabWindup": 6,
+    "counterJabStartup": 14,
+    "counterJabActive": 6,
+    "counterJabRecovery": 18,
+    "roleDuration": 600,
+    "roleWarningFrames": 60,
+    "dipDuration": 30,
+    "dipEnterFrames": 4,
+    "dipReturnFrames": 6,
+    "dipSameSideCooldown": 30,
+    "jabCooldownFrames": 90,
+    "hitRecentlyFrames": 60,
+    "maxStamina": 100,
+    "staminaRegen": 0.1,
+    "staminaRegenOnDip": 10,
+    "blockDrain": 0.133,
+    "jabCost": 10,
+    "hookCost": 20,
+    "haymakerCost": 28,
+    "counterJabCost": 12,
+    "dipCost": 6,
+    "staminaOnKnockdown": 40,
+    "jabDamage": 15,
+    "hookDamage": 20,
+    "hookBlockDamage": 10,
+    "haymakerBlockDamage": 35,
+    "counterJabDamage": 15,
+    "missedCounterJabCost": 6,
+    "hitstopFrames": 4,
+    "hitstopCritFrames": 18,
+    "knockdownStun": 21,
+    "roleSwapStun": 20,
+    "idleGloveSpreadX": 40,
+    "idleGloveForwardOffset": 60,
+    "blockingGloveSpreadX": 18,
+    "blockingGloveForwardOffset": 54,
+    "attackerForwardOffset": 80,
+    "defenderBackOffset": 0,
+    "blockParticleCount": 16,
+    "blockParticleLifetime": 22,
+    "blockParticleSpeed": 6,
+    "blockShakeFrames": 14,
+    "blockShakePixels": 5,
+    "blockedGlanceDistance": 34,
+    "gloveTransitionSpeed": 0.18,
+    "bodyTransitionSpeed": 0.1,
+    "gloveTrailFrames": 7,
+    "gloveTrailAlpha": 0.32,
+    "gloveTrailWidth": 10,
+    "hookArcWidth": 90,
+    "attackOvershoot": 0.5,
+    "hookOvershootWidth": 140,
+    "haymakerWindbackDistance": 4,
+    "dipVisualWidth": 90,
+    "idleBounceFrequency": 0.6,
+    "idleBounceDistance": 13,
+    "jabStartupEase": "easeInQuad",
+    "jabActiveEase": "easeOutCubic",
+    "jabRecoveryEase": "easeOutQuad",
+    "hookStartupEase": "easeInOutQuad",
+    "hookActiveEase": "easeOutCubic",
+    "hookRecoveryEase": "easeOutQuad",
+    "haymakerStartupEase": "easeOutBack",
+    "haymakerActiveEase": "easeOutCubic",
+    "haymakerRecoveryEase": "easeOutQuad",
+    "counterJabStartupEase": "easeInQuad",
+    "counterJabActiveEase": "easeOutCubic",
+    "counterJabRecoveryEase": "easeOutQuad",
+    "uppercutStartup": 24,
+    "uppercutActive": 8,
+    "uppercutRecovery": 20,
+    "uppercutCost": 25,
+    "uppercutDamage": 25,
+    "counterWindow": 36
+  }
+}

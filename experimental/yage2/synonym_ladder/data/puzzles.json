@@ -1,0 +1,67 @@
+[
+  {
+    "id": "acknowledge-induce",
+    "start": "acknowledge",
+    "target": "induce",
+    "bestPath": [
+      "acknowledge",
+      "admit",
+      "accept",
+      "have",
+      "induce"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "sour-adopt",
+    "start": "sour",
+    "target": "adopt",
+    "bestPath": [
+      "sour",
+      "false",
+      "sham",
+      "assume",
+      "adopt"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "outdo-discharge",
+    "start": "outdo",
+    "target": "discharge",
+    "bestPath": [
+      "outdo",
+      "exceed",
+      "pass",
+      "clear",
+      "discharge"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "rob-put",
+    "start": "rob",
+    "target": "put",
+    "bestPath": [
+      "rob",
+      "hook",
+      "draw",
+      "cast",
+      "put"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "rump-baffle",
+    "start": "rump",
+    "target": "baffle",
+    "bestPath": [
+      "rump",
+      "butt",
+      "fag",
+      "queer",
+      "baffle"
+    ],
+    "difficulty": "medium"
+  }
+]

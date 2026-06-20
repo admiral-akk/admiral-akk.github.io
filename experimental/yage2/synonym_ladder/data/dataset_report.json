@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-19",
+  "wordCount": 7966,
+  "edgeCount": 21058,
+  "puzzleCount": 5,
+  "puzzleFilter": {
+    "requiredDistinctSolutionCount": 3,
+    "distinctness": "internal nodes are disjoint; start and target may be shared",
+    "attemptedStartCount": 14,
+    "attemptedPairCount": 2965,
+    "rejectedNoTargetInRangeCount": 0,
+    "rejectedNoPathCount": 0,
+    "rejectedPathBoundsCount": 0,
+    "rejectedDistinctSolutionCount": 2960,
+    "acceptedPuzzleCount": 5
+  },
+  "graphReport": {
+    "wordnetStats": {
+      "synsetCount": 117659,
+      "lemmaCount": 206978,
+      "emptyLemmaCount": 0,
+      "duplicateLemmaWithinSynsetCount": 230
+    },
+    "unfilteredWordCount": 146763,
+    "unfilteredEdgeCount": 151687,
+    "alphabeticFilter": {
+      "removedWordCount": 69260,
+      "removedEdgeCount": 81648
+    },
+    "canonicalization": {
+      "enabled": true,
+      "source": "scripts/synonym_ladder/data/scowl-pre.txt",
+      "parsedGroupCount": 5845,
+      "variantSlotCount": 10864,
+      "canonicalGroupCount": 8895,
+      "canonicalWordCount": 19538,
+      "collapsedGroupCount": 1877,
+      "collapsedWordCount": 1928,
+      "collapsedEdgeCount": 4875,
+      "collapsedSelfEdgeCount": 1928,
+      "mapOut": "public/synonym_ladder/data/canonical_word_mapping.json",
+      "usedGroupCount": 1877
+    },
+    "deadEndFilter": {
+      "minDegree": 2,
+      "removedWordCount": 52161,
+      "removedEdgeCount": 11764
+    },
+    "preThresholdWordCount": 14812,
+    "preThresholdEdgeCount": 41492,
+    "preThresholdComponentCount": 2295,
+    "frequencyFilter": {
+      "minZipfFrequency": 2.5,
+      "removedWordCount": 5475,
+      "removedEdgeCount": 19204
+    },
+    "thresholdDeadEndFilter": {
+      "minDegree": 2,
+      "removedWordCount": 1172,
+      "removedEdgeCount": 985
+    },
+    "thresholdComponentCount": 49
+  },
+  "options": {
+    "out": "public/synonym_ladder/data",
+    "min_frequency": 2.5,
+    "min_path": 4,
+    "max_path": 4,
+    "max_puzzles": 5,
+    "seed": 20260618,
+    "scowl_path": "scripts/synonym_ladder/data/scowl-pre.txt",
+    "canonical_map_out": "public/synonym_ladder/data/canonical_word_mapping.json",
+    "no_scowl_canonicalization": false
+  }
+}

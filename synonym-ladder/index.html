@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <title>Synonym Ladder</title>
     <style>
       :root {
@@ -14,18 +18,23 @@
       html,
       body {
         width: 100%;
-        min-height: 100%;
+        height: 100%;
         margin: 0;
         background: #dce4dd;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
       }
 
       canvas {
         max-width: 100vw;
         max-height: 100vh;
+        touch-action: none;
       }
     </style>
-    <script type="module" crossorigin src="./assets/synonym_ladder-K9rZOwge.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/globals-BBByfGJA.js">
+    <script type="module" crossorigin src="./assets/synonym_ladder-0SivFUUZ.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/globals-DJC1myy0.js">
+    <link rel="modulepreload" crossorigin href="./assets/easing-7ieU7a7q.js">
   </head>
   <body>
     <script src="./assets/riffwave.js"></script>

@@ -3,16 +3,200 @@
   "generatedAt": "2026-06-21",
   "wordCount": 7966,
   "edgeCount": 21058,
+  "synonymCountDistribution": [
+    {
+      "synonymCount": 2,
+      "wordCount": 2053
+    },
+    {
+      "synonymCount": 3,
+      "wordCount": 1568
+    },
+    {
+      "synonymCount": 4,
+      "wordCount": 1049
+    },
+    {
+      "synonymCount": 5,
+      "wordCount": 750
+    },
+    {
+      "synonymCount": 6,
+      "wordCount": 649
+    },
+    {
+      "synonymCount": 7,
+      "wordCount": 426
+    },
+    {
+      "synonymCount": 8,
+      "wordCount": 296
+    },
+    {
+      "synonymCount": 9,
+      "wordCount": 226
+    },
+    {
+      "synonymCount": 10,
+      "wordCount": 197
+    },
+    {
+      "synonymCount": 11,
+      "wordCount": 159
+    },
+    {
+      "synonymCount": 12,
+      "wordCount": 107
+    },
+    {
+      "synonymCount": 13,
+      "wordCount": 81
+    },
+    {
+      "synonymCount": 14,
+      "wordCount": 68
+    },
+    {
+      "synonymCount": 15,
+      "wordCount": 47
+    },
+    {
+      "synonymCount": 16,
+      "wordCount": 35
+    },
+    {
+      "synonymCount": 17,
+      "wordCount": 52
+    },
+    {
+      "synonymCount": 18,
+      "wordCount": 32
+    },
+    {
+      "synonymCount": 19,
+      "wordCount": 24
+    },
+    {
+      "synonymCount": 20,
+      "wordCount": 21
+    },
+    {
+      "synonymCount": 21,
+      "wordCount": 20
+    },
+    {
+      "synonymCount": 22,
+      "wordCount": 13
+    },
+    {
+      "synonymCount": 23,
+      "wordCount": 15
+    },
+    {
+      "synonymCount": 24,
+      "wordCount": 9
+    },
+    {
+      "synonymCount": 25,
+      "wordCount": 10
+    },
+    {
+      "synonymCount": 26,
+      "wordCount": 6
+    },
+    {
+      "synonymCount": 27,
+      "wordCount": 7
+    },
+    {
+      "synonymCount": 28,
+      "wordCount": 7
+    },
+    {
+      "synonymCount": 29,
+      "wordCount": 3
+    },
+    {
+      "synonymCount": 30,
+      "wordCount": 6
+    },
+    {
+      "synonymCount": 31,
+      "wordCount": 5
+    },
+    {
+      "synonymCount": 32,
+      "wordCount": 5
+    },
+    {
+      "synonymCount": 33,
+      "wordCount": 4
+    },
+    {
+      "synonymCount": 34,
+      "wordCount": 3
+    },
+    {
+      "synonymCount": 36,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 37,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 39,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 40,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 41,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 44,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 46,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 47,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 49,
+      "wordCount": 2
+    },
+    {
+      "synonymCount": 55,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 56,
+      "wordCount": 1
+    },
+    {
+      "synonymCount": 60,
+      "wordCount": 1
+    }
+  ],
   "puzzleCount": 100,
   "puzzleFilter": {
     "requiredDistinctSolutionCount": 3,
     "distinctness": "internal nodes are disjoint; start and target may be shared",
-    "attemptedStartCount": 291,
-    "attemptedPairCount": 69422,
+    "endpointSynonymCountMin": 5,
+    "endpointSynonymCountMax": 8,
+    "attemptedStartCount": 182,
+    "attemptedPairCount": 30747,
     "rejectedNoTargetInRangeCount": 0,
     "rejectedNoPathCount": 0,
     "rejectedPathBoundsCount": 0,
-    "rejectedDistinctSolutionCount": 69322,
+    "rejectedDistinctSolutionCount": 30647,
     "acceptedPuzzleCount": 100
   },
   "graphReport": {
@@ -65,8 +249,8 @@
   "options": {
     "out": "public/synonym_ladder/data",
     "min_frequency": 2.5,
-    "min_path": 4,
-    "max_path": 4,
+    "min_path": 5,
+    "max_path": 5,
     "max_puzzles": 100,
     "seed": 20260618,
     "scowl_path": "scripts/synonym_ladder/data/scowl-pre.txt",

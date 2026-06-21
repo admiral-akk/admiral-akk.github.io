@@ -124,5 +124,21 @@
     "dofFocalDistance": 5,
     "dofFocalRange": 3,
     "dofMaxBlur": 8
+  },
+  "synonymLadderParams": {
+    "nodeTargetSpeed": 0.45,
+    "cameraTargetSpeed": 0.45,
+    "victoryInitialHoldFrames": 12,
+    "victoryStepDelayFrames": 32,
+    "victoryNodeSpringFrames": 24,
+    "victoryNodePeakScale": 1.18,
+    "victoryDefinitionFadeFrames": 18,
+    "victoryLineFadeFrames": 14,
+    "victoryActionDelayFrames": 16,
+    "victoryActionFadeFrames": 18,
+    "victoryDimAlpha": 1,
+    "victorySpringOvershoot": 0.18,
+    "victoryNodeGreenSfx": "word-closer",
+    "victoryCompleteSfx": "puzzle-complete"
   }
 }

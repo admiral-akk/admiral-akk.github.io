@@ -1,56 +1,56 @@
 {
   "version": 1,
   "generatedAt": "2026-06-21",
-  "wordCount": 7966,
-  "edgeCount": 21058,
+  "wordCount": 7955,
+  "edgeCount": 20985,
   "synonymCountDistribution": [
     {
       "synonymCount": 2,
-      "wordCount": 2053
+      "wordCount": 2051
     },
     {
       "synonymCount": 3,
-      "wordCount": 1568
+      "wordCount": 1567
     },
     {
       "synonymCount": 4,
-      "wordCount": 1049
+      "wordCount": 1051
     },
     {
       "synonymCount": 5,
-      "wordCount": 750
+      "wordCount": 760
     },
     {
       "synonymCount": 6,
-      "wordCount": 649
+      "wordCount": 643
     },
     {
       "synonymCount": 7,
-      "wordCount": 426
+      "wordCount": 422
     },
     {
       "synonymCount": 8,
-      "wordCount": 296
+      "wordCount": 297
     },
     {
       "synonymCount": 9,
-      "wordCount": 226
+      "wordCount": 227
     },
     {
       "synonymCount": 10,
-      "wordCount": 197
+      "wordCount": 189
     },
     {
       "synonymCount": 11,
-      "wordCount": 159
+      "wordCount": 160
     },
     {
       "synonymCount": 12,
-      "wordCount": 107
+      "wordCount": 105
     },
     {
       "synonymCount": 13,
-      "wordCount": 81
+      "wordCount": 80
     },
     {
       "synonymCount": 14,
@@ -58,7 +58,7 @@
     },
     {
       "synonymCount": 15,
-      "wordCount": 47
+      "wordCount": 46
     },
     {
       "synonymCount": 16,
@@ -66,7 +66,7 @@
     },
     {
       "synonymCount": 17,
-      "wordCount": 52
+      "wordCount": 53
     },
     {
       "synonymCount": 18,
@@ -78,7 +78,7 @@
     },
     {
       "synonymCount": 20,
-      "wordCount": 21
+      "wordCount": 19
     },
     {
       "synonymCount": 21,
@@ -86,23 +86,23 @@
     },
     {
       "synonymCount": 22,
-      "wordCount": 13
-    },
-    {
-      "synonymCount": 23,
       "wordCount": 15
     },
     {
-      "synonymCount": 24,
-      "wordCount": 9
+      "synonymCount": 23,
+      "wordCount": 14
     },
     {
-      "synonymCount": 25,
+      "synonymCount": 24,
       "wordCount": 10
     },
     {
+      "synonymCount": 25,
+      "wordCount": 9
+    },
+    {
       "synonymCount": 26,
-      "wordCount": 6
+      "wordCount": 5
     },
     {
       "synonymCount": 27,
@@ -191,12 +191,12 @@
     "distinctness": "internal nodes are disjoint; start and target may be shared",
     "endpointSynonymCountMin": 5,
     "endpointSynonymCountMax": 8,
-    "attemptedStartCount": 182,
-    "attemptedPairCount": 30747,
+    "attemptedStartCount": 186,
+    "attemptedPairCount": 31583,
     "rejectedNoTargetInRangeCount": 0,
     "rejectedNoPathCount": 0,
     "rejectedPathBoundsCount": 0,
-    "rejectedDistinctSolutionCount": 30647,
+    "rejectedDistinctSolutionCount": 31483,
     "acceptedPuzzleCount": 100
   },
   "graphReport": {
@@ -244,7 +244,29 @@
       "removedWordCount": 1172,
       "removedEdgeCount": 985
     },
-    "thresholdComponentCount": 49
+    "thresholdComponentCount": 49,
+    "graphExclusionFilter": {
+      "sourceWordCount": 21,
+      "matchedWordCount": 8,
+      "matchedWords": [
+        "bitch",
+        "cock",
+        "cunt",
+        "fag",
+        "faggot",
+        "homo",
+        "rape",
+        "twat"
+      ],
+      "removedWordCount": 11,
+      "removedEdgeCount": 73,
+      "postRemovalDeadEndFilter": {
+        "minDegree": 2,
+        "removedWordCount": 3,
+        "removedEdgeCount": 3
+      },
+      "postRemovalComponentCount": 1
+    }
   },
   "options": {
     "out": "public/synonym_ladder/data",
@@ -255,6 +277,7 @@
     "seed": 20260618,
     "scowl_path": "scripts/synonym_ladder/data/scowl-pre.txt",
     "canonical_map_out": "public/synonym_ladder/data/canonical_word_mapping.json",
-    "no_scowl_canonicalization": false
+    "no_scowl_canonicalization": false,
+    "objectionable_words": "scripts/synonym_ladder/data/objectionable_words.txt"
   }
 }

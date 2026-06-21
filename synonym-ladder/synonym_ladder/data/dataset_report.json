@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-19",
+  "generatedAt": "2026-06-21",
   "wordCount": 7966,
   "edgeCount": 21058,
-  "puzzleCount": 5,
+  "puzzleCount": 100,
   "puzzleFilter": {
     "requiredDistinctSolutionCount": 3,
     "distinctness": "internal nodes are disjoint; start and target may be shared",
-    "attemptedStartCount": 8,
-    "attemptedPairCount": 923,
+    "attemptedStartCount": 291,
+    "attemptedPairCount": 69422,
     "rejectedNoTargetInRangeCount": 0,
     "rejectedNoPathCount": 0,
     "rejectedPathBoundsCount": 0,
-    "rejectedDistinctSolutionCount": 918,
-    "acceptedPuzzleCount": 5
+    "rejectedDistinctSolutionCount": 69322,
+    "acceptedPuzzleCount": 100
   },
   "graphReport": {
     "wordnetStats": {
@@ -67,7 +67,7 @@
     "min_frequency": 2.5,
     "min_path": 4,
     "max_path": 4,
-    "max_puzzles": 5,
+    "max_puzzles": 100,
     "seed": 20260618,
     "scowl_path": "scripts/synonym_ladder/data/scowl-pre.txt",
     "canonical_map_out": "public/synonym_ladder/data/canonical_word_mapping.json",

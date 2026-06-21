@@ -66,30 +66,18 @@
   "sfxParams": {
     "fileMap": {
       "ui-back": "synonym-ui-hover.mp3",
-      "word-source-select": "synonym-ui-hover.mp3",
       "word-submit": "node-expand-click.mp3",
-      "word-accepted": "node-expand-click.mp3",
       "word-closer": "correct-ding.mp3",
-      "word-invalid": "negativebeep.mp3",
-      "hint-reveal": "hint.mp3",
-      "word-undo": "synonym-ui-hover.mp3",
       "puzzle-complete": "Game Success Fanfare Short.mp3",
-      "puzzle-reset": "synonym-ui-hover.mp3",
-      "puzzle-start": "Boxing Bell Signals.mp3"
+      "puzzle-start": "Win Spacey.mp3"
     },
     "volumeMap": {
       "ui-hover": 0.12,
-      "word-source-select": 0.5,
       "word-submit": 0.65,
-      "word-invalid": 0,
-      "hint-reveal": 0,
-      "word-undo": 0,
-      "puzzle-complete": 0.85,
-      "menu-click": 0.54,
-      "word-accepted": 0,
+      "puzzle-complete": 0.6,
       "word-closer": 0.42,
-      "puzzle-reset": 0,
-      "puzzle-start": 0
+      "puzzle-start": 0.08,
+      "ui-back": 0.2
     }
   },
   "musicParams": {

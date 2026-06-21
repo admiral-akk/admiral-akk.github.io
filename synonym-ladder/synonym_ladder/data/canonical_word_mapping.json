@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-19",
+  "generatedAt": "2026-06-21",
   "source": {
     "name": "English Speller Database / SCOWL",
     "source": "scripts/synonym_ladder/data/scowl-pre.txt",

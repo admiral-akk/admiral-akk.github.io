@@ -1,0 +1,140 @@
+{
+  "paletteParams": {
+    "colorArray": {
+      "0": {
+        "l": 0.2,
+        "c": 0,
+        "h": 266.2,
+        "a": 1
+      },
+      "2": {
+        "l": 0.55,
+        "c": 0.08,
+        "h": 80,
+        "a": 1
+      },
+      "3": {
+        "l": 0.78,
+        "c": 0.06,
+        "h": 80,
+        "a": 0
+      },
+      "4": {
+        "l": 0.14,
+        "c": 0.005,
+        "h": 80,
+        "a": 1
+      },
+      "7": {
+        "l": 0.75,
+        "c": 0.06,
+        "h": 80,
+        "a": 1
+      }
+    },
+    "nameIndex": {
+      "background": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-box": {
+        "index": 2,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-button": {
+        "index": 7,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "text": {
+        "index": 4,
+        "lMult": 1.008,
+        "cMult": 1
+      },
+      "particle-highlight": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      }
+    }
+  },
+  "imageParams": {
+    "toImage": {}
+  },
+  "sfxParams": {
+    "fileMap": {
+      "ui-back": "synonym-ui-hover.mp3",
+      "word-source-select": "synonym-ui-hover.mp3",
+      "word-submit": "node-expand-click.mp3",
+      "word-accepted": "node-expand-click.mp3",
+      "word-closer": "correct-ding.mp3",
+      "word-invalid": "negativebeep.mp3",
+      "hint-reveal": "hint.mp3",
+      "word-undo": "synonym-ui-hover.mp3",
+      "puzzle-complete": "Game Success Fanfare Short.mp3",
+      "puzzle-reset": "synonym-ui-hover.mp3",
+      "puzzle-start": "Boxing Bell Signals.mp3"
+    },
+    "volumeMap": {
+      "ui-hover": 0.12,
+      "word-source-select": 0.5,
+      "word-submit": 0.65,
+      "word-invalid": 0,
+      "hint-reveal": 0,
+      "word-undo": 0,
+      "puzzle-complete": 0.85,
+      "menu-click": 0.54,
+      "word-accepted": 0,
+      "word-closer": 0.42,
+      "puzzle-reset": 0,
+      "puzzle-start": 0
+    }
+  },
+  "musicParams": {
+    "fileMap": {},
+    "cueMap": {
+      "synonym-ladder-ambient": "synonym-ladder-ambient.strudel.js"
+    }
+  },
+  "render3dParams": {
+    "celShading": false,
+    "colorVariance": 0.1,
+    "colorVarianceScale": 2,
+    "aoEnabled": false,
+    "aoIntensity": 1,
+    "aoRadius": 0.5,
+    "aoBias": 0.025,
+    "aoSampleCount": 16,
+    "aoBlurEnabled": true,
+    "aoBlurDepthSharpness": 200,
+    "aoMaxScreenFraction": 0.05,
+    "shadowEnabled": false,
+    "shadowMethod": "csm",
+    "shadowMapSize": 2048,
+    "shadowSlopeFactor": 2,
+    "shadowDepthUnits": 4,
+    "shadowLambda": 0.7,
+    "shadowBlurRadius": 3,
+    "shadowSoftShadows": true,
+    "shadowPcf": true,
+    "shadowGeometry": false,
+    "shadowDarken": 0.3,
+    "shadowNormalBias": 0.05,
+    "contactShadows": false,
+    "contactSteps": 12,
+    "contactMaxDist": 2,
+    "contactThickness": 0.5,
+    "fogEnabled": true,
+    "fogNear": 12,
+    "fogFar": 35,
+    "fogR": 0.55,
+    "fogG": 0.68,
+    "fogB": 0.78,
+    "dofEnabled": false,
+    "dofFocalDistance": 5,
+    "dofFocalRange": 3,
+    "dofMaxBlur": 8
+  }
+}

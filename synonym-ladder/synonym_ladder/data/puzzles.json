@@ -1,0 +1,67 @@
+[
+  {
+    "id": "appeal-swipe",
+    "start": "appeal",
+    "target": "swipe",
+    "bestPath": [
+      "appeal",
+      "attract",
+      "draw",
+      "hook",
+      "swipe"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "chuck-deal",
+    "start": "chuck",
+    "target": "deal",
+    "bestPath": [
+      "chuck",
+      "cast",
+      "draw",
+      "lot",
+      "deal"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "swig-form",
+    "start": "swig",
+    "target": "form",
+    "bestPath": [
+      "swig",
+      "draft",
+      "blueprint",
+      "pattern",
+      "form"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "savvy-jerk",
+    "start": "savvy",
+    "target": "jerk",
+    "bestPath": [
+      "savvy",
+      "apprehend",
+      "arrest",
+      "hitch",
+      "jerk"
+    ],
+    "difficulty": "medium"
+  },
+  {
+    "id": "accept-limit",
+    "start": "accept",
+    "target": "limit",
+    "bestPath": [
+      "accept",
+      "admit",
+      "hold",
+      "confine",
+      "limit"
+    ],
+    "difficulty": "medium"
+  }
+]

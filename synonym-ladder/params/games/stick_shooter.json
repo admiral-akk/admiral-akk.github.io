@@ -1,0 +1,73 @@
+{
+  "paletteParams": {
+    "colorArray": {
+      "0": {
+        "l": 0.2,
+        "c": 0,
+        "h": 266.2,
+        "a": 1
+      },
+      "2": {
+        "l": 0.55,
+        "c": 0.08,
+        "h": 80,
+        "a": 1
+      },
+      "3": {
+        "l": 0.78,
+        "c": 0.06,
+        "h": 80,
+        "a": 0
+      },
+      "4": {
+        "l": 0.14,
+        "c": 0.005,
+        "h": 80,
+        "a": 1
+      },
+      "7": {
+        "l": 0.75,
+        "c": 0.06,
+        "h": 80,
+        "a": 1
+      }
+    },
+    "nameIndex": {
+      "background": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-box": {
+        "index": 2,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "ui-button": {
+        "index": 7,
+        "lMult": 1,
+        "cMult": 1
+      },
+      "text": {
+        "index": 4,
+        "lMult": 1.008,
+        "cMult": 1
+      },
+      "particle-highlight": {
+        "index": 0,
+        "lMult": 1,
+        "cMult": 1
+      }
+    }
+  },
+  "imageParams": {
+    "toImage": {}
+  },
+  "sfxParams": {
+    "fileMap": {}
+  },
+  "musicParams": {
+    "fileMap": {}
+  },
+  "render3dParams": {}
+}

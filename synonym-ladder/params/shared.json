@@ -1,0 +1,31 @@
+{
+  "engineParams": {
+    "debugMode": false
+  },
+  "imageParams": {
+    "toImage": {
+      "speaker": "speaker",
+      "speaker-off": "speaker-off"
+    }
+  },
+  "sfxParams": {
+    "fileMap": {
+      "menu-hover": "ui-hover.mp3",
+      "menu-click": "correct-ding.mp3",
+      "ui-hover": "synonym-ui-hover.mp3",
+      "ui-disabled": "negativebeep.mp3",
+      "ui-error": "negativebeep.mp3"
+    }
+  },
+  "musicParams": {
+    "fileMap": {},
+    "cueMap": {
+      "basic-song": "synonym-ladder-ambient.strudel.js"
+    }
+  },
+  "volumeParams": {
+    "master": 0.8,
+    "sfx": 0.7,
+    "music": 0.3
+  }
+}
